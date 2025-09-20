@@ -6,22 +6,20 @@ const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
 
-const auth = require('./middleware/auth');
-
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, '../frontend')));
-app.use('/uploads/audio', express.static(path.join('/tmp', 'uploads', 'audio'))); // Serve audio from /tmp
+app.use('/uploads/audio', express.static(path.join('/tmp', 'Uploads', 'audio')));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'hymns_secret_key',
   resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    secure: process.env.NODE_ENV === 'production',
-  },
+    secure: process.env.NODE_ENV === 'production'
+  }
 }));
 app.use(flash());
 app.use((req, res, next) => {
@@ -31,7 +29,7 @@ app.use((req, res, next) => {
 
 // Database connection
 mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hymns_db', {
+  .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -44,10 +42,9 @@ app.use('/api/categories', express.json({ limit: '10mb' }));
 app.use('/api/users', express.json({ limit: '10mb' }));
 app.use('/api/contact', express.json({ limit: '10mb' }));
 
-// For hymn routes, we'll handle multipart/form-data separately
+// For hymn routes, handle multipart/form-data separately
 app.use('/api/hymns', (req, res, next) => {
   if (req.method === 'POST' || req.method === 'PUT') {
-    // Skip body parsing for multipart requests (handled by multer)
     next();
   } else {
     express.json({ limit: '10mb' })(req, res, next);
@@ -68,7 +65,6 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  // Changed to 0.0.0.0 for Render compatibility
   console.log(`Server running on port ${PORT}`);
   console.log('All active sessions cleared. Users will need to login again.');
 });
