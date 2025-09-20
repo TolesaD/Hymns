@@ -11,7 +11,7 @@ const router = express.Router();
 // Get all hymns
 router.get('/', async (req, res) => {
   try {
-    const { category, lang, search, page = 1, limit = 10 } = req.query;  // Changed 'language' to 'lang'
+    const { category, lang, search, page = 1, limit = 10 } = req.query;
     
     let filter = { isActive: true };
     
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       }
     }
     
-    if (lang) {  // Changed from 'language'
+    if (lang) {
       filter.lang = lang;
     }
     
@@ -72,7 +72,6 @@ router.get('/:id', async (req, res) => {
       });
     }
     
-    // Increment listen count
     hymn.listens += 1;
     await hymn.save();
     
@@ -110,9 +109,9 @@ router.post('/', auth, uploadAudio.single('audio'), handleUploadError, async (re
     const audioUrl = `/uploads/audio/${req.file.filename}`;
     
     const hymnData = {
-      ...req.body,  // Expects 'lang' from frontend form
+      ...req.body,
       audioUrl: audioUrl,
-      category: req.body.category // This should be the category ID
+      category: req.body.category
     };
     
     const hymn = await Hymn.create(hymnData);
@@ -124,6 +123,7 @@ router.post('/', auth, uploadAudio.single('audio'), handleUploadError, async (re
       }
     });
   } catch (error) {
+    console.error('Error creating hymn:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error creating hymn: ' + error.message
@@ -151,13 +151,13 @@ router.put('/:id', auth, uploadAudio.single('audio'), handleUploadError, async (
     }
     
     // Prepare update data
-    const updateData = { ...req.body };  // Expects 'lang' from frontend form
+    const updateData = { ...req.body };
     
     // If new audio file is uploaded
     if (req.file) {
       // Delete old audio file if it exists
       if (hymn.audioUrl) {
-        const oldFilePath = path.join(__dirname, '..', hymn.audioUrl);
+        const oldFilePath = path.join('/tmp', 'uploads', 'audio', path.basename(hymn.audioUrl));
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
         }
@@ -180,6 +180,7 @@ router.put('/:id', auth, uploadAudio.single('audio'), handleUploadError, async (
       }
     });
   } catch (error) {
+    console.error('Error updating hymn:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error updating hymn: ' + error.message
@@ -206,9 +207,9 @@ router.delete('/:id', auth, async (req, res) => {
       });
     }
     
-    // Delete audio file
+    // Delete audio file if it exists
     if (hymn.audioUrl) {
-      const filePath = path.join(__dirname, '..', hymn.audioUrl);
+      const filePath = path.join('/tmp', 'Uploads', 'audio', path.basename(hymn.audioUrl));
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -222,6 +223,7 @@ router.delete('/:id', auth, async (req, res) => {
       message: 'Hymn deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting hymn:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error deleting hymn: ' + error.message
