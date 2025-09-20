@@ -62,7 +62,7 @@ router.post('/forgot-password', [
       });
       
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@hymns.com',
+        from: process.env.EMAIL_FROM || 'tolesadebushe9@gmail.com',
         to: user.email,
         subject: 'Password Reset Request - Orthodox Hymns',
         html: `
