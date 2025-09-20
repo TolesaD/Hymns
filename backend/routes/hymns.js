@@ -1,0 +1,259 @@
+const express = require('express');
+const Hymn = require('../models/Hymn');
+const Category = require('../models/Category');
+const auth = require('../middleware/auth');
+const { uploadAudio, handleUploadError } = require('../middleware/upload');
+const fs = require('fs');
+const path = require('path');
+
+const router = express.Router();
+
+// Get all hymns
+router.get('/', async (req, res) => {
+  try {
+    const { category, lang, search, page = 1, limit = 10 } = req.query;  // Changed 'language' to 'lang'
+    
+    let filter = { isActive: true };
+    
+    if (category) {
+      const categoryDoc = await Category.findOne({ name: category, isActive: true });
+      if (categoryDoc) {
+        filter.category = categoryDoc._id;
+      }
+    }
+    
+    if (lang) {  // Changed from 'language'
+      filter.lang = lang;
+    }
+    
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { lyrics: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const hymns = await Hymn.find(filter)
+      .populate('category', 'name')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const total = await Hymn.countDocuments(filter);
+    
+    res.status(200).json({
+      status: 'success',
+      results: hymns.length,
+      data: {
+        hymns,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error fetching hymns'
+    });
+  }
+});
+
+// Get single hymn
+router.get('/:id', async (req, res) => {
+  try {
+    const hymn = await Hymn.findById(req.params.id)
+      .populate('category', 'name description');
+    
+    if (!hymn || !hymn.isActive) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Hymn not found'
+      });
+    }
+    
+    // Increment listen count
+    hymn.listens += 1;
+    await hymn.save();
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        hymn
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error fetching hymn'
+    });
+  }
+});
+
+// Create hymn (admin only) with file upload
+router.post('/', auth, uploadAudio.single('audio'), handleUploadError, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.'
+      });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Audio file is required'
+      });
+    }
+    
+    const audioUrl = `/uploads/audio/${req.file.filename}`;
+    
+    const hymnData = {
+      ...req.body,  // Expects 'lang' from frontend form
+      audioUrl: audioUrl,
+      category: req.body.category // This should be the category ID
+    };
+    
+    const hymn = await Hymn.create(hymnData);
+    
+    res.status(201).json({
+      status: 'success',
+      data: {
+        hymn
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error creating hymn: ' + error.message
+    });
+  }
+});
+
+// Update hymn (admin only)
+router.put('/:id', auth, uploadAudio.single('audio'), handleUploadError, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.'
+      });
+    }
+    
+    const hymn = await Hymn.findById(req.params.id);
+    
+    if (!hymn) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Hymn not found'
+      });
+    }
+    
+    // Prepare update data
+    const updateData = { ...req.body };  // Expects 'lang' from frontend form
+    
+    // If new audio file is uploaded
+    if (req.file) {
+      // Delete old audio file if it exists
+      if (hymn.audioUrl) {
+        const oldFilePath = path.join(__dirname, '..', hymn.audioUrl);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+      
+      // Set new audio URL
+      updateData.audioUrl = `/uploads/audio/${req.file.filename}`;
+    }
+    
+    const updatedHymn = await Hymn.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('category', 'name description');
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        hymn: updatedHymn
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error updating hymn: ' + error.message
+    });
+  }
+});
+
+// Delete hymn (admin only)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.'
+      });
+    }
+    
+    const hymn = await Hymn.findById(req.params.id);
+    
+    if (!hymn) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Hymn not found'
+      });
+    }
+    
+    // Delete audio file
+    if (hymn.audioUrl) {
+      const filePath = path.join(__dirname, '..', hymn.audioUrl);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    
+    // Delete from database
+    await Hymn.findByIdAndDelete(req.params.id);
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Hymn deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error deleting hymn: ' + error.message
+    });
+  }
+});
+
+// Increment download count
+router.post('/:id/download', async (req, res) => {
+  try {
+    const hymn = await Hymn.findById(req.params.id);
+    
+    if (!hymn || !hymn.isActive) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Hymn not found'
+      });
+    }
+    
+    hymn.downloads += 1;
+    await hymn.save();
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Download count updated'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error updating download count'
+    });
+  }
+});
+
+module.exports = router;
