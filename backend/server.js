@@ -57,6 +57,7 @@ app.use('/api/hymns', require('./routes/hymns'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/contact', require('./routes/contact'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Serve frontend
 app.get('*', (req, res) => {

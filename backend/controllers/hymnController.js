@@ -1,5 +1,67 @@
 const Hymn = require('../models/Hymn');
 const Category = require('../models/Category');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
+
+// Create hymn (admin only) with file upload and notifications
+exports.createHymn = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.'
+      });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Audio file is required'
+      });
+    }
+    
+    const audioUrl = `/uploads/audio/${req.file.filename}`;
+    
+    const hymnData = {
+      ...req.body,
+      audioUrl: audioUrl,
+      category: req.body.category
+    };
+    
+    const hymn = await Hymn.create(hymnData);
+    
+    // Send notifications to all users about new hymn
+    try {
+      const users = await User.find({ isActive: true });
+      const notificationPromises = users.map(user => 
+        Notification.create({
+          userId: user._id,
+          message: `New hymn added: ${hymn.title}`,
+          type: 'new_hymn',
+          relatedId: hymn._id,
+          onModel: 'Hymn'
+        })
+      );
+      
+      await Promise.all(notificationPromises);
+    } catch (notificationError) {
+      console.error('Error creating notifications:', notificationError);
+      // Don't fail the hymn creation if notifications fail
+    }
+    
+    res.status(201).json({
+      status: 'success',
+      data: {
+        hymn
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error creating hymn: ' + error.message
+    });
+  }
+};
 
 // Get all hymns
 exports.getHymns = async (req, res) => {

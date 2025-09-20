@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -35,20 +36,16 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  resetPasswordToken: {
-    type: String
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  emailVerified: {
+    type: Boolean,
+    default: false
   },
-  resetPasswordExpire: {
-    type: Date
-  }
+  emailVerificationToken: String
 }, {
   timestamps: true
 });
-
-// Add indexes
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ isActive: 1 });
 
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
@@ -58,6 +55,32 @@ userSchema.pre('save', async function(next) {
 
 userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+// Generate password reset token
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+    
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  
+  return resetToken;
+};
+
+// Generate email verification token
+userSchema.methods.createEmailVerificationToken = function() {
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(verificationToken)
+    .digest('hex');
+    
+  return verificationToken;
 };
 
 module.exports = mongoose.model('User', userSchema);
