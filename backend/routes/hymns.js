@@ -1,12 +1,10 @@
 const express = require('express');
 const Hymn = require('../models/Hymn');
 const Category = require('../models/Category');
-const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { uploadAudio, handleUploadError } = require('../middleware/upload');
 const fs = require('fs');
 const path = require('path');
-const nodemailer = require('nodemailer');
 
 const router = express.Router();
 
@@ -54,7 +52,6 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching hymns:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error fetching hymns'
@@ -85,7 +82,6 @@ router.get('/:id', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching hymn:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error fetching hymn'
@@ -119,35 +115,7 @@ router.post('/', auth, uploadAudio.single('audio'), handleUploadError, async (re
     };
     
     const hymn = await Hymn.create(hymnData);
-
-    // Send notification emails to all active users
-    const users = await User.find({ isActive: true });
-    const transporter = nodemailer.createTransport({
-      service: 'Gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    users.forEach(async (user) => {
-      try {
-        await transporter.sendMail({
-          from: `"Orthodox Hymns" <${process.env.EMAIL_USER}>`,
-          to: user.email,
-          subject: 'New Hymn Added to Orthodox Hymns',
-          html: `
-            <p>Hello ${user.username},</p>
-            <p>A new hymn "${hymn.title}" has been added to Orthodox Hymns.</p>
-            <p>Check it out at <a href="https://${req.headers.host}/">Orthodox Hymns</a>.</p>
-            <p>Orthodox Hymns Team</p>
-          `,
-        });
-      } catch (emailError) {
-        console.error(`Error sending email to ${user.email}:`, emailError);
-      }
-    });
-
+    
     res.status(201).json({
       status: 'success',
       data: {
@@ -189,7 +157,7 @@ router.put('/:id', auth, uploadAudio.single('audio'), handleUploadError, async (
     if (req.file) {
       // Delete old audio file if it exists
       if (hymn.audioUrl) {
-        const oldFilePath = path.join('/tmp', 'Uploads', 'audio', path.basename(hymn.audioUrl));
+        const oldFilePath = path.join('/tmp', 'uploads', 'audio', path.basename(hymn.audioUrl));
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
         }
@@ -283,7 +251,6 @@ router.post('/:id/download', async (req, res) => {
       message: 'Download count updated'
     });
   } catch (error) {
-    console.error('Error updating download count:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error updating download count'
