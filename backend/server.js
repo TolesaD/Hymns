@@ -6,17 +6,24 @@ const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
 
+const auth = require('./middleware/auth');
+
 const app = express();
+
+// Clear all active sessions on server start
+auth.clearAllSessions();
 
 // Middleware
 app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '../frontend')));
-app.use('/uploads/audio', express.static(path.join('/tmp', 'Uploads', 'audio')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'hymns_secret_key',
   resave: false,
   saveUninitialized: false,
-  cookie: {
+  cookie: { 
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     secure: process.env.NODE_ENV === 'production'
   }
@@ -28,28 +35,12 @@ app.use((req, res, next) => {
 });
 
 // Database connection
-mongoose
-  .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('MongoDB connection error:', err));
-
-// Apply JSON parsing only to specific routes that need it
-app.use('/api/auth', express.json({ limit: '10mb' }));
-app.use('/api/categories', express.json({ limit: '10mb' }));
-app.use('/api/users', express.json({ limit: '10mb' }));
-app.use('/api/contact', express.json({ limit: '10mb' }));
-
-// For hymn routes, handle multipart/form-data separately
-app.use('/api/hymns', (req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT') {
-    next();
-  } else {
-    express.json({ limit: '10mb' })(req, res, next);
-  }
-});
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hymns_db', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -59,13 +50,17 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/notifications', require('./routes/notifications'));
 
+// Temporary routes for debugging (remove in production)
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/test', require('./routes/test'));
+
 // Serve frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('All active sessions cleared. Users will need to login again.');
 });
