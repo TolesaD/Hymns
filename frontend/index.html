@@ -7,114 +7,9 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        .hymns-carousel {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            gap: 20px;
-            padding: 20px 0;
-            scrollbar-width: none;
-        }
-        .hymns-carousel::-webkit-scrollbar {
-            display: none;
-        }
-        .carousel-item {
-            flex: 0 0 auto;
-            width: 300px;
-            scroll-snap-align: start;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .carousel-item:hover {
-            transform: translateY(-5px);
-        }
-        .carousel-controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .carousel-prev, .carousel-next {
-            background: var(--primary-color, #2c3e50);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-        .carousel-prev:hover, .carousel-next:hover {
-            background: var(--secondary-color, #34495e);
-        }
-        .view-all-container {
-            text-align: center;
-            margin-top: 30px;
-        }
-        .hymn-content audio {
-            width: 100%;
-            margin: 10px 0;
-        }
-        .hymn-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin: 10px 0;
-        }
-        .hymn-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            color: var(--primary-color, #2c3e50);
-        }
-        .hymn-actions button:hover {
-            color: var(--secondary-color, #34495e);
-        }
-        @media (max-width: 768px) {
-            .carousel-item {
-                width: 250px;
-            }
-            .hymns-carousel {
-                gap: 15px;
-            }
-        }
-        .language-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
-        .language-modal-content {
-            background-color: #fefefe;
-            margin: 10% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 600px;
-            border-radius: 8px;
-        }
-        .language-modal-close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .language-modal-close:hover {
-            color: black;
-        }
-    </style>
 </head>
 <body>
+    <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
@@ -145,8 +40,10 @@
         </div>
     </nav>
 
+    <!-- Flash Messages -->
     <div id="flash-messages"></div>
 
+    <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
             <h1>Discover Sacred Ethiopian Orthodox Hymns</h1>
@@ -158,6 +55,7 @@
         </div>
     </section>
 
+    <!-- Categories Section -->
     <section class="categories">
         <div class="container">
             <h2>Categories</h2>
@@ -167,23 +65,24 @@
         </div>
     </section>
 
+    <!-- Languages Section -->
     <section class="languages">
         <div class="container">
             <h2>Languages</h2>
             <div class="languages-grid">
-                <div class="language-card" data-lang="am">
+                <div class="language-card" data-lang="Amharic">
                     <img src="img/amharic.jpg" alt="Amharic Hymns">
                     <h3>Amharic</h3>
                 </div>
-                <div class="language-card" data-lang="om">
+                <div class="language-card" data-lang="Afan Oromo">
                     <img src="img/afanOromo.jpg" alt="Afan Oromo Hymns">
                     <h3>Afan Oromo</h3>
                 </div>
-                <div class="language-card" data-lang="ti">
+                <div class="language-card" data-lang="Tigrigna">
                     <img src="img/tigrigna.jpg" alt="Tigrigna Hymns">
                     <h3>Tigrigna</h3>
                 </div>
-                <div class="language-card" data-lang="en">
+                <div class="language-card" data-lang="English">
                     <img src="img/english.jpg" alt="English Hymns">
                     <h3>English</h3>
                 </div>
@@ -191,15 +90,17 @@
         </div>
     </section>
 
+    <!-- Featured Hymns -->
     <section class="featured-hymns">
         <div class="container">
             <h2>Featured Hymns</h2>
-            <div class="hymns-carousel" id="hymns-carousel">
-                <!-- Carousel items will be loaded here -->
+            <div class="hymns-display-options">
+                <button class="filter-btn active" data-filter="recent">Most Recent</button>
+                <button class="filter-btn" data-filter="popular">Most Popular</button>
+                <button class="filter-btn" data-filter="random">Random Selection</button>
             </div>
-            <div class="carousel-controls">
-                <button class="carousel-prev" onclick="prevSlide()">❮</button>
-                <button class="carousel-next" onclick="nextSlide()">❯</button>
+            <div class="hymns-grid" id="featured-hymns">
+                <!-- Hymns will be loaded here -->
             </div>
             <div class="view-all-container">
                 <a href="pages/categories.html" class="btn">View All Hymns</a>
@@ -207,14 +108,53 @@
         </div>
     </section>
 
-    <div id="language-modal" class="language-modal">
-        <div class="language-modal-content">
-            <span class="language-modal-close" onclick="closeLanguageModal()">&times;</span>
-            <h3 id="language-modal-title"></h3>
-            <div id="language-hymns"></div>
-        </div>
-    </div>
+    <style>
+        .hymns-display-options {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
 
+        .filter-btn {
+            padding: 8px 16px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .hymns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .view-all-container {
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .hymns-display-options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hymns-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -249,252 +189,5 @@
 
     <script src="js/auth.js"></script>
     <script src="js/main.js"></script>
-    <script>
-        let currentSlide = 0;
-        let featuredHymns = [];
-
-        async function loadFeaturedHymns() {
-            try {
-                const response = await fetch('/api/hymns?limit=10');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    featuredHymns = data.data.hymns;
-                    displayFeaturedHymns(featuredHymns);
-                } else {
-                    auth.showFlash(data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error loading featured hymns:', error);
-                auth.showFlash('Error loading featured hymns', 'error');
-            }
-        }
-
-        function displayFeaturedHymns(hymns) {
-            const carousel = document.getElementById('hymns-carousel');
-            if (!carousel) return;
-            carousel.innerHTML = '';
-            if (hymns.length === 0) {
-                carousel.innerHTML = '<p>No hymns available yet.</p>';
-                return;
-            }
-            hymns.forEach(hymn => {
-                const carouselItem = document.createElement('div');
-                carouselItem.className = 'carousel-item';
-                carouselItem.innerHTML = `
-                    <div class="hymn-content">
-                        <h3>${hymn.title}</h3>
-                        <p><strong>Language:</strong> ${hymn.lang || 'N/A'}</p>
-                        <p>${hymn.description ? hymn.description.substring(0, 80) + '...' : 'No description'}</p>
-                        <audio controls src="${hymn.audioUrl}"></audio>
-                        <div class="hymn-actions">
-                            <button onclick="playHymn('${hymn._id}', this)"><i class="fas fa-play"></i></button>
-                            <button onclick="shareHymn('${hymn._id}')"><i class="fas fa-share-alt"></i></button>
-                            <button onclick="downloadHymn('${hymn._id}')"><i class="fas fa-download"></i></button>
-                            <button onclick="toggleFavorite('${hymn._id}', this)"><i class="far fa-heart"></i></button>
-                        </div>
-                        <a href="pages/hymn.html?id=${hymn._id}" class="btn" style="display: block; text-align: center; margin: 10px;">View Details</a>
-                    </div>
-                `;
-                carousel.appendChild(carouselItem);
-            });
-        }
-
-        function nextSlide() {
-            const carousel = document.getElementById('hymns-carousel');
-            if (!carousel) return;
-            currentSlide = (currentSlide + 1) % featuredHymns.length;
-            carousel.scrollLeft = currentSlide * 320;
-        }
-
-        function prevSlide() {
-            const carousel = document.getElementById('hymns-carousel');
-            if (!carousel) return;
-            currentSlide = (currentSlide - 1 + featuredHymns.length) % featuredHymns.length;
-            carousel.scrollLeft = currentSlide * 320;
-        }
-
-        async function playHymn(hymnId, button) {
-            const audio = button.closest('.hymn-content').querySelector('audio');
-            if (!audio) {
-                auth.showFlash('Audio not available', 'error');
-                return;
-            }
-            try {
-                if (audio.paused) {
-                    document.querySelectorAll('audio').forEach(a => {
-                        if (a !== audio) a.pause();
-                    });
-                    await audio.play();
-                    button.querySelector('i').classList.replace('fa-play', 'fa-pause');
-                } else {
-                    audio.pause();
-                    button.querySelector('i').classList.replace('fa-pause', 'fa-play');
-                }
-                await fetch(`/api/hymns/${hymnId}`, { method: 'GET' });
-            } catch (error) {
-                console.error('Error playing hymn:', error);
-                auth.showFlash('Error playing hymn', 'error');
-            }
-        }
-
-        async function shareHymn(hymnId) {
-            try {
-                const url = `${window.location.origin}/pages/hymn.html?id=${hymnId}`;
-                await navigator.clipboard.writeText(url);
-                auth.showFlash('Hymn link copied to clipboard', 'success');
-            } catch (error) {
-                console.error('Error sharing hymn:', error);
-                auth.showFlash('Error sharing hymn', 'error');
-            }
-        }
-
-        async function downloadHymn(hymnId) {
-            try {
-                const response = await fetch(`/api/hymns/${hymnId}`);
-                const data = await response.json();
-                if (data.status === 'success') {
-                    await fetch(`/api/hymns/${hymnId}/download`, { method: 'POST' });
-                    window.location.href = data.data.hymn.audioUrl;
-                } else {
-                    auth.showFlash(data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error downloading hymn:', error);
-                auth.showFlash('Error downloading hymn', 'error');
-            }
-        }
-
-        async function toggleFavorite(hymnId, button) {
-            try {
-                const response = await fetch('/api/users/favorites', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...auth.getAuthHeader()
-                    },
-                    body: JSON.stringify({ hymnId })
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    const icon = button.querySelector('i');
-                    icon.classList.toggle('far');
-                    icon.classList.toggle('fas');
-                    auth.showFlash(data.message, 'success');
-                } else {
-                    auth.showFlash(data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error toggling favorite:', error);
-                auth.showFlash('Error toggling favorite', 'error');
-            }
-        }
-
-        async function loadLanguageHymns(lang) {
-            try {
-                const response = await fetch(`/api/hymns?lang=${lang}`);
-                const data = await response.json();
-                if (data.status === 'success') {
-                    displayLanguageHymns(data.data.hymns, lang);
-                } else {
-                    auth.showFlash(data.message, 'error');
-                }
-            } catch (error) {
-                console.error(`Error loading ${lang} hymns:`, error);
-                auth.showFlash(`Error loading ${lang} hymns`, 'error');
-            }
-        }
-
-        function displayLanguageHymns(hymns, lang) {
-            const modal = document.getElementById('language-modal');
-            const title = document.getElementById('language-modal-title');
-            const hymnsContainer = document.getElementById('language-hymns');
-            title.textContent = `${lang} Hymns`;
-            hymnsContainer.innerHTML = '';
-            if (hymns.length === 0) {
-                hymnsContainer.innerHTML = `<p>No ${lang} hymns available.</p>`;
-            } else {
-                hymns.forEach(hymn => {
-                    const hymnItem = document.createElement('div');
-                    hymnItem.className = 'hymn-item';
-                    hymnItem.style.marginBottom = '20px';
-                    hymnItem.innerHTML = `
-                        <h4>${hymn.title}</h4>
-                        <p><strong>Category:</strong> ${hymn.category?.name || 'N/A'}</p>
-                        <audio controls src="${hymn.audioUrl}"></audio>
-                        <div class="hymn-actions">
-                            <button onclick="playHymn('${hymn._id}', this)"><i class="fas fa-play"></i></button>
-                            <button onclick="shareHymn('${hymn._id}')"><i class="fas fa-share-alt"></i></button>
-                            <button onclick="downloadHymn('${hymn._id}')"><i class="fas fa-download"></i></button>
-                            <button onclick="toggleFavorite('${hymn._id}', this)"><i class="far fa-heart"></i></button>
-                        </div>
-                        <a href="pages/hymn.html?id=${hymn._id}" class="btn" style="display: block; text-align: center; margin: 10px;">View Details</a>
-                    `;
-                    hymnsContainer.appendChild(hymnItem);
-                });
-            }
-            modal.style.display = 'block';
-        }
-
-        function closeLanguageModal() {
-            document.getElementById('language-modal').style.display = 'none';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCategories();
-            loadFeaturedHymns();
-            if (auth.user) {
-                loadNotifications();
-            }
-            document.querySelectorAll('.language-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const lang = card.getAttribute('data-lang');
-                    loadLanguageHymns(lang);
-                });
-            });
-        });
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('language-modal');
-            if (event.target == modal) {
-                closeLanguageModal();
-            }
-        };
-
-        async function loadNotifications() {
-            try {
-                const response = await fetch('/api/notifications/unread-count', {
-                    headers: auth.getAuthHeader()
-                });
-                const data = await response.json();
-                if (data.status === 'success' && data.data.count > 0) {
-                    showNotificationBadge(data.data.count);
-                }
-            } catch (error) {
-                console.error('Error loading notifications:', error);
-            }
-        }
-
-        function showNotificationBadge(count) {
-            let badge = document.getElementById('notification-badge');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.id = 'notification-badge';
-                badge.className = 'notification-badge';
-                badge.style.cssText = `
-                    background: var(--danger-color, #e74c3c);
-                    color: white;
-                    border-radius: 50%;
-                    padding: 2px 6px;
-                    font-size: 12px;
-                    margin-left: 5px;
-                `;
-                const navUser = document.getElementById('nav-user');
-                if (navUser) {
-                    navUser.appendChild(badge);
-                }
-            }
-            badge.textContent = count;
-        }
-    </script>
 </body>
 </html>

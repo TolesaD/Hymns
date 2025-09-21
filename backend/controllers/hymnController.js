@@ -32,7 +32,7 @@ exports.createHymn = async (req, res) => {
     
     // Send notifications to all users about new hymn
     try {
-      const users = await User.find({ isActive: true });
+      const users = await User.find({ isActive: true, _id: { $ne: req.user.id } });
       const notificationPromises = users.map(user => 
         Notification.create({
           userId: user._id,
@@ -44,6 +44,7 @@ exports.createHymn = async (req, res) => {
       );
       
       await Promise.all(notificationPromises);
+      console.log(`Created ${notificationPromises.length} notifications for new hymn`);
     } catch (notificationError) {
       console.error('Error creating notifications:', notificationError);
       // Don't fail the hymn creation if notifications fail

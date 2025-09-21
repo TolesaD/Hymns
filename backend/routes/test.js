@@ -41,7 +41,6 @@ router.post('/test-user', async (req, res) => {
         message: 'User already exists'
       });
     }
-    
     // Create test user
     const user = await User.create({
       email,

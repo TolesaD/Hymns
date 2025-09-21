@@ -19,10 +19,10 @@ const hymnSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  lang: {  // Changed from 'language' to 'lang'
+  lang: {
     type: String,
     required: true,
-    enum: ['am', 'om', 'ti', 'en']  // Updated to language codes
+    enum: ['am', 'om', 'ti', 'en']
   },
   category: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,7 +48,7 @@ const hymnSchema = new mongoose.Schema({
 // Add indexes for better performance
 hymnSchema.index({ title: 'text', description: 'text', lyrics: 'text' });
 hymnSchema.index({ category: 1 });
-hymnSchema.index({ lang: 1 });  // Updated to 'lang'
+hymnSchema.index({ lang: 1 });
 hymnSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Hymn', hymnSchema);

@@ -1,774 +1,842 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Orthodox Hymns</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Orthodox Hymns</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <img src="../img/logo.png" alt="Orthodox Hymns Logo">
-                <span>Orthodox Hymns</span>
-            </div>
-            <div class="nav-menu" id="nav-menu">
-                <a href="../index.html" class="nav-link">Home</a>
-                <a href="categories.html" class="nav-link">Categories</a>
-                <a href="languages.html" class="nav-link">Languages</a>
-                <a href="favorites.html" class="nav-link">Favorites</a>
-                <a href="contact.html" class="nav-link">Contact</a>
-                <div class="nav-auth" id="nav-auth">
-                    <a href="login.html" class="nav-link">Login</a>
-                    <a href="register.html" class="nav-link">Register</a>
-                </div>
-                <div class="nav-user" id="nav-user" style="display: none;">
-                    <span id="user-name"></span>
-                    <a href="#" id="logout-btn" class="nav-link">Logout</a>
-                    <a href="admin.html" id="admin-link" class="nav-link" style="display: none;">Admin</a>
-                </div>
-            </div>
-            <div class="hamburger" id="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <img src="../img/logo.png" alt="Orthodox Hymns Logo">
+        <span>Orthodox Hymns</span>
+      </div>
+      <div class="nav-menu" id="nav-menu">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="categories.html" class="nav-link">Categories</a>
+        <a href="languages.html" class="nav-link">Languages</a>
+        <a href="favorites.html" class="nav-link">Favorites</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+        <div class="nav-auth" id="nav-auth">
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="register.html" class="nav-link">Register</a>
         </div>
-    </nav>
-
-    <div id="flash-messages"></div>
-
-    <div class="admin-container">
-        <h2>Admin Panel</h2>
-        <div id="admin-login-prompt" style="text-align: center; padding: 2rem; display: none;">
-            <p>Please login as admin to access this page.</p>
-            <a href="login.html" class="btn">Login</a>
+        <div class="nav-user" id="nav-user" style="display: none;">
+          <span id="user-name"></span>
+          <a href="#" id="logout-btn" class="nav-link">Logout</a>
+          <a href="admin.html" id="admin-link" class="nav-link" style="display: none;">Admin</a>
         </div>
+      </div>
+      <div class="hamburger" id="hamburger">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
+    </div>
+  </nav>
 
-        <div id="admin-content" style="display: none;">
-            <div class="admin-stats">
-                <div class="stat-card"><h3 id="total-users">0</h3><p>Total Users</p></div>
-                <div class="stat-card"><h3 id="total-hymns">0</h3><p>Total Hymns</p></div>
-                <div class="stat-card"><h3 id="total-categories">0</h3><p>Categories</p></div>
-                <div class="stat-card"><h3 id="unread-messages">0</h3><p>Unread Messages</p></div>
-            </div>
+  <div id="flash-messages"></div>
 
-            <div class="admin-tabs">
-                <button class="tab-btn active" onclick="openTab('users-tab')">Users</button>
-                <button class="tab-btn" onclick="openTab('hymns-tab')">Hymns</button>
-                <button class="tab-btn" onclick="openTab('categories-tab')">Categories</button>
-                <button class="tab-btn" onclick="openTab('messages-tab')">Messages</button>
-                <button class="tab-btn" onclick="openTab('add-hymn-tab')">Add Hymn</button>
-                <button class="tab-btn" onclick="openTab('add-category-tab')">Add Category</button>
-            </div>
+  <!-- ADMIN PANEL -->
+  <div class="admin-container">
+    <h2>Admin Panel</h2>
 
-            <div id="users-tab" class="tab-content active">
-                <h3>User Management</h3>
-                <table class="admin-table">
-                    <thead>
-                        <tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="users-table-body"></tbody>
-                </table>
-            </div>
-
-            <div id="hymns-tab" class="tab-content">
-                <h3>Hymn Management</h3>
-                <table class="admin-table">
-                    <thead>
-                        <tr><th>Title</th><th>Category</th><th>Language</th><th>Listens</th><th>Downloads</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="hymns-table-body"></tbody>
-                </table>
-            </div>
-
-            <div id="categories-tab" class="tab-content">
-                <h3>Category Management</h3>
-                <table class="admin-table">
-                    <thead>
-                        <tr><th>Name</th><th>Description</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="categories-table-body"></tbody>
-                </table>
-            </div>
-
-            <div id="messages-tab" class="tab-content">
-                <h3>Contact Messages</h3>
-                <table class="admin-table">
-                    <thead>
-                        <tr><th>Name</th><th>Email</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="messages-table-body"></tbody>
-                </table>
-            </div>
-
-            <div id="add-hymn-tab" class="tab-content">
-                <h3>Add New Hymn</h3>
-                <form id="add-hymn-form" enctype="multipart/form-data">
-                    <div class="form-group"><label for="hymn-title">Title</label><input type="text" id="hymn-title" name="title" required></div>
-                    <div class="form-group"><label for="hymn-description">Description</label><textarea id="hymn-description" name="description" required></textarea></div>
-                    <div class="form-group"><label for="hymn-lyrics">Lyrics</label><textarea id="hymn-lyrics" name="lyrics" required></textarea></div>
-                    <div class="form-group"><label for="hymn-audio">Audio File</label><input type="file" id="hymn-audio" name="audio" accept="audio/*" required></div>
-                    <div class="form-group">
-                        <label for="hymn-language">Language</label>
-                        <select id="hymn-language" name="lang" required>
-                            <option value="am">Amharic</option>
-                            <option value="om">Afan Oromo</option>
-                            <option value="ti">Tigrigna</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label for="hymn-category">Category</label><select id="hymn-category" name="category" required></select></div>
-                    <button type="submit" class="btn">Add Hymn</button>
-                </form>
-            </div>
-
-            <div id="add-category-tab" class="tab-content">
-                <h3>Add New Category</h3>
-                <form id="add-category-form">
-                    <div class="form-group"><label for="category-name">Name</label><input type="text" id="category-name" name="name" required></div>
-                    <div class="form-group"><label for="category-description">Description</label><textarea id="category-description" name="description" required></textarea></div>
-                    <button type="submit" class="btn">Add Category</button>
-                </form>
-            </div>
-        </div>
+    <!-- login required -->
+    <div id="admin-login-prompt" style="text-align: center; padding: 2rem; display: none;">
+      <p>Please login as admin to access this page.</p>
+      <a href="login.html" class="btn">Login</a>
     </div>
 
-    <div id="edit-hymn-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
-            <h3>Edit Hymn</h3>
-            <form id="edit-hymn-form" enctype="multipart/form-data">
-                <input type="hidden" id="edit-hymn-id" name="id">
-                <div class="form-group">
-                    <label for="edit-hymn-title">Title</label>
-                    <input type="text" id="edit-hymn-title" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-hymn-description">Description</label>
-                    <textarea id="edit-hymn-description" name="description" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-hymn-lyrics">Lyrics</label>
-                    <textarea id="edit-hymn-lyrics" name="lyrics" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="edit-hymn-audio">Audio File (MP3, WAV, etc.) - Leave empty to keep current</label>
-                    <input type="file" id="edit-hymn-audio" name="audio" accept="audio/*">
-                    <div id="current-audio" style="margin-top: 10px;"></div>
-                </div>
-                <div class="form-group">
-                    <label for="edit-hymn-language">Language</label>
-                    <select id="edit-hymn-language" name="lang" required>
-                        <option value="am">Amharic</option>
-                        <option value="om">Afan Oromo</option>
-                        <option value="ti">Tigrigna</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="edit-hymn-category">Category</label>
-                    <select id="edit-hymn-category" name="category" required>
-                        <option value="">Select a category</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn">Update Hymn</button>
-            </form>
-        </div>
+    <!-- actual content -->
+    <div id="admin-content" style="display: none;">
+      <div class="admin-stats">
+        <div class="stat-card"><h3 id="total-users">0</h3><p>Total Users</p></div>
+        <div class="stat-card"><h3 id="total-hymns">0</h3><p>Total Hymns</p></div>
+        <div class="stat-card"><h3 id="total-categories">0</h3><p>Categories</p></div>
+        <div class="stat-card"><h3 id="unread-messages">0</h3><p>Unread Messages</p></div>
+      </div>
+
+      <!-- tabs -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" onclick="openTab('users-tab')">Users</button>
+        <button class="tab-btn" onclick="openTab('hymns-tab')">Hymns</button>
+        <button class="tab-btn" onclick="openTab('categories-tab')">Categories</button>
+        <button class="tab-btn" onclick="openTab('messages-tab')">Messages</button>
+        <button class="tab-btn" onclick="openTab('add-hymn-tab')">Add Hymn</button>
+        <button class="tab-btn" onclick="openTab('add-category-tab')">Add Category</button>
+      </div>
+
+      <!-- USERS -->
+      <div id="users-tab" class="tab-content active">
+        <h3>User Management</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- HYMNS -->
+      <div id="hymns-tab" class="tab-content">
+        <h3>Hymn Management</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Title</th><th>Category</th><th>Language</th><th>Listens</th><th>Downloads</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="hymns-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div id="categories-tab" class="tab-content">
+        <h3>Category Management</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Name</th><th>Description</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="categories-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- MESSAGES -->
+      <div id="messages-tab" class="tab-content">
+        <h3>Contact Messages</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="messages-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- ADD HYMN -->
+      <div id="add-hymn-tab" class="tab-content">
+        <h3>Add New Hymn</h3>
+        <form id="add-hymn-form" enctype="multipart/form-data">
+          <div class="form-group"><label for="hymn-title">Title</label><input type="text" id="hymn-title" name="title" required></div>
+          <div class="form-group"><label for="hymn-description">Description</label><textarea id="hymn-description" name="description" required></textarea></div>
+          <div class="form-group"><label for="hymn-lyrics">Lyrics</label><textarea id="hymn-lyrics" name="lyrics" required></textarea></div>
+          <div class="form-group"><label for="hymn-audio">Audio File</label><input type="file" id="hymn-audio" name="audio" accept="audio/*" required></div>
+          <div class="form-group">
+            <label for="hymn-lang">Language</label>
+            <select id="hymn-lang" name="lang" required>
+              <option value="am">Amharic</option>
+              <option value="om">Afan Oromo</option>
+              <option value="ti">Tigrigna</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="form-group"><label for="hymn-category">Category</label><select id="hymn-category" name="category" required></select></div>
+          <button type="submit" class="btn">Add Hymn</button>
+        </form>
+      </div>
+
+      <!-- ADD CATEGORY -->
+      <div id="add-category-tab" class="tab-content">
+        <h3>Add New Category</h3>
+        <form id="add-category-form">
+          <div class="form-group"><label for="category-name">Name</label><input type="text" id="category-name" name="name" required></div>
+          <div class="form-group"><label for="category-description">Description</label><textarea id="category-description" name="description" required></textarea></div>
+          <button type="submit" class="btn">Add Category</button>
+        </form>
+      </div>
     </div>
+  </div>
 
-    <style>
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 10% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 600px;
-            border-radius: 8px;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close:hover {
-            color: black;
-        }
-    </style>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>Orthodox Hymns</h3>
-                    <p>Preserving and sharing the sacred hymns of the Ethiopian Orthodox Church.</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="../index.html">Home</a></li>
-                        <li><a href="categories.html">Categories</a></li>
-                        <li><a href="languages.html">Languages</a></li>
-                        <li><a href="contact.html">Contact</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Connect With Us</h4>
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2023 Orthodox Hymns. All rights reserved.</p>
-            </div>
+  <!-- Edit Hymn Modal -->
+  <div id="edit-hymn-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeEditModal()">&times;</span>
+      <h3>Edit Hymn</h3>
+      <form id="edit-hymn-form" enctype="multipart/form-data">
+        <input type="hidden" id="edit-hymn-id" name="id">
+        <div class="form-group">
+          <label for="edit-hymn-title">Title</label>
+          <input type="text" id="edit-hymn-title" name="title" required>
         </div>
-    </footer>
+        <div class="form-group">
+          <label for="edit-hymn-description">Description</label>
+          <textarea id="edit-hymn-description" name="description" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="edit-hymn-lyrics">Lyrics</label>
+          <textarea id="edit-hymn-lyrics" name="lyrics" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="edit-hymn-audio">Audio File (MP3, WAV, etc.) - Leave empty to keep current</label>
+          <input type="file" id="edit-hymn-audio" name="audio" accept="audio/*">
+          <div id="current-audio" style="margin-top: 10px;"></div>
+        </div>
+        <div class="form-group">
+          <label for="edit-hymn-lang">Language</label>
+          <select id="edit-hymn-lang" name="lang" required>
+            <option value="am">Amharic</option>
+            <option value="om">Afan Oromo</option>
+            <option value="ti">Tigrigna</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-hymn-category">Category</label>
+          <select id="edit-hymn-category" name="category" required>
+            <option value="">Select a category</option>
+          </select>
+        </div>
+        <button type="submit" class="btn">Update Hymn</button>
+      </form>
+    </div>
+  </div>
 
-    <script src="../js/auth.js"></script>
-    <script>
-        let currentEditingHymnId = null;
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            if (auth.user && auth.user.role === 'admin') {
-                document.getElementById('admin-login-prompt').style.display = 'none';
-                document.getElementById('admin-content').style.display = 'block';
-                document.getElementById('nav-user').style.display = 'flex';
-                document.getElementById('nav-auth').style.display = 'none';
-                document.getElementById('admin-link').style.display = 'inline';
-                document.getElementById('user-name').textContent = auth.user.username;
-                loadAdminData();
-            } else {
-                document.getElementById('admin-login-prompt').style.display = 'block';
-                document.getElementById('admin-content').style.display = 'none';
-            }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: black;
+    }
+  </style>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section"><h3>Orthodox Hymns</h3><p>Preserving and sharing the sacred hymns of the Ethiopian Orthodox Church.</p></div>
+        <div class="footer-section"><h4>Quick Links</h4>
+          <ul><li><a href="../index.html">Home</a></li><li><a href="categories.html">Categories</a></li><li><a href="languages.html">Languages</a></li><li><a href="contact.html">Contact</a></li></ul>
+        </div>
+        <div class="footer-section"><h4>Connect With Us</h4>
+          <div class="social-icons"><a href="#"><i class="fab fa-facebook"></i></a><a href="#"><i class="fab fa-twitter"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-youtube"></i></a></div>
+        </div>
+      </div>
+      <div class="footer-bottom"><p>&copy; 2023 Orthodox Hymns. All rights reserved.</p></div>
+    </div>
+  </footer>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    let cachedData = {
+      users: null,
+      hymns: null,
+      categories: null,
+      messages: null
+    };
+
+    let currentEditingHymnId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (auth.user && auth.user.role === 'admin') {
+        document.getElementById('admin-login-prompt').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        loadAdminData();
+      } else {
+        document.getElementById('admin-login-prompt').style.display = 'block';
+        document.getElementById('admin-content').style.display = 'none';
+      }
+    });
+
+    function openTab(tabId) {
+      const tabContents = document.getElementsByClassName('tab-content');
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove('active');
+      }
+      
+      const tabButtons = document.getElementsByClassName('tab-btn');
+      for (let i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove('active');
+      }
+      
+      document.getElementById(tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+      
+      if (tabId === 'users-tab') {
+        loadUsers();
+      } else if (tabId === 'hymns-tab') {
+        loadHymns();
+      } else if (tabId === 'categories-tab') {
+        loadCategories();
+      } else if (tabId === 'messages-tab') {
+        loadMessages();
+      } else if (tabId === 'add-hymn-tab') {
+        loadCategoriesForDropdown();
+      }
+    }
+
+    async function loadAdminData() {
+      try {
+        const usersResponse = await fetch('/api/users', {
+          headers: auth.getAuthHeader()
         });
-
-        function openTab(tabId) {
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            const tabButtons = document.getElementsByClassName('tab-btn');
-            for (let i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove('active');
-            }
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-            if (tabId === 'users-tab') {
-                loadUsers();
-            } else if (tabId === 'hymns-tab') {
-                loadHymns();
-            } else if (tabId === 'categories-tab') {
-                loadCategories();
-            } else if (tabId === 'messages-tab') {
-                loadMessages();
-            } else if (tabId === 'add-hymn-tab') {
-                loadCategoriesForDropdown();
-            }
-        }
-
-        async function loadAdminData() {
-            try {
-                const usersResponse = await fetch('/api/users', {
-                    headers: auth.getAuthHeader()
-                });
-                const usersData = await usersResponse.json();
-                const hymnsResponse = await fetch('/api/hymns');
-                const hymnsData = await hymnsResponse.json();
-                const categoriesResponse = await fetch('/api/categories');
-                const categoriesData = await categoriesResponse.json();
-                const messagesResponse = await fetch('/api/contact', {
-                    headers: auth.getAuthHeader()
-                });
-                const messagesData = await messagesResponse.json();
-                if (usersData.status === 'success') {
-                    document.getElementById('total-users').textContent = usersData.data.users.length;
-                }
-                if (hymnsData.status === 'success') {
-                    document.getElementById('total-hymns').textContent = hymnsData.data.hymns.length;
-                }
-                if (categoriesData.status === 'success') {
-                    document.getElementById('total-categories').textContent = categoriesData.data.categories.length;
-                }
-                if (messagesData.status === 'success') {
-                    const unreadMessages = messagesData.data.messages.filter(msg => !msg.isRead);
-                    document.getElementById('unread-messages').textContent = unreadMessages.length;
-                }
-                loadUsers();
-                loadCategoriesForDropdown();
-            } catch (error) {
-                console.error('Error loading admin data:', error);
-                auth.showFlash('Error loading admin data', 'error');
-            }
-        }
-
-        async function loadUsers() {
-            try {
-                const response = await fetch('/api/users', {
-                    headers: auth.getAuthHeader()
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    displayUsers(data.data.users);
-                }
-            } catch (error) {
-                console.error('Error loading users:', error);
-                auth.showFlash('Error loading users', 'error');
-            }
-        }
-
-        function displayUsers(users) {
-            const usersTableBody = document.getElementById('users-table-body');
-            usersTableBody.innerHTML = '';
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.username}</td>
-                    <td>${user.email}</td>
-                    <td>${user.role}</td>
-                    <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-                    <td>
-                        ${user.role !== 'admin' ? `
-                            <button class="btn btn-danger" onclick="deleteUser('${user._id}')">Delete</button>
-                        ` : ''}
-                    </td>
-                `;
-                usersTableBody.appendChild(row);
-            });
-        }
-
-        async function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
-                try {
-                    const response = await fetch(`/api/users/${userId}`, {
-                        method: 'DELETE',
-                        headers: auth.getAuthHeader()
-                    });
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        auth.showFlash('User deleted successfully', 'success');
-                        loadUsers();
-                        loadAdminData();
-                    } else {
-                        auth.showFlash(data.message, 'error');
-                    }
-                } catch (error) {
-                    auth.showFlash('Error deleting user', 'error');
-                }
-            }
-        }
-
-        async function loadHymns() {
-            try {
-                const response = await fetch('/api/hymns');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    displayHymns(data.data.hymns);
-                }
-            } catch (error) {
-                console.error('Error loading hymns:', error);
-                auth.showFlash('Error loading hymns', 'error');
-            }
-        }
-
-        function displayHymns(hymns) {
-            const hymnsTableBody = document.getElementById('hymns-table-body');
-            if (!hymnsTableBody) return;
-            const fragment = document.createDocumentFragment();
-            hymns.forEach(hymn => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${hymn.title}</td>
-                    <td>${hymn.category?.name || 'Unknown'}</td>
-                    <td>${hymn.lang || 'Unknown'}</td>
-                    <td>${hymn.listens}</td>
-                    <td>${hymn.downloads}</td>
-                    <td>
-                        <button class="btn btn-info" onclick="openEditModal('${hymn._id}')">Edit</button>
-                        <button class="btn btn-danger" onclick="deleteHymn('${hymn._id}')">Delete</button>
-                    </td>
-                `;
-                fragment.appendChild(row);
-            });
-            hymnsTableBody.innerHTML = '';
-            hymnsTableBody.appendChild(fragment);
-        }
-
-        async function deleteHymn(hymnId) {
-            if (confirm('Are you sure you want to delete this hymn?')) {
-                try {
-                    const response = await fetch(`/api/hymns/${hymnId}`, {
-                        method: 'DELETE',
-                        headers: auth.getAuthHeader()
-                    });
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        auth.showFlash('Hymn deleted successfully', 'success');
-                        loadHymns();
-                        loadAdminData();
-                    } else {
-                        auth.showFlash(data.message, 'error');
-                    }
-                } catch (error) {
-                    auth.showFlash('Error deleting hymn', 'error');
-                }
-            }
-        }
-
-        async function loadCategories() {
-            try {
-                const response = await fetch('/api/categories');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    displayCategories(data.data.categories);
-                }
-            } catch (error) {
-                console.error('Error loading categories:', error);
-                auth.showFlash('Error loading categories', 'error');
-            }
-        }
-
-        function displayCategories(categories) {
-            const categoriesTableBody = document.getElementById('categories-table-body');
-            categoriesTableBody.innerHTML = '';
-            categories.forEach(category => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${category.name}</td>
-                    <td>${category.description}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="deleteCategory('${category._id}')">Delete</button>
-                    </td>
-                `;
-                categoriesTableBody.appendChild(row);
-            });
-        }
-
-        async function deleteCategory(categoryId) {
-            if (confirm('Are you sure you want to delete this category?')) {
-                try {
-                    const response = await fetch(`/api/categories/${categoryId}`, {
-                        method: 'DELETE',
-                        headers: auth.getAuthHeader()
-                    });
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        auth.showFlash('Category deleted successfully', 'success');
-                        loadCategories();
-                        loadAdminData();
-                    } else {
-                        auth.showFlash(data.message, 'error');
-                    }
-                } catch (error) {
-                    auth.showFlash('Error deleting category', 'error');
-                }
-            }
-        }
-
-        async function loadMessages() {
-            try {
-                const response = await fetch('/api/contact', {
-                    headers: auth.getAuthHeader()
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    displayMessages(data.data.messages);
-                }
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                auth.showFlash('Error loading messages', 'error');
-            }
-        }
-
-        function displayMessages(messages) {
-            const messagesTableBody = document.getElementById('messages-table-body');
-            messagesTableBody.innerHTML = '';
-            messages.forEach(message => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${message.name}</td>
-                    <td>${message.email}</td>
-                    <td>${message.subject}</td>
-                    <td>${new Date(message.createdAt).toLocaleDateString()}</td>
-                    <td>${message.isRead ? 'Read' : 'Unread'}</td>
-                    <td>
-                        ${!message.isRead ? `
-                            <button class="btn btn-info" onclick="markAsRead('${message._id}')">Mark as Read</button>
-                        ` : ''}
-                        <button class="btn btn-danger" onclick="deleteMessage('${message._id}')">Delete</button>
-                    </td>
-                `;
-                messagesTableBody.appendChild(row);
-            });
-        }
-
-        async function markAsRead(messageId) {
-            try {
-                const response = await fetch(`/api/contact/${messageId}/read`, {
-                    method: 'PATCH',
-                    headers: auth.getAuthHeader()
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    auth.showFlash('Message marked as read', 'success');
-                    loadMessages();
-                    loadAdminData();
-                } else {
-                    auth.showFlash(data.message, 'error');
-                }
-            } catch (error) {
-                auth.showFlash('Error updating message', 'error');
-            }
-        }
-
-        async function deleteMessage(messageId) {
-            if (confirm('Are you sure you want to delete this message?')) {
-                try {
-                    const response = await fetch(`/api/contact/${messageId}`, {
-                        method: 'DELETE',
-                        headers: auth.getAuthHeader()
-                    });
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        auth.showFlash('Message deleted successfully', 'success');
-                        loadMessages();
-                        loadAdminData();
-                    } else {
-                        auth.showFlash(data.message, 'error');
-                    }
-                } catch (error) {
-                    auth.showFlash('Error deleting message', 'error');
-                }
-            }
-        }
-
-        async function loadCategoriesForDropdown() {
-            try {
-                const response = await fetch('/api/categories');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    const categorySelect = document.getElementById('hymn-category');
-                    categorySelect.innerHTML = '<option value="">Select a category</option>';
-                    data.data.categories.forEach(category => {
-                        const option = document.createElement('option');
-                        option.value = category._id;
-                        option.textContent = category.name;
-                        categorySelect.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading categories for dropdown:', error);
-                auth.showFlash('Error loading categories', 'error');
-            }
-        }
-
-        function openEditModal(hymnId) {
-            currentEditingHymnId = hymnId;
-            loadHymnForEditing(hymnId);
-            document.getElementById('edit-hymn-modal').style.display = 'block';
-        }
-
-        function closeEditModal() {
-            document.getElementById('edit-hymn-modal').style.display = 'none';
-            currentEditingHymnId = null;
-        }
-
-        async function loadHymnForEditing(hymnId) {
-            try {
-                const response = await fetch(`/api/hymns/${hymnId}`);
-                const data = await response.json();
-                if (data.status === 'success') {
-                    const hymn = data.data.hymn;
-                    document.getElementById('edit-hymn-id').value = hymn._id;
-                    document.getElementById('edit-hymn-title').value = hymn.title;
-                    document.getElementById('edit-hymn-description').value = hymn.description;
-                    document.getElementById('edit-hymn-lyrics').value = hymn.lyrics;
-                    document.getElementById('edit-hymn-language').value = hymn.lang;
-                    const currentAudioDiv = document.getElementById('current-audio');
-                    currentAudioDiv.innerHTML = `
-                        <p><strong>Current Audio:</strong> ${hymn.audioUrl.split('/').pop()}</p>
-                        <audio controls style="width: 100%; margin-top: 10px;">
-                            <source src="${hymn.audioUrl}" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                    `;
-                    await loadCategoriesForEditDropdown(hymn.category?._id);
-                } else {
-                    auth.showFlash('Error loading hymn for editing', 'error');
-                }
-            } catch (error) {
-                auth.showFlash('Error loading hymn for editing: ' + error.message, 'error');
-            }
-        }
-
-        async function loadCategoriesForEditDropdown(selectedCategoryId = null) {
-            try {
-                const response = await fetch('/api/categories');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    const categorySelect = document.getElementById('edit-hymn-category');
-                    categorySelect.innerHTML = '<option value="">Select a category</option>';
-                    data.data.categories.forEach(category => {
-                        const option = document.createElement('option');
-                        option.value = category._id;
-                        option.textContent = category.name;
-                        if (selectedCategoryId && category._id === category._id) {
-                            option.selected = true;
-                        }
-                        categorySelect.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading categories for dropdown:', error);
-                auth.showFlash('Error loading categories', 'error');
-            }
-        }
-
-        document.getElementById('add-hymn-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-            const formData = new FormData();
-            formData.append('title', document.getElementById('hymn-title').value);
-            formData.append('description', document.getElementById('hymn-description').value);
-            formData.append('lyrics', document.getElementById('hymn-lyrics').value);
-            formData.append('lang', document.getElementById('hymn-language').value);
-            formData.append('category', document.getElementById('hymn-category').value);
-            const audioFile = document.getElementById('hymn-audio').files[0];
-            if (!audioFile) {
-                auth.showFlash('Please select an audio file', 'error');
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-                return;
-            }
-            formData.append('audio', audioFile);
-            try {
-                const response = await fetch('/api/hymns', {
-                    method: 'POST',
-                    headers: auth.getAuthHeader(),
-                    body: formData
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    auth.showFlash('Hymn added successfully', 'success');
-                    document.getElementById('add-hymn-form').reset();
-                    loadHymns();
-                    loadAdminData();
-                } else {
-                    auth.showFlash(data.message || 'Error adding hymn', 'error');
-                }
-            } catch (error) {
-                console.error('Error adding hymn:', error);
-                auth.showFlash('Error adding hymn: ' + error.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-            }
+        const usersData = await usersResponse.json();
+        
+        const hymnsResponse = await fetch('/api/hymns');
+        const hymnsData = await hymnsResponse.json();
+        
+        const categoriesResponse = await fetch('/api/categories');
+        const categoriesData = await categoriesResponse.json();
+        
+        const messagesResponse = await fetch('/api/contact', {
+          headers: auth.getAuthHeader()
         });
-
-        document.getElementById('edit-hymn-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (!currentEditingHymnId) {
-                auth.showFlash('No hymn selected for editing', 'error');
-                return;
-            }
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-            const formData = new FormData();
-            formData.append('title', document.getElementById('edit-hymn-title').value);
-            formData.append('description', document.getElementById('edit-hymn-description').value);
-            formData.append('lyrics', document.getElementById('edit-hymn-lyrics').value);
-            formData.append('lang', document.getElementById('edit-hymn-language').value);
-            formData.append('category', document.getElementById('edit-hymn-category').value);
-            const audioFile = document.getElementById('edit-hymn-audio').files[0];
-            if (audioFile) {
-                formData.append('audio', audioFile);
-            }
-            try {
-                const response = await fetch(`/api/hymns/${currentEditingHymnId}`, {
-                    method: 'PUT',
-                    headers: auth.getAuthHeader(),
-                    body: formData
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    auth.showFlash('Hymn updated successfully', 'success');
-                    closeEditModal();
-                    loadHymns();
-                    loadAdminData();
-                } else {
-                    auth.showFlash(data.message || 'Error updating hymn', 'error');
-                }
-            } catch (error) {
-                console.error('Error updating hymn:', error);
-                auth.showFlash('Error updating hymn: ' + error.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-            }
-        });
-
-        document.getElementById('add-category-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = {
-                name: document.getElementById('category-name').value,
-                description: document.getElementById('category-description').value
-            };
-            try {
-                const response = await fetch('/api/categories', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...auth.getAuthHeader()
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    auth.showFlash('Category added successfully', 'success');
-                    document.getElementById('add-category-form').reset();
-                    loadCategories();
-                    loadCategoriesForDropdown();
-                    loadAdminData();
-                } else {
-                    auth.showFlash(data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error adding category:', error);
-                auth.showFlash('Error adding category', 'error');
-            }
-        });
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('edit-hymn-modal');
-            if (event.target == modal) {
-                closeEditModal();
-            }
+        const messagesData = await messagesResponse.json();
+        
+        if (usersData.status === 'success') {
+          document.getElementById('total-users').textContent = usersData.data.users.length;
         }
-    </script>
+        
+        if (hymnsData.status === 'success') {
+          document.getElementById('total-hymns').textContent = hymnsData.data.hymns.length;
+        }
+        
+        if (categoriesData.status === 'success') {
+          document.getElementById('total-categories').textContent = categoriesData.data.categories.length;
+        }
+        
+        if (messagesData.status === 'success') {
+          const unreadMessages = messagesData.data.messages.filter(msg => !msg.isRead);
+          document.getElementById('unread-messages').textContent = unreadMessages.length;
+        }
+        
+        loadUsers();
+        loadCategoriesForDropdown();
+      } catch (error) {
+        console.error('Error loading admin data:', error);
+      }
+    }
+
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/users', {
+          headers: auth.getAuthHeader()
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          displayUsers(data.data.users);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
+    }
+
+    function displayUsers(users) {
+      const usersTableBody = document.getElementById('users-table-body');
+      usersTableBody.innerHTML = '';
+      
+      users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.username}</td>
+          <td>${user.email}</td>
+          <td>${user.role}</td>
+          <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+          <td>
+            ${user.role !== 'admin' ? `
+              <button class="btn btn-danger" onclick="deleteUser('${user._id}')">Delete</button>
+            ` : ''}
+          </td>
+        `;
+        usersTableBody.appendChild(row);
+      });
+    }
+
+    async function deleteUser(userId) {
+      if (confirm('Are you sure you want to delete this user?')) {
+        try {
+          const response = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: auth.getAuthHeader()
+          });
+          
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            auth.showFlash('User deleted successfully', 'success');
+            loadUsers();
+            loadAdminData();
+          } else {
+            auth.showFlash(data.message, 'error');
+          }
+        } catch (error) {
+          auth.showFlash('Error deleting user', 'error');
+        }
+      }
+    }
+
+    async function loadHymns() {
+      try {
+        const response = await fetch('/api/hymns');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          displayHymns(data.data.hymns);
+        }
+      } catch (error) {
+        console.error('Error loading hymns:', error);
+      }
+    }
+
+    function displayHymns(hymns) {
+      const hymnsTableBody = document.getElementById('hymns-table-body');
+      if (!hymnsTableBody) return;
+      
+      const fragment = document.createDocumentFragment();
+      const languageMap = {
+        'am': 'Amharic',
+        'om': 'Afan Oromo',
+        'ti': 'Tigrigna',
+        'en': 'English'
+      };
+      
+      hymns.forEach(hymn => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${hymn.title}</td>
+          <td>${hymn.category?.name || 'Unknown'}</td>
+          <td>${languageMap[hymn.lang] || hymn.lang || 'Unknown'}</td>
+          <td>${hymn.listens}</td>
+          <td>${hymn.downloads}</td>
+          <td>
+            <button class="btn btn-info" onclick="openEditModal('${hymn._id}')">Edit</button>
+            <button class="btn btn-danger" onclick="deleteHymn('${hymn._id}')">Delete</button>
+          </td>
+        `;
+        fragment.appendChild(row);
+      });
+      
+      hymnsTableBody.innerHTML = '';
+      hymnsTableBody.appendChild(fragment);
+    }
+
+    async function deleteHymn(hymnId) {
+      if (confirm('Are you sure you want to delete this hymn?')) {
+        try {
+          const response = await fetch(`/api/hymns/${hymnId}`, {
+            method: 'DELETE',
+            headers: auth.getAuthHeader()
+          });
+          
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            auth.showFlash('Hymn deleted successfully', 'success');
+            loadHymns();
+            loadAdminData();
+          } else {
+            auth.showFlash(data.message, 'error');
+          }
+        } catch (error) {
+          auth.showFlash('Error deleting hymn', 'error');
+        }
+      }
+    }
+
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          displayCategories(data.data.categories);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    }
+
+    function displayCategories(categories) {
+      const categoriesTableBody = document.getElementById('categories-table-body');
+      categoriesTableBody.innerHTML = '';
+      
+      categories.forEach(category => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${category.name}</td>
+          <td>${category.description}</td>
+          <td>
+            <button class="btn btn-danger" onclick="deleteCategory('${category._id}')">Delete</button>
+          </td>
+        `;
+        categoriesTableBody.appendChild(row);
+      });
+    }
+
+    async function deleteCategory(categoryId) {
+      if (confirm('Are you sure you want to delete this category?')) {
+        try {
+          const response = await fetch(`/api/categories/${categoryId}`, {
+            method: 'DELETE',
+            headers: auth.getAuthHeader()
+          });
+          
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            auth.showFlash('Category deleted successfully', 'success');
+            loadCategories();
+            loadAdminData();
+          } else {
+            auth.showFlash(data.message, 'error');
+          }
+        } catch (error) {
+          auth.showFlash('Error deleting category', 'error');
+        }
+      }
+    }
+
+    async function loadMessages() {
+      try {
+        const response = await fetch('/api/contact', {
+          headers: auth.getAuthHeader()
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          displayMessages(data.data.messages);
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    }
+
+    function displayMessages(messages) {
+      const messagesTableBody = document.getElementById('messages-table-body');
+      messagesTableBody.innerHTML = '';
+      
+      messages.forEach(message => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${message.name}</td>
+          <td>${message.email}</td>
+          <td>${message.subject}</td>
+          <td>${new Date(message.createdAt).toLocaleDateString()}</td>
+          <td>${message.isRead ? 'Read' : 'Unread'}</td>
+          <td>
+            ${!message.isRead ? `
+              <button class="btn btn-info" onclick="markAsRead('${message._id}')">Mark as Read</button>
+            ` : ''}
+            <button class="btn btn-danger" onclick="deleteMessage('${message._id}')">Delete</button>
+          </td>
+        `;
+        messagesTableBody.appendChild(row);
+      });
+    }
+
+    async function markAsRead(messageId) {
+      try {
+        const response = await fetch(`/api/contact/${messageId}/read`, {
+          method: 'PATCH',
+          headers: auth.getAuthHeader()
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          auth.showFlash('Message marked as read', 'success');
+          loadMessages();
+          loadAdminData();
+        } else {
+          auth.showFlash(data.message, 'error');
+        }
+      } catch (error) {
+        auth.showFlash('Error updating message', 'error');
+      }
+    }
+
+    async function deleteMessage(messageId) {
+      if (confirm('Are you sure you want to delete this message?')) {
+        try {
+          const response = await fetch(`/api/contact/${messageId}`, {
+            method: 'DELETE',
+            headers: auth.getAuthHeader()
+          });
+          
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            auth.showFlash('Message deleted successfully', 'success');
+            loadMessages();
+            loadAdminData();
+          } else {
+            auth.showFlash(data.message, 'error');
+          }
+        } catch (error) {
+          auth.showFlash('Error deleting message', 'error');
+        }
+      }
+    }
+
+    async function loadCategoriesForDropdown() {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const categorySelect = document.getElementById('hymn-category');
+          categorySelect.innerHTML = '<option value="">Select a category</option>';
+          
+          data.data.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category._id;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading categories for dropdown:', error);
+      }
+    }
+
+    function openEditModal(hymnId) {
+      currentEditingHymnId = hymnId;
+      loadHymnForEditing(hymnId);
+      document.getElementById('edit-hymn-modal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-hymn-modal').style.display = 'none';
+      currentEditingHymnId = null;
+    }
+
+    async function loadHymnForEditing(hymnId) {
+      try {
+        const response = await fetch(`/api/hymns/${hymnId}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const hymn = data.data.hymn;
+          
+          document.getElementById('edit-hymn-id').value = hymn._id;
+          document.getElementById('edit-hymn-title').value = hymn.title;
+          document.getElementById('edit-hymn-description').value = hymn.description;
+          document.getElementById('edit-hymn-lyrics').value = hymn.lyrics;
+          document.getElementById('edit-hymn-lang').value = hymn.lang;
+          
+          const currentAudioDiv = document.getElementById('current-audio');
+          currentAudioDiv.innerHTML = `
+            <p><strong>Current Audio:</strong> ${hymn.audioUrl.split('/').pop()}</p>
+            <audio controls style="width: 100%; margin-top: 10px;">
+              <source src="${hymn.audioUrl}" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          `;
+          
+          await loadCategoriesForEditDropdown(hymn.category?._id);
+        } else {
+          auth.showFlash('Error loading hymn for editing', 'error');
+        }
+      } catch (error) {
+        auth.showFlash('Error loading hymn for editing: ' + error.message, 'error');
+      }
+    }
+
+    async function loadCategoriesForEditDropdown(selectedCategoryId = null) {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const categorySelect = document.getElementById('edit-hymn-category');
+          categorySelect.innerHTML = '<option value="">Select a category</option>';
+          
+          data.data.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category._id;
+            option.textContent = category.name;
+            if (selectedCategoryId && category._id === selectedCategoryId) {
+              option.selected = true;
+            }
+            categorySelect.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading categories for dropdown:', error);
+      }
+    }
+
+    document.getElementById('add-hymn-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+      
+      const formData = new FormData();
+      formData.append('title', document.getElementById('hymn-title').value);
+      formData.append('description', document.getElementById('hymn-description').value);
+      formData.append('lyrics', document.getElementById('hymn-lyrics').value);
+      formData.append('lang', document.getElementById('hymn-lang').value);
+      formData.append('category', document.getElementById('hymn-category').value);
+      
+      const audioFile = document.getElementById('hymn-audio').files[0];
+      if (!audioFile) {
+        auth.showFlash('Please select an audio file', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        return;
+      }
+      
+      formData.append('audio', audioFile);
+      
+      try {
+        const response = await fetch('/api/hymns', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          },
+          body: formData
+        });
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Server returned non-JSON response');
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          auth.showFlash('Hymn added successfully', 'success');
+          document.getElementById('add-hymn-form').reset();
+          cachedData.hymns = null;
+          loadHymns();
+          loadAdminData();
+        } else {
+          auth.showFlash(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Add hymn error:', error);
+        auth.showFlash('Error adding hymn: ' + error.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    });
+
+    document.getElementById('edit-hymn-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      if (!currentEditingHymnId) {
+        auth.showFlash('No hymn selected for editing', 'error');
+        return;
+      }
+      
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+      
+      const formData = new FormData();
+      formData.append('title', document.getElementById('edit-hymn-title').value);
+      formData.append('description', document.getElementById('edit-hymn-description').value);
+      formData.append('lyrics', document.getElementById('edit-hymn-lyrics').value);
+      formData.append('lang', document.getElementById('edit-hymn-lang').value);
+      formData.append('category', document.getElementById('edit-hymn-category').value);
+      
+      const audioFile = document.getElementById('edit-hymn-audio').files[0];
+      if (audioFile) {
+        formData.append('audio', audioFile);
+      }
+      
+      try {
+        const response = await fetch(`/api/hymns/${currentEditingHymnId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${auth.token}`
+          },
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          auth.showFlash('Hymn updated successfully', 'success');
+          closeEditModal();
+          cachedData.hymns = null;
+          loadHymns();
+          loadAdminData();
+        } else {
+          auth.showFlash(data.message || 'Error updating hymn', 'error');
+        }
+      } catch (error) {
+        auth.showFlash('Error updating hymn: ' + error.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    });
+
+    document.getElementById('add-category-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('category-name').value,
+        description: document.getElementById('category-description').value
+      };
+      
+      try {
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...auth.getAuthHeader()
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          auth.showFlash('Category added successfully', 'success');
+          document.getElementById('add-category-form').reset();
+          loadCategories();
+          loadCategoriesForDropdown();
+          loadAdminData();
+        } else {
+          auth.showFlash(data.message, 'error');
+        }
+      } catch (error) {
+        auth.showFlash('Error adding category', 'error');
+      }
+    });
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('edit-hymn-modal');
+      if (event.target == modal) {
+        closeEditModal();
+      }
+    }
+  </script>
 </body>
 </html>

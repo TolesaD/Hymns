@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Hymn = require('../models/Hymn');
 const Category = require('../models/Category');
 const auth = require('../middleware/auth');
@@ -8,10 +9,43 @@ const path = require('path');
 
 const router = express.Router();
 
-// Get all hymns
+// Fallback model registration
+let HymnModel = Hymn;
+if (!Hymn || typeof Hymn.create !== 'function') {
+  console.error('Hymn model import failed, re-registering');
+  const hymnSchema = new mongoose.Schema({
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    lyrics: { type: String, required: true },
+    audioUrl: { type: String, required: true },
+    lang: { type: String, required: true, enum: ['am', 'om', 'ti', 'en'] },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    downloads: { type: Number, default: 0 },
+    listens: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true }
+  }, { timestamps: true });
+  hymnSchema.index({ title: 'text', description: 'text', lyrics: 'text' });
+  hymnSchema.index({ category: 1 });
+  hymnSchema.index({ lang: 1 });
+  hymnSchema.index({ isActive: 1 });
+  HymnModel = mongoose.model('Hymn', hymnSchema);
+}
+
+// Log model import for debugging
+console.log('Hymn model imported:', typeof HymnModel, HymnModel ? HymnModel.name : 'undefined');
+
+// Language mapping for response formatting
+const reverseLanguageMap = {
+  'am': 'Amharic',
+  'om': 'Afan Oromo',
+  'ti': 'Tigrigna',
+  'en': 'English'
+};
+
+// Get all hymns with random sorting option
 router.get('/', async (req, res) => {
   try {
-    const { category, lang, search, page = 1, limit = 10 } = req.query;
+    const { category, lang, search, page = 1, limit = 10, sort, random } = req.query;
     
     let filter = { isActive: true };
     
@@ -34,13 +68,39 @@ router.get('/', async (req, res) => {
       ];
     }
     
-    const hymns = await Hymn.find(filter)
-      .populate('category', 'name')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    let hymns;
+    let total;
+
+    if (random) {
+      // Use aggregation for random sampling
+      const aggregateQuery = [{ $match: filter }, { $sample: { size: parseInt(limit) || 10 } }];
+      hymns = await HymnModel.aggregate(aggregateQuery);
+      total = await HymnModel.countDocuments(filter);
+      // Populate category manually for aggregation results
+      hymns = await HymnModel.populate(hymns, { path: 'category', select: 'name' });
+    } else {
+      let query = HymnModel.find(filter).populate('category', 'name');
+      
+      if (sort) {
+        const sortOrder = sort.startsWith('-') ? -1 : 1;
+        const sortField = sort.replace('-', '');
+        query = query.sort({ [sortField]: sortOrder });
+      } else {
+        query = query.sort({ createdAt: -1 });
+      }
+      
+      query = query
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+      
+      hymns = await query.exec();
+      total = await HymnModel.countDocuments(filter);
+    }
     
-    const total = await Hymn.countDocuments(filter);
+    hymns = hymns.map(hymn => ({
+      ...hymn._doc || hymn, // Handle both query and aggregation results
+      language: reverseLanguageMap[hymn.lang] || hymn.lang
+    }));
     
     res.status(200).json({
       status: 'success',
@@ -52,9 +112,10 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching hymns:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Error fetching hymns'
+      message: 'Error fetching hymns: ' + error.message
     });
   }
 });
@@ -62,7 +123,7 @@ router.get('/', async (req, res) => {
 // Get single hymn
 router.get('/:id', async (req, res) => {
   try {
-    const hymn = await Hymn.findById(req.params.id)
+    const hymn = await HymnModel.findById(req.params.id)
       .populate('category', 'name description');
     
     if (!hymn || !hymn.isActive) {
@@ -75,13 +136,19 @@ router.get('/:id', async (req, res) => {
     hymn.listens += 1;
     await hymn.save();
     
+    const hymnResponse = {
+      ...hymn._doc,
+      language: reverseLanguageMap[hymn.lang] || hymn.lang
+    };
+    
     res.status(200).json({
       status: 'success',
       data: {
-        hymn
+        hymn: hymnResponse
       }
     });
   } catch (error) {
+    console.error('Error fetching hymn:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error fetching hymn'
@@ -108,18 +175,35 @@ router.post('/', auth, uploadAudio.single('audio'), handleUploadError, async (re
     
     const audioUrl = `/uploads/audio/${req.file.filename}`;
     
+    const lang = req.body.lang;
+    if (!lang || !['am', 'om', 'ti', 'en'].includes(lang)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid language code'
+      });
+    }
+    
     const hymnData = {
       ...req.body,
-      audioUrl: audioUrl,
+      lang,
+      audioUrl,
       category: req.body.category
     };
     
-    const hymn = await Hymn.create(hymnData);
+    console.log('Creating hymn with data:', hymnData);
+    console.log('Hymn model in POST:', typeof HymnModel, HymnModel ? HymnModel.name : 'undefined');
+    
+    const hymn = await HymnModel.create(hymnData);
+    
+    const hymnResponse = {
+      ...hymn._doc,
+      language: reverseLanguageMap[hymn.lang] || hymn.lang
+    };
     
     res.status(201).json({
       status: 'success',
       data: {
-        hymn
+        hymn: hymnResponse
       }
     });
   } catch (error) {
@@ -141,7 +225,7 @@ router.put('/:id', auth, uploadAudio.single('audio'), handleUploadError, async (
       });
     }
     
-    const hymn = await Hymn.findById(req.params.id);
+    const hymn = await HymnModel.findById(req.params.id);
     
     if (!hymn) {
       return res.status(404).json({
@@ -150,33 +234,43 @@ router.put('/:id', auth, uploadAudio.single('audio'), handleUploadError, async (
       });
     }
     
-    // Prepare update data
     const updateData = { ...req.body };
     
-    // If new audio file is uploaded
+    if (req.body.lang) {
+      if (!['am', 'om', 'ti', 'en'].includes(req.body.lang)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid language code'
+        });
+      }
+      updateData.lang = req.body.lang;
+    }
+    
     if (req.file) {
-      // Delete old audio file if it exists
       if (hymn.audioUrl) {
-        const oldFilePath = path.join('/tmp', 'uploads', 'audio', path.basename(hymn.audioUrl));
+        const oldFilePath = path.join(__dirname, '../Uploads/audio', path.basename(hymn.audioUrl));
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
         }
       }
-      
-      // Set new audio URL
       updateData.audioUrl = `/uploads/audio/${req.file.filename}`;
     }
     
-    const updatedHymn = await Hymn.findByIdAndUpdate(
+    const updatedHymn = await HymnModel.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
     ).populate('category', 'name description');
     
+    const hymnResponse = {
+      ...updatedHymn._doc,
+      language: reverseLanguageMap[updatedHymn.lang] || updatedHymn.lang
+    };
+    
     res.status(200).json({
       status: 'success',
       data: {
-        hymn: updatedHymn
+        hymn: hymnResponse
       }
     });
   } catch (error) {
@@ -198,7 +292,7 @@ router.delete('/:id', auth, async (req, res) => {
       });
     }
     
-    const hymn = await Hymn.findById(req.params.id);
+    const hymn = await HymnModel.findById(req.params.id);
     
     if (!hymn) {
       return res.status(404).json({
@@ -207,16 +301,14 @@ router.delete('/:id', auth, async (req, res) => {
       });
     }
     
-    // Delete audio file if it exists
     if (hymn.audioUrl) {
-      const filePath = path.join('/tmp', 'Uploads', 'audio', path.basename(hymn.audioUrl));
+      const filePath = path.join(__dirname, '../Uploads/audio', path.basename(hymn.audioUrl));
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
     }
     
-    // Delete from database
-    await Hymn.findByIdAndDelete(req.params.id);
+    await HymnModel.findByIdAndDelete(req.params.id);
     
     res.status(200).json({
       status: 'success',
@@ -234,7 +326,7 @@ router.delete('/:id', auth, async (req, res) => {
 // Increment download count
 router.post('/:id/download', async (req, res) => {
   try {
-    const hymn = await Hymn.findById(req.params.id);
+    const hymn = await HymnModel.findById(req.params.id);
     
     if (!hymn || !hymn.isActive) {
       return res.status(404).json({
@@ -251,6 +343,7 @@ router.post('/:id/download', async (req, res) => {
       message: 'Download count updated'
     });
   } catch (error) {
+    console.error('Error updating download count:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error updating download count'

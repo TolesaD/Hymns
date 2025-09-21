@@ -7,10 +7,28 @@ class Auth {
     }
 
     // Check if user is authenticated
-    checkAuth() {
+    async checkAuth() {
         if (this.token && this.user) {
-            this.updateUI();
-            return true;
+            try {
+                const response = await fetch('/api/auth/check', {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    this.updateUI();
+                    return true;
+                } else {
+                    this.clearAuth();
+                    return false;
+                }
+            } catch (error) {
+                this.clearAuth();
+                return false;
+            }
         }
         return false;
     }
@@ -88,19 +106,32 @@ class Auth {
     }
 
     // Logout function
-    logout() {
+    async logout() {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: this.getAuthHeader()
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            this.clearAuth();
+            this.showFlash('Logged out successfully', 'success');
+            
+            // Redirect to home page after logout
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        }
+    }
+
+    // Clear authentication data
+    clearAuth() {
         this.token = null;
         this.user = null;
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        
         this.updateUI();
-        this.showFlash('Logged out successfully', 'success');
-        
-        // Redirect to home page after logout
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 1000);
     }
 
     // Update UI based on authentication status
@@ -152,7 +183,7 @@ class Auth {
         // Remove flash after 5 seconds
         setTimeout(() => {
             flash.remove();
-        }, 3000);
+        }, 5000);
     }
 }
 
@@ -178,4 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
             navMenu.classList.toggle('active');
         });
     }
+    
+    // Check authentication status on page load
+    auth.checkAuth();
 });

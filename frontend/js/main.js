@@ -1,10 +1,16 @@
-// Main application functionality
+let currentFilter = 'recent';
+
+// Language mapping for display
+const languageMap = {
+  'am': 'Amharic',
+  'om': 'Afan Oromo',
+  'ti': 'Tigrigna',
+  'en': 'English'
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Load categories
     loadCategories();
-    
-    // Load featured hymns
-    loadFeaturedHymns();
     
     // Language cards event listeners
     const languageCards = document.querySelectorAll('.language-card');
@@ -27,6 +33,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Add filter functionality for hymns
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get filter type
+            const filter = this.getAttribute('data-filter');
+            currentFilter = filter;
+            
+            // Load hymns with new filter
+            loadFeaturedHymns(filter);
+        });
+    });
+    
+    // Load initial hymns
+    loadFeaturedHymns(currentFilter);
 });
 
 // Load categories
@@ -68,13 +96,23 @@ function displayCategories(categories) {
 }
 
 // Load featured hymns
-async function loadFeaturedHymns() {
+async function loadFeaturedHymns(filter = 'recent') {
     try {
-        const response = await fetch('/api/hymns?limit=6');
+        let url = '/api/hymns?limit=9'; // Show only 9 hymns max
+        
+        if (filter === 'popular') {
+            url += '&sort=-listens';
+        } else if (filter === 'random') {
+            url += '&random=true';
+        } else {
+            url += '&sort=-createdAt';
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
         
         if (data.status === 'success') {
-            displayFeaturedHymns(data.data.hymns);
+            displayFeaturedHymns(data.data.hymns, filter);
         } else {
             console.error('Error loading featured hymns:', data.message);
         }
@@ -84,11 +122,16 @@ async function loadFeaturedHymns() {
 }
 
 // Display featured hymns
-function displayFeaturedHymns(hymns) {
+function displayFeaturedHymns(hymns, filter) {
     const hymnsGrid = document.getElementById('featured-hymns');
     if (!hymnsGrid) return;
     
     hymnsGrid.innerHTML = '';
+    
+    if (hymns.length === 0) {
+        hymnsGrid.innerHTML = '<p>No hymns available yet.</p>';
+        return;
+    }
     
     hymns.forEach(hymn => {
         const hymnCard = document.createElement('div');
@@ -96,13 +139,21 @@ function displayFeaturedHymns(hymns) {
         hymnCard.innerHTML = `
             <div class="hymn-content">
                 <h3>${hymn.title}</h3>
-                <p>${hymn.description.substring(0, 100)}...</p>
+                <p><strong>Language:</strong> ${languageMap[hymn.lang] || hymn.lang}</p>
+                <p><strong>Category:</strong> ${hymn.category?.name || 'Unknown'}</p>
+                <p>${hymn.description.substring(0, 80)}...</p>
+                <div class="hymn-stats">
+                    <span><i class="fas fa-play"></i> ${hymn.listens || 0}</span>
+                    <span><i class="fas fa-download"></i> ${hymn.downloads || 0}</span>
+                    <span><i class="fas fa-heart"></i> ${hymn.favorites || 0}</span>
+                </div>
                 <div class="hymn-actions">
                     <button onclick="playHymn('${hymn._id}')"><i class="fas fa-play"></i></button>
                     <button onclick="shareHymn('${hymn._id}')"><i class="fas fa-share-alt"></i></button>
                     <button onclick="downloadHymn('${hymn._id}')"><i class="fas fa-download"></i></button>
                     <button onclick="toggleFavorite('${hymn._id}')"><i class="far fa-heart"></i></button>
                 </div>
+                <a href="pages/hymn.html?id=${hymn._id}" class="btn" style="display: block; text-align: center; margin-top: 10px;">View Details</a>
             </div>
         `;
         hymnsGrid.appendChild(hymnCard);
@@ -127,7 +178,6 @@ function playHymn(hymnId) {
 
 // Share hymn
 function shareHymn(hymnId) {
-    // Implementation for sharing hymn
     if (navigator.share) {
         navigator.share({
             title: 'Orthodox Hymn',
@@ -136,7 +186,6 @@ function shareHymn(hymnId) {
         })
         .catch(error => console.log('Error sharing:', error));
     } else {
-        // Fallback for browsers that don't support Web Share API
         prompt('Copy this link to share:', `${window.location.origin}/pages/hymn.html?id=${hymnId}`);
     }
 }
@@ -144,12 +193,10 @@ function shareHymn(hymnId) {
 // Download hymn
 async function downloadHymn(hymnId) {
     try {
-        // First increment download count
         await fetch(`/api/hymns/${hymnId}/download`, {
             method: 'POST'
         });
         
-        // Then get the hymn to download
         const response = await fetch(`/api/hymns/${hymnId}`);
         const data = await response.json();
         
@@ -175,7 +222,6 @@ async function toggleFavorite(hymnId) {
     }
     
     try {
-        // Check if already favorited
         const response = await fetch('/api/users/favorites/list', {
             method: 'GET',
             headers: auth.getAuthHeader()
@@ -187,14 +233,12 @@ async function toggleFavorite(hymnId) {
             const isFavorited = data.data.favorites.some(fav => fav._id === hymnId);
             
             if (isFavorited) {
-                // Remove from favorites
                 await fetch(`/api/users/favorites/${hymnId}`, {
                     method: 'DELETE',
                     headers: auth.getAuthHeader()
                 });
                 auth.showFlash('Removed from favorites', 'success');
             } else {
-                // Add to favorites
                 await fetch(`/api/users/favorites/${hymnId}`, {
                     method: 'POST',
                     headers: auth.getAuthHeader()
