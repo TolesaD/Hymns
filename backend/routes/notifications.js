@@ -4,28 +4,21 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get user notifications
+// Get all notifications for the authenticated user
 router.get('/', auth, async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
-    
-    const notifications = await Notification.find({ userId: req.user.id })
+    const notifications = await Notification.find({ userId: req.user._id })
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-    
-    const total = await Notification.countDocuments({ userId: req.user.id });
+      .populate('relatedId', 'title name');
     
     res.status(200).json({
       status: 'success',
-      results: notifications.length,
       data: {
-        notifications,
-        totalPages: Math.ceil(total / limit),
-        currentPage: page
+        notifications
       }
     });
   } catch (error) {
+    console.error('Error fetching notifications:', error);
     res.status(500).json({
       status: 'error',
       message: 'Error fetching notifications'
@@ -34,13 +27,12 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Mark notification as read
-router.patch('/:id/read', auth, async (req, res) => {
+router.put('/:id/read', auth, async (req, res) => {
   try {
-    const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      { isRead: true },
-      { new: true }
-    );
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
     
     if (!notification) {
       return res.status(404).json({
@@ -49,58 +41,18 @@ router.patch('/:id/read', auth, async (req, res) => {
       });
     }
     
-    res.status(200).json({
-      status: 'success',
-      data: {
-        notification
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Error updating notification'
-    });
-  }
-});
-
-// Mark all notifications as read
-router.patch('/read-all', auth, async (req, res) => {
-  try {
-    await Notification.updateMany(
-      { userId: req.user.id, isRead: false },
-      { isRead: true }
-    );
+    notification.isRead = true;
+    await notification.save();
     
     res.status(200).json({
       status: 'success',
-      message: 'All notifications marked as read'
+      message: 'Notification marked as read'
     });
   } catch (error) {
+    console.error('Error marking notification as read:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Error updating notifications'
-    });
-  }
-});
-
-// Get unread notification count
-router.get('/unread-count', auth, async (req, res) => {
-  try {
-    const count = await Notification.countDocuments({
-      userId: req.user.id,
-      isRead: false
-    });
-    
-    res.status(200).json({
-      status: 'success',
-      data: {
-        count
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Error fetching unread count'
+      message: 'Error marking notification as read'
     });
   }
 });

@@ -2,8 +2,17 @@ const Hymn = require('../models/Hymn');
 const Category = require('../models/Category');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { uploadFile, getSignedUrl, deleteFile } = require('../utils/b2');
 
-// Create hymn (admin only) with file upload and notifications
+// Language mapping for response formatting
+const reverseLanguageMap = {
+  'am': 'Amharic',
+  'om': 'Afan Oromo',
+  'ti': 'Tigrigna',
+  'en': 'English'
+};
+
+// Create hymn (admin only) with file upload to Backblaze B2
 exports.createHymn = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -20,43 +29,60 @@ exports.createHymn = async (req, res) => {
       });
     }
     
-    const audioUrl = `/uploads/audio/${req.file.filename}`;
+    const lang = req.body.lang;
+    if (!lang || !['am', 'om', 'ti', 'en'].includes(lang)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid language code'
+      });
+    }
+    
+    const fileName = `hymn-${Date.now()}-${req.file.originalname}`;
+    const b2FilePath = await uploadFile(req.file.buffer, fileName, 'audio');
     
     const hymnData = {
       ...req.body,
-      audioUrl: audioUrl,
+      lang,
+      audioUrl: b2FilePath,
       category: req.body.category
     };
     
-    const hymn = await Hymn.create(hymnData);
+    console.log('Creating hymn with data:', hymnData);
     
-    // Send notifications to all users about new hymn
-    try {
-      const users = await User.find({ isActive: true, _id: { $ne: req.user.id } });
-      const notificationPromises = users.map(user => 
-        Notification.create({
-          userId: user._id,
-          message: `New hymn added: ${hymn.title}`,
-          type: 'new_hymn',
-          relatedId: hymn._id,
-          onModel: 'Hymn'
-        })
-      );
-      
-      await Promise.all(notificationPromises);
-      console.log(`Created ${notificationPromises.length} notifications for new hymn`);
-    } catch (notificationError) {
-      console.error('Error creating notifications:', notificationError);
-      // Don't fail the hymn creation if notifications fail
+    const hymn = await Hymn.create(hymnData);
+    console.log('Hymn created successfully:', hymn._id);
+    
+    const users = await User.find({ isActive: true });
+    console.log('Found users for notifications:', users.length);
+    const notifications = users.map(user => ({
+      userId: user._id,
+      message: `New hymn added: ${hymn.title}`,
+      type: 'new_hymn',
+      relatedId: hymn._id,
+      onModel: 'Hymn',
+      isRead: false
+    }));
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+      console.log('Notifications created for', notifications.length, 'users');
+    } else {
+      console.log('No active users found, no notifications created');
     }
+    
+    const hymnResponse = {
+      ...hymn._doc,
+      language: reverseLanguageMap[hymn.lang] || hymn.lang,
+      audioUrl: await getSignedUrl(b2FilePath)
+    };
     
     res.status(201).json({
       status: 'success',
       data: {
-        hymn
+        hymn: hymnResponse
       }
     });
   } catch (error) {
+    console.error('Error creating hymn:', error.message);
     res.status(500).json({
       status: 'error',
       message: 'Error creating hymn: ' + error.message
@@ -67,7 +93,7 @@ exports.createHymn = async (req, res) => {
 // Get all hymns
 exports.getHymns = async (req, res) => {
   try {
-    const { category, language, search, page = 1, limit = 10 } = req.query;
+    const { category, lang, search, page = 1, limit = 10, sort, random } = req.query;
     
     let filter = { isActive: true };
     
@@ -78,8 +104,8 @@ exports.getHymns = async (req, res) => {
       }
     }
     
-    if (language) {
-      filter.language = language;
+    if (lang) {
+      filter.lang = lang;
     }
     
     if (search) {
@@ -90,13 +116,39 @@ exports.getHymns = async (req, res) => {
       ];
     }
     
-    const hymns = await Hymn.find(filter)
-      .populate('category', 'name')
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    let hymns;
+    let total;
+
+    if (random) {
+      const aggregateQuery = [{ $match: filter }, { $sample: { size: parseInt(limit) || 10 } }];
+      hymns = await Hymn.aggregate(aggregateQuery);
+      total = await Hymn.countDocuments(filter);
+      hymns = await Hymn.populate(hymns, { path: 'category', select: 'name' });
+    } else {
+      let query = Hymn.find(filter).populate('category', 'name');
+      
+      if (sort) {
+        const sortOrder = sort.startsWith('-') ? -1 : 1;
+        const sortField = sort.replace('-', '');
+        query = query.sort({ [sortField]: sortOrder });
+      } else {
+        query = query.sort({ createdAt: -1 });
+      }
+      
+      query = query
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+      
+      hymns = await query.exec();
+      total = await Hymn.countDocuments(filter);
+    }
     
-    const total = await Hymn.countDocuments(filter);
+    // Generate signed URLs for private files
+    hymns = await Promise.all(hymns.map(async hymn => ({
+      ...hymn._doc || hymn,
+      language: reverseLanguageMap[hymn.lang] || hymn.lang,
+      audioUrl: await getSignedUrl(hymn.audioUrl)
+    })));
     
     res.status(200).json({
       status: 'success',
@@ -108,9 +160,10 @@ exports.getHymns = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching hymns:', error.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error fetching hymns'
+      message: 'Error fetching hymns: ' + error.message
     });
   }
 };
@@ -128,51 +181,41 @@ exports.getHymn = async (req, res) => {
       });
     }
     
-    // Increment listen count
     hymn.listens += 1;
     await hymn.save();
     
+    const hymnResponse = {
+      ...hymn._doc,
+      language: reverseLanguageMap[hymn.lang] || hymn.lang,
+      audioUrl: await getSignedUrl(hymn.audioUrl)
+    };
+    
     res.status(200).json({
       status: 'success',
       data: {
-        hymn
+        hymn: hymnResponse
       }
     });
   } catch (error) {
+    console.error('Error fetching hymn:', error.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error fetching hymn'
+      message: 'Error fetching hymn: ' + error.message
     });
   }
 };
 
-// Create hymn
-exports.createHymn = async (req, res) => {
-  try {
-    const hymn = await Hymn.create(req.body);
-    
-    res.status(201).json({
-      status: 'success',
-      data: {
-        hymn
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Error creating hymn'
-    });
-  }
-};
-
-// Update hymn
+// Update hymn (admin only)
 exports.updateHymn = async (req, res) => {
   try {
-    const hymn = await Hymn.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.'
+      });
+    }
+    
+    const hymn = await Hymn.findById(req.params.id);
     
     if (!hymn) {
       return res.status(404).json({
@@ -180,29 +223,71 @@ exports.updateHymn = async (req, res) => {
         message: 'Hymn not found'
       });
     }
+    
+    const updateData = { ...req.body };
+    
+    if (req.body.lang) {
+      if (!['am', 'om', 'ti', 'en'].includes(req.body.lang)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid language code'
+        });
+      }
+      updateData.lang = req.body.lang;
+    }
+    
+    if (req.file) {
+      if (hymn.audioUrl) {
+        try {
+          await deleteFile(hymn.audioUrl);
+          console.log('Deleted old audio file:', hymn.audioUrl);
+        } catch (deleteError) {
+          console.warn('Could not delete old audio file:', deleteError.message);
+        }
+      }
+      
+      const fileName = `hymn-${Date.now()}-${req.file.originalname}`;
+      updateData.audioUrl = await uploadFile(req.file.buffer, fileName, 'audio');
+    }
+    
+    const updatedHymn = await Hymn.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('category', 'name description');
+    
+    const hymnResponse = {
+      ...updatedHymn._doc,
+      language: reverseLanguageMap[updatedHymn.lang] || updatedHymn.lang,
+      audioUrl: await getSignedUrl(updatedHymn.audioUrl)
+    };
     
     res.status(200).json({
       status: 'success',
       data: {
-        hymn
+        hymn: hymnResponse
       }
     });
   } catch (error) {
+    console.error('Error updating hymn:', error.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error updating hymn'
+      message: 'Error updating hymn: ' + error.message
     });
   }
 };
 
-// Delete hymn
+// Delete hymn (admin only)
 exports.deleteHymn = async (req, res) => {
   try {
-    const hymn = await Hymn.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      { new: true }
-    );
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.'
+      });
+    }
+    
+    const hymn = await Hymn.findById(req.params.id);
     
     if (!hymn) {
       return res.status(404).json({
@@ -210,15 +295,27 @@ exports.deleteHymn = async (req, res) => {
         message: 'Hymn not found'
       });
     }
+    
+    if (hymn.audioUrl) {
+      try {
+        await deleteFile(hymn.audioUrl);
+        console.log('Deleted audio file from B2:', hymn.audioUrl);
+      } catch (deleteError) {
+        console.warn('Could not delete audio file from B2:', deleteError.message);
+      }
+    }
+    
+    await Hymn.findByIdAndDelete(req.params.id);
     
     res.status(200).json({
       status: 'success',
       message: 'Hymn deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting hymn:', error.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error deleting hymn'
+      message: 'Error deleting hymn: ' + error.message
     });
   }
 };
@@ -243,9 +340,10 @@ exports.incrementDownload = async (req, res) => {
       message: 'Download count updated'
     });
   } catch (error) {
+    console.error('Error updating download count:', error.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error updating download count'
+      message: 'Error updating download count: ' + error.message
     });
   }
 };

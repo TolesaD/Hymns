@@ -1,6 +1,5 @@
 let currentFilter = 'recent';
 
-// Language mapping for display
 const languageMap = {
   'am': 'Amharic',
   'om': 'Afan Oromo',
@@ -9,10 +8,8 @@ const languageMap = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Load categories
     loadCategories();
     
-    // Language cards event listeners
     const languageCards = document.querySelectorAll('.language-card');
     languageCards.forEach(card => {
         card.addEventListener('click', function() {
@@ -21,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Search functionality
     const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('search-input');
     
@@ -34,30 +30,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add filter functionality for hymns
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Remove active class from all buttons
             filterButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Add active class to clicked button
             this.classList.add('active');
-            
-            // Get filter type
-            const filter = this.getAttribute('data-filter');
-            currentFilter = filter;
-            
-            // Load hymns with new filter
-            loadFeaturedHymns(filter);
+            currentFilter = this.getAttribute('data-filter');
+            loadFeaturedHymns(currentFilter);
         });
     });
     
-    // Load initial hymns
     loadFeaturedHymns(currentFilter);
 });
 
-// Load categories
 async function loadCategories() {
     try {
         const response = await fetch('/api/categories');
@@ -67,13 +52,14 @@ async function loadCategories() {
             displayCategories(data.data.categories);
         } else {
             console.error('Error loading categories:', data.message);
+            auth.showFlash('Error loading categories', 'error');
         }
     } catch (error) {
         console.error('Error loading categories:', error);
+        auth.showFlash('Error loading categories', 'error');
     }
 }
 
-// Display categories
 function displayCategories(categories) {
     const categoriesGrid = document.getElementById('categories-grid');
     if (!categoriesGrid) return;
@@ -95,10 +81,9 @@ function displayCategories(categories) {
     });
 }
 
-// Load featured hymns
 async function loadFeaturedHymns(filter = 'recent') {
     try {
-        let url = '/api/hymns?limit=9'; // Show only 9 hymns max
+        let url = '/api/hymns?limit=9';
         
         if (filter === 'popular') {
             url += '&sort=-listens';
@@ -115,13 +100,14 @@ async function loadFeaturedHymns(filter = 'recent') {
             displayFeaturedHymns(data.data.hymns, filter);
         } else {
             console.error('Error loading featured hymns:', data.message);
+            auth.showFlash('Error loading hymns', 'error');
         }
     } catch (error) {
         console.error('Error loading featured hymns:', error);
+        auth.showFlash('Error loading hymns', 'error');
     }
 }
 
-// Display featured hymns
 function displayFeaturedHymns(hymns, filter) {
     const hymnsGrid = document.getElementById('featured-hymns');
     if (!hymnsGrid) return;
@@ -160,7 +146,6 @@ function displayFeaturedHymns(hymns, filter) {
     });
 }
 
-// Perform search
 function performSearch() {
     const searchInput = document.getElementById('search-input');
     if (!searchInput) return;
@@ -171,12 +156,10 @@ function performSearch() {
     }
 }
 
-// Play hymn
 function playHymn(hymnId) {
     window.location.href = `pages/hymn.html?id=${hymnId}`;
 }
 
-// Share hymn
 function shareHymn(hymnId) {
     if (navigator.share) {
         navigator.share({
@@ -184,13 +167,21 @@ function shareHymn(hymnId) {
             text: 'Check out this beautiful Orthodox hymn',
             url: `${window.location.origin}/pages/hymn.html?id=${hymnId}`
         })
-        .catch(error => console.log('Error sharing:', error));
+        .catch(error => {
+            console.error('Error sharing:', error);
+            auth.showFlash('Error sharing hymn', 'error');
+        });
     } else {
-        prompt('Copy this link to share:', `${window.location.origin}/pages/hymn.html?id=${hymnId}`);
+        const shareUrl = `${window.location.origin}/pages/hymn.html?id=${hymnId}`;
+        navigator.clipboard.writeText(shareUrl)
+            .then(() => auth.showFlash('Link copied to clipboard', 'success'))
+            .catch(error => {
+                console.error('Error copying link:', error);
+                auth.showFlash('Error copying link', 'error');
+            });
     }
 }
 
-// Download hymn
 async function downloadHymn(hymnId) {
     try {
         await fetch(`/api/hymns/${hymnId}/download`, {
@@ -208,13 +199,16 @@ async function downloadHymn(hymnId) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            auth.showFlash('Download started', 'success');
+        } else {
+            auth.showFlash('Error downloading hymn', 'error');
         }
     } catch (error) {
         console.error('Error downloading hymn:', error);
+        auth.showFlash('Error downloading hymn', 'error');
     }
 }
 
-// Toggle favorite
 async function toggleFavorite(hymnId) {
     if (!auth.user) {
         auth.showFlash('Please login to add favorites', 'error');
@@ -245,8 +239,11 @@ async function toggleFavorite(hymnId) {
                 });
                 auth.showFlash('Added to favorites', 'success');
             }
+        } else {
+            auth.showFlash('Error updating favorites', 'error');
         }
     } catch (error) {
         console.error('Error toggling favorite:', error);
+        auth.showFlash('Error updating favorites', 'error');
     }
 }

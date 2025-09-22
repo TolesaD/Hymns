@@ -12,27 +12,27 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['new_hymn', 'system', 'update'],
-    default: 'system'
+    enum: ['new_hymn', 'system'],
+    required: true
   },
   relatedId: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'onModel'
+    refPath: 'onModel',
+    required: false
   },
   onModel: {
     type: String,
-    enum: ['Hymn', 'Category']
+    enum: ['Hymn', 'Category'],
+    required: false
   },
   isRead: {
     type: Boolean,
     default: false
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
 });
-
-// Index for better performance
-notificationSchema.index({ userId: 1, isRead: 1 });
-notificationSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

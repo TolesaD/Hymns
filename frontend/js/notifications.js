@@ -1,4 +1,3 @@
-// Notification system
 class Notifications {
     constructor() {
         this.unreadCount = 0;
@@ -10,8 +9,6 @@ class Notifications {
         if (auth.user) {
             this.loadUnreadCount();
             this.startPolling();
-            
-            // Create notification icon in navbar
             this.createNotificationIcon();
         }
     }
@@ -20,7 +17,6 @@ class Notifications {
         const navUser = document.getElementById('nav-user');
         if (!navUser) return;
 
-        // Create notification icon
         const notificationIcon = document.createElement('div');
         notificationIcon.id = 'notification-icon';
         notificationIcon.innerHTML = '<i class="fas fa-bell"></i>';
@@ -31,7 +27,6 @@ class Notifications {
             font-size: 1.2rem;
         `;
 
-        // Create badge for unread count
         const badge = document.createElement('span');
         badge.id = 'notification-badge';
         badge.className = 'notification-badge';
@@ -54,7 +49,6 @@ class Notifications {
         notificationIcon.appendChild(badge);
         navUser.insertBefore(notificationIcon, navUser.firstChild);
 
-        // Add click event
         notificationIcon.addEventListener('click', () => {
             this.showNotifications();
         });
@@ -90,7 +84,6 @@ class Notifications {
     }
 
     startPolling() {
-        // Check for new notifications every 30 seconds
         this.checkInterval = setInterval(() => {
             this.loadUnreadCount();
         }, 30000);
@@ -103,9 +96,72 @@ class Notifications {
     }
 
     async showNotifications() {
-        // Implement notification modal/dropdown
-        console.log('Show notifications modal');
-        // You can implement a modal or dropdown to show notifications
+        try {
+            const response = await fetch('/api/notifications', {
+                headers: auth.getAuthHeader()
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const notifications = data.data.notifications;
+                const modal = document.createElement('div');
+                modal.className = 'notification-modal';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    z-index: 1000;
+                    max-width: 400px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                `;
+                
+                modal.innerHTML = `
+                    <h3>Notifications</h3>
+                    <button onclick="notifications.markAllAsRead()" style="float: right; margin-bottom: 10px;">Mark All as Read</button>
+                    <div id="notification-list">
+                        ${notifications.length === 0 ? '<p>No notifications</p>' : ''}
+                    </div>
+                    <button onclick="this.parentElement.remove()" style="margin-top: 10px;">Close</button>
+                `;
+                
+                const notificationList = modal.querySelector('#notification-list');
+                notifications.forEach(notification => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        padding: 10px;
+                        border-bottom: 1px solid #eee;
+                        background: ${notification.isRead ? '#f9f9f9' : '#e6f3ff'};
+                        cursor: ${notification.relatedId && notification.onModel === 'Hymn' ? 'pointer' : 'default'};
+                    `;
+                    div.innerHTML = `
+                        <p>${notification.message}</p>
+                        <small>${new Date(notification.createdAt).toLocaleString()}</small>
+                    `;
+                    if (notification.relatedId && notification.onModel === 'Hymn') {
+                        div.addEventListener('click', () => {
+                            window.location.href = `/pages/hymn.html?id=${notification.relatedId}`;
+                            this.markAsRead(notification._id);
+                        });
+                    }
+                    notificationList.appendChild(div);
+                });
+                
+                document.body.appendChild(modal);
+            } else {
+                auth.showFlash('Error loading notifications', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            auth.showFlash('Error loading notifications', 'error');
+        }
     }
 
     async markAsRead(notificationId) {
@@ -138,6 +194,8 @@ class Notifications {
             if (data.status === 'success') {
                 this.unreadCount = 0;
                 this.updateBadge();
+                const modal = document.querySelector('.notification-modal');
+                if (modal) modal.remove();
             }
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
@@ -145,5 +203,4 @@ class Notifications {
     }
 }
 
-// Initialize notifications
 const notifications = new Notifications();

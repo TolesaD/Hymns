@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
-const nodemailer = require('nodemailer');
 
 // Generate JWT token
 const signToken = (id) => {
@@ -64,7 +63,7 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error:', error.message, error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Server error during registration'
@@ -128,7 +127,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error.message, error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Server error during login'
@@ -164,6 +163,7 @@ exports.logout = (req, res) => {
       });
     });
   } catch (error) {
+    console.error('Logout error:', error.message, error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Server error during logout'
@@ -208,6 +208,7 @@ exports.checkAuth = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Check auth error:', error.message, error.stack);
     res.status(401).json({
       status: 'error',
       message: 'Not authenticated'
@@ -232,10 +233,9 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email, isActive: true });
     
     if (!user) {
-      // Don't reveal whether email exists or not for security
       return res.status(200).json({
         status: 'success',
-        message: 'If the email exists, a password reset link has been sent'
+        message: 'If the email exists, a password reset link has been logged to the server terminal.'
       });
     }
     
@@ -243,55 +243,16 @@ exports.forgotPassword = async (req, res) => {
     const resetToken = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
     
-    // Send email
-    try {
-      const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/pages/reset-password.html?token=${resetToken}`;
-      
-      const transporter = nodemailer.createTransporter({
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT || 587,
-        secure: process.env.EMAIL_SECURE === 'true',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-      
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@hymns.com',
-        to: user.email,
-        subject: 'Password Reset Request - Orthodox Hymns',
-        html: `
-          <h2>Password Reset Request</h2>
-          <p>You requested a password reset for your Orthodox Hymns account.</p>
-          <p>Click the link below to reset your password (valid for 10 minutes):</p>
-          <a href="${resetURL}" style="display: inline-block; padding: 10px 20px; background-color: #3a506b; color: white; text-decoration: none; border-radius: 4px;">Reset Password</a>
-          <p>If you didn't request this reset, please ignore this email.</p>
-          <p><strong>Link:</strong> ${resetURL}</p>
-        `
-      };
-      
-      await transporter.sendMail(mailOptions);
-      
-      res.status(200).json({
-        status: 'success',
-        message: 'If the email exists, a password reset link has been sent'
-      });
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
-      
-      // Reset the token if email fails
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      await user.save({ validateBeforeSave: false });
-      
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error sending email. Please try again later.'
-      });
-    }
+    // Log the reset link for testing (since no external email)
+    const resetURL = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/pages/reset-password.html?token=${resetToken}`;
+    console.log('Password reset link (for testing):', resetURL);
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset link has been logged to the server terminal for testing.'
+    });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Forgot password error:', error.message, error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Error processing request'
@@ -342,7 +303,7 @@ exports.resetPassword = async (req, res) => {
       message: 'Password reset successfully'
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Reset password error:', error.message, error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Error resetting password'
@@ -377,7 +338,7 @@ exports.verifyResetToken = async (req, res) => {
       message: 'Token is valid'
     });
   } catch (error) {
-    console.error('Verify token error:', error);
+    console.error('Verify token error:', error.message, error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Error verifying token'

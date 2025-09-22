@@ -75,7 +75,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 Orthodox Hymns. All rights reserved.</p>
+                <p>&copy; 2025 Orthodox Hymns. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -102,10 +102,12 @@
                     displayHymnDetails(data.data.hymn);
                 } else {
                     console.error('Error loading hymn details:', data.message);
+                    auth.showFlash('Error loading hymn details', 'error');
                     window.location.href = '../index.html';
                 }
             } catch (error) {
                 console.error('Error loading hymn details:', error);
+                auth.showFlash('Error loading hymn details', 'error');
                 window.location.href = '../index.html';
             }
         }
@@ -122,10 +124,11 @@
                 </div>
                 
                 <div class="audio-player">
-                    <audio controls style="width: 100%;">
+                    <audio id="hymn-audio" controls style="width: 100%;">
                         <source src="${hymn.audioUrl}" type="audio/mpeg">
                         Your browser does not support the audio element.
                     </audio>
+                    <p id="audio-error" style="color: red; display: none;">Error: Unable to play audio. Please try downloading or contact support.</p>
                 </div>
                 
                 <div class="hymn-actions" style="margin: 20px 0; display: flex; gap: 10px;">
@@ -150,6 +153,13 @@
                     <pre>${hymn.lyrics}</pre>
                 </div>
             `;
+            
+            // Add audio error handling
+            const audioElement = document.getElementById('hymn-audio');
+            audioElement.addEventListener('error', () => {
+                console.error('Audio playback error:', audioElement.error);
+                document.getElementById('audio-error').style.display = 'block';
+            });
             
             // Check if already favorited
             checkIfFavorited(hymn._id);
@@ -180,6 +190,7 @@
                 }
             } catch (error) {
                 console.error('Error checking favorite status:', error);
+                auth.showFlash('Error checking favorite status', 'error');
             }
         }
 
@@ -217,11 +228,18 @@
                     url: `${window.location.origin}/pages/hymn.html?id=${hymnId}`
                 })
                 .then(() => auth.showFlash('Shared successfully', 'success'))
-                .catch(error => console.log('Error sharing:', error));
+                .catch(error => {
+                    console.error('Error sharing:', error);
+                    auth.showFlash('Error sharing hymn', 'error');
+                });
             } else {
                 const shareUrl = `${window.location.origin}/pages/hymn.html?id=${hymnId}`;
-                prompt('Copy this link to share:', shareUrl);
-                auth.showFlash('Link copied to clipboard', 'success');
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => auth.showFlash('Link copied to clipboard', 'success'))
+                    .catch(error => {
+                        console.error('Error copying link:', error);
+                        auth.showFlash('Error copying link', 'error');
+                    });
             }
         }
 
