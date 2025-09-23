@@ -1,0 +1,60 @@
+<div class="admin-container">
+  <div class="container">
+    <div class="admin-header">
+      <h1>Moderate Comments</h1>
+      <a href="/admin" class="btn btn-outline">Back to Dashboard</a>
+    </div>
+    
+    <% if (success_msg && success_msg.length > 0) { %>
+      <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        <p><%= success_msg %></p>
+      </div>
+    <% } %>
+    <% if (error_msg && error_msg.length > 0) { %>
+      <div class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i>
+        <p><%= error_msg %></p>
+      </div>
+    <% } %>
+    
+    <div class="admin-content">
+      <h2>Pending Comments</h2>
+      <div class="comments-grid">
+        <% pendingComments.forEach(comment => { %>
+          <div class="comment-card">
+            <p><strong>User:</strong> <%= comment.user?.username || 'N/A' %></p>
+            <p><strong>Hymn:</strong> <%= comment.hymn?.title || 'N/A' %></p>
+            <p><strong>Comment:</strong> <%= comment.content %></p>
+            <p><strong>Rating:</strong> <%= comment.rating %></p>
+            <div class="comment-actions">
+              <form action="/admin/comments/approve/<%= comment._id %>" method="POST">
+                <button type="submit" class="btn btn-primary btn-small">Approve</button>
+              </form>
+              <form action="/admin/comments/delete/<%= comment._id %>" method="POST">
+                <button type="submit" class="btn btn-danger btn-small">Delete</button>
+              </form>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      
+      <h2>Approved Comments</h2>
+      <div class="comments-grid">
+        <% approvedComments.forEach(comment => { %>
+          <div class="comment-card">
+            <p><strong>User:</strong> <%= comment.user?.username || 'N/A' %></p>
+            <p><strong>Hymn:</strong> <%= comment.hymn?.title || 'N/A' %></p>
+            <p><strong>Comment:</strong> <%= comment.content %></p>
+            <p><strong>Rating:</strong> <%= comment.rating %></p>
+            <div class="comment-actions">
+              <form action="/admin/comments/delete/<%= comment._id %>" method="POST">
+                <button type="submit" class="btn btn-danger btn-small">Delete</button>
+              </form>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>

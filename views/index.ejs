@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Ethiopian Orthodox Hymns</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                    <span>Hymns</span>
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form action="/search" method="GET">
+                    <div class="search-box">
+                        <input type="text" name="q" placeholder="Search hymns..." id="search-input">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#" class="nav-link">Languages <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="/amharic/worship">Amharic</a>
+                        <a href="/oromo/worship">Afan Oromo</a>
+                        <a href="/tigrigna/worship">Tigrigna</a>
+                        <a href="/english/worship">English</a>
+                    </div>
+                </div>
+                <% if (user) { %>
+                    <a href="/users/profile" class="nav-link">Profile</a>
+                    <a href="/users/logout" class="nav-link">Logout</a>
+                <% } else { %>
+                    <a href="/users/login" class="nav-link">Login</a>
+                    <a href="/users/register" class="nav-link btn-primary">Sign Up</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Ethiopian Orthodox Hymns</h1>
+                <p>Discover, listen, and share beautiful hymns in multiple Ethiopian languages</p>
+                <div class="hero-buttons">
+                    <a href="/amharic/worship" class="btn btn-primary">Explore Hymns</a>
+                    <a href="/users/register" class="btn btn-secondary">Join Community</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Languages Section -->
+    <section class="languages-section">
+        <div class="container">
+            <h2>Browse by Language</h2>
+            <div class="languages-grid">
+                <div class="language-card">
+                    <div class="language-icon">
+                        <i class="fas fa-globe-africa"></i>
+                    </div>
+                    <h3>Amharic</h3>
+                    <p>Traditional hymns in Amharic</p>
+                    <div class="category-stats">
+                        <div class="stat">
+                            <span>Worship</span>
+                            <span class="count"><%= hymnData.amharic.worship %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Praise</span>
+                            <span class="count"><%= hymnData.amharic.praise %></span>
+                        </div>
+                    </div>
+                    <a href="/amharic/worship" class="btn btn-outline">Browse Amharic</a>
+                </div>
+                
+                <div class="language-card">
+                    <div class="language-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h3>Afan Oromo</h3>
+                    <p>Hymns in Afan Oromo</p>
+                    <div class="category-stats">
+                        <div class="stat">
+                            <span>Worship</span>
+                            <span class="count"><%= hymnData.oromo.worship %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Praise</span>
+                            <span class="count"><%= hymnData.oromo.praise %></span>
+                        </div>
+                    </div>
+                    <a href="/oromo/worship" class="btn btn-outline">Browse Oromo</a>
+                </div>
+                
+                <div class="language-card">
+                    <div class="language-icon">
+                        <i class="fas fa-church"></i>
+                    </div>
+                    <h3>Tigrigna</h3>
+                    <p>Hymns in Tigrigna</p>
+                    <div class="category-stats">
+                        <div class="stat">
+                            <span>Worship</span>
+                            <span class="count"><%= hymnData.tigrigna.worship %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Praise</span>
+                            <span class="count"><%= hymnData.tigrigna.praise %></span>
+                        </div>
+                    </div>
+                    <a href="/tigrigna/worship" class="btn btn-outline">Browse Tigrigna</a>
+                </div>
+                
+                <div class="language-card">
+                    <div class="language-icon">
+                        <i class="fas fa-pray"></i>
+                    </div>
+                    <h3>English</h3>
+                    <p>Hymns in English</p>
+                    <div class="category-stats">
+                        <div class="stat">
+                            <span>Worship</span>
+                            <span class="count"><%= hymnData.english.worship %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Praise</span>
+                            <span class="count"><%= hymnData.english.praise %></span>
+                        </div>
+                    </div>
+                    <a href="/english/worship" class="btn btn-outline">Browse English</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Hymns -->
+    <section class="featured-hymns" id="featured">
+        <div class="container">
+            <h2>Featured Hymns</h2>
+            <div class="hymns-grid">
+                <% if (featuredHymns.length > 0) { %>
+                    <% featuredHymns.forEach(function(hymn) { %>
+                        <div class="hymn-card">
+                            <div class="hymn-image">
+                                <div class="language-badge">
+                                    <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
+                                </div>
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <div class="hymn-content">
+                                <h3><%= hymn.title %></h3>
+                                <p><%= hymn.description ? hymn.description.substring(0, 100) + '...' : 'No description available' %></p>
+                                <div class="hymn-meta">
+                                    <span><i class="fas fa-play"></i> <%= hymn.plays || 0 %> plays</span>
+                                    <span><i class="fas fa-download"></i> <%= hymn.downloads || 0 %> downloads</span>
+                                </div>
+                                <div class="hymn-actions">
+                                    <a href="/hymns/<%= hymn._id %>" class="btn btn-primary">Listen</a>
+                                    <% if (user) { %>
+                                        <button class="btn-icon favorite-btn" data-hymn-id="<%= hymn._id %>">
+                                            <i class="far fa-heart"></i>
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-music"></i>
+                        <h3>No featured hymns available</h3>
+                        <p>Check back soon for new featured hymns!</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2>Stay Updated</h2>
+                <p>Subscribe to our newsletter to get notified about new hymns and updates</p>
+                <form class="newsletter-form" id="newsletter-form">
+                    <input type="email" name="email" placeholder="Your email address" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <span>Hymns</span>
+                    </div>
+                    <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

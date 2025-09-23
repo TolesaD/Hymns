@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-sidebar">
+            <div class="admin-brand">
+                <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                <span>Admin Panel</span>
+            </div>
+            
+            <nav class="admin-nav">
+                <a href="/admin" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/hymns" class="nav-item">
+                    <i class="fas fa-music"></i>
+                    Manage Hymns
+                </a>
+                <a href="/admin/hymns/add" class="nav-item">
+                    <i class="fas fa-plus"></i>
+                    Add New Hymn
+                </a>
+                <a href="/admin/users" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    Manage Users
+                </a>
+                <a href="/admin/comments" class="nav-item">
+                    <i class="fas fa-comments"></i>
+                    Moderate Comments
+                </a>
+                <a href="/" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    Back to Site
+                </a>
+                <a href="/users/logout" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </nav>
+        </div>
+        
+        <div class="admin-main">
+            <div class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <p>Welcome, <%= user ? user.username : 'Admin' %></p>
+            </div>
+            
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= hymnCount %></h3>
+                        <p>Total Hymns</p>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i> 12%
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= userCount %></h3>
+                        <p>Registered Users</p>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i> 8%
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= commentCount %></h3>
+                        <p>Total Comments</p>
+                    </div>
+                    <div class="stat-trend down">
+                        <i class="fas fa-arrow-down"></i> 3%
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= pendingComments %></h3>
+                        <p>Pending Reviews</p>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i> 15%
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="actions-grid">
+                    <a href="/admin/hymns/add" class="action-card">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New Hymn</span>
+                    </a>
+                    <a href="/admin/comments" class="action-card">
+                        <i class="fas fa-comments"></i>
+                        <span>Moderate Comments</span>
+                    </a>
+                    <a href="/admin/users" class="action-card">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Manage Users</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Popular Hymns -->
+            <div class="popular-hymns">
+                <h2>Most Popular Hymns</h2>
+                <div class="hymns-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Language</th>
+                                <th>Plays</th>
+                                <th>Downloads</th>
+                                <th>Rating</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (popularHymns && popularHymns.length > 0) { %>
+                                <% popularHymns.forEach(function(hymn) { %>
+                                    <% if (hymn && hymn.hymnLanguage) { %>
+                                        <tr>
+                                            <td>
+                                                <div class="hymn-title">
+                                                    <i class="fas fa-music"></i>
+                                                    <span><%= hymn.title || 'Untitled' %></span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="language-badge small">
+                                                    <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
+                                                </span>
+                                            </td>
+                                            <td><%= hymn.plays || 0 %></td>
+                                            <td><%= hymn.downloads || 0 %></td>
+                                            <td>
+                                                <div class="rating-display">
+                                                    <i class="fas fa-star"></i>
+                                                    <span><%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %></span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-actions">
+                                                    <% if (hymn._id) { %>
+                                                        <a href="/hymns/<%= hymn._id %>" class="btn-icon" title="View">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="/admin/hymns/edit/<%= hymn._id %>" class="btn-icon" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="no-data">No hymns available</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

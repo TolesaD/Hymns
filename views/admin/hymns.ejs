@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-sidebar">
+            <div class="admin-brand">
+                <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                <span>Admin Panel</span>
+            </div>
+            
+            <nav class="admin-nav">
+                <a href="/admin" class="nav-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/hymns" class="nav-item active">
+                    <i class="fas fa-music"></i>
+                    Manage Hymns
+                </a>
+                <a href="/admin/hymns/add" class="nav-item">
+                    <i class="fas fa-plus"></i>
+                    Add New Hymn
+                </a>
+                <a href="/admin/users" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    Manage Users
+                </a>
+                <a href="/admin/comments" class="nav-item">
+                    <i class="fas fa-comments"></i>
+                    Moderate Comments
+                </a>
+                <a href="/" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    Back to Site
+                </a>
+                <a href="/users/logout" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </nav>
+        </div>
+        
+        <div class="admin-main">
+            <div class="admin-header">
+                <div class="header-content">
+                    <h1>Manage Hymns</h1>
+                    <p>Add, edit, or remove hymns from the collection</p>
+                </div>
+                <a href="/admin/hymns/add" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Hymn
+                </a>
+            </div>
+
+            <!-- Add this after the admin-header div -->
+<% if (success_msg && success_msg.length > 0) { %>
+    <div class="flash-message success">
+        <div class="container">
+            <i class="fas fa-check-circle"></i>
+            <span><%= success_msg %></span>
+        </div>
+    </div>
+<% } %>
+
+<% if (error_msg && error_msg.length > 0) { %>
+    <div class="flash-message error">
+        <div class="container">
+            <i class="fas fa-exclamation-circle"></i>
+            <span><%= error_msg %></span>
+        </div>
+    </div>
+<% } %>
+            
+            <div class="admin-content">
+                <div class="content-header">
+                    <h2>All Hymns (<%= hymns.length %>)</h2>
+                </div>
+                
+                <% if (hymns.length > 0) { %>
+                    <div class="hymns-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Language</th>
+                                    <th>Category</th>
+                                    <th>Plays</th>
+                                    <th>Downloads</th>
+                                    <th>Featured</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% hymns.forEach(function(hymn) { %>
+                                    <tr>
+                                        <td>
+                                            <div class="hymn-title">
+                                                <i class="fas fa-music"></i>
+                                                <div>
+                                                    <strong><%= hymn.title %></strong>
+                                                    <p class="hymn-description"><%= hymn.description ? hymn.description.substring(0, 50) + '...' : 'No description' %></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="language-badge small">
+                                                <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
+                                            </span>
+                                        </td>
+                                        <td><%= hymn.category ? hymn.category.charAt(0).toUpperCase() + hymn.category.slice(1) : 'Unknown' %></td>
+                                        <td><%= hymn.plays || 0 %></td>
+                                        <td><%= hymn.downloads || 0 %></td>
+                                        <td>
+                                            <% if (hymn.featured) { %>
+                                                <span class="featured-badge">Yes</span>
+                                            <% } else { %>
+                                                <span class="not-featured">No</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a href="/hymns/<%= hymn._id %>" class="btn-icon" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="/admin/hymns/edit/<%= hymn._id %>" class="btn-icon" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <form action="/admin/hymns/delete/<%= hymn._id %>" method="POST" class="inline-form">
+                                                    <button type="submit" class="btn-icon danger" title="Delete" onclick="return confirm('Are you sure you want to delete this hymn?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-music"></i>
+                        <h3>No hymns found</h3>
+                        <p>Get started by adding your first hymn to the collection.</p>
+                        <a href="/admin/hymns/add" class="btn btn-primary">Add New Hymn</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .featured-badge {
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .not-featured {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+        
+        .inline-form {
+            display: inline;
+        }
+    </style>
+</body>
+</html>

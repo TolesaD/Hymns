@@ -1,0 +1,10 @@
+<header>
+  <nav class="nav-menu">
+    <a href="/">Home</a>
+    <a href="/users/login">Login</a>
+    <a href="/users/register">Register</a>
+    <% if (user && user.isAdmin) { %>
+      <a href="/admin">Admin Dashboard</a>
+    <% } %>
+  </nav>
+</header>

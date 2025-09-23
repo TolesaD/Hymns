@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= hymn.title %> - Hymns</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Social Media Meta Tags -->
+    <meta property="og:title" content="<%= hymn.title %> - Ethiopian Orthodox Hymns">
+    <meta property="og:description" content="<%= hymn.description %>">
+    <meta property="og:type" content="music.song">
+    <meta property="og:url" content="<%= currentUrl %>">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="<%= hymn.title %>">
+    <meta name="twitter:description" content="<%= hymn.description %>">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                    <span>Hymns</span>
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form action="/search" method="GET">
+                    <div class="search-box">
+                        <input type="text" name="q" placeholder="Search hymns..." id="search-input">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#" class="nav-link">Languages <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="/amharic/worship">Amharic</a>
+                        <a href="/oromo/worship">Afan Oromo</a>
+                        <a href="/tigrigna/worship">Tigrigna</a>
+                        <a href="/english/worship">English</a>
+                    </div>
+                </div>
+                <% if (user && user.isAdmin) { %>
+                    <a href="/admin" class="nav-link">Admin</a>
+                <% } %>
+                <% if (user) { %>
+                    <a href="/users/profile" class="nav-link">Profile</a>
+                    <a href="/users/logout" class="nav-link">Logout</a>
+                <% } else { %>
+                    <a href="/users/login" class="nav-link">Login</a>
+                    <a href="/users/register" class="nav-link btn-primary">Sign Up</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hymn-detail">
+            <div class="breadcrumb">
+                <a href="/">Home</a> > 
+                <a href="/<%= hymn.hymnLanguage %>/<%= hymn.category %>">
+                    <%= hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) %> 
+                    <%= hymn.category.charAt(0).toUpperCase() + hymn.category.slice(1) %>
+                </a> > 
+                <span><%= hymn.title %></span>
+            </div>
+            
+            <div class="hymn-header">
+                <h1><%= hymn.title %></h1>
+                <div class="hymn-meta">
+                    <span class="language-badge">
+                        <%= hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) %>
+                    </span>
+                    <span class="category-badge">
+                        <%= hymn.category.charAt(0).toUpperCase() + hymn.category.slice(1) %>
+                    </span>
+                    <span><i class="fas fa-play"></i> <%= hymn.plays || 0 %> plays</span>
+                    <span><i class="fas fa-download"></i> <%= hymn.downloads || 0 %> downloads</span>
+                    <span><i class="fas fa-star"></i> <%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %> (<%= hymn.ratingCount || 0 %>)</span>
+                </div>
+            </div>
+            
+            <div class="hymn-content">
+                <div class="audio-section">
+                    <div class="audio-player">
+                        <audio id="hymn-audio" src="<%= hymn.audioFile %>" preload="metadata"></audio>
+                        <div class="player-controls">
+                            <button class="play-btn" id="play-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="progress-bar" id="progress-bar">
+                                <div class="progress" id="progress"></div>
+                            </div>
+                            <div class="time-display">
+                                <span class="current-time" id="current-time">0:00</span>
+                                <span class="duration" id="duration">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <a href="/hymns/<%= hymn._id %>/download" class="btn btn-primary" onclick="trackDownload('<%= hymn._id %>')">
+                            <i class="fas fa-download"></i> Download MP3
+                        </a>
+                        
+                        <% if (user) { %>
+                            <button class="btn btn-secondary favorite-btn" data-hymn-id="<%= hymn._id %>">
+                                <i class="far fa-heart"></i> Add to Favorites
+                            </button>
+                        <% } else { %>
+                            <a href="/users/login" class="btn btn-secondary">
+                                <i class="far fa-heart"></i> Login to Favorite
+                            </a>
+                        <% } %>
+                        
+                        <!-- Social Share Buttons -->
+                        <div class="share-buttons">
+                            <span class="share-label">Share:</span>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(currentUrl) %>" 
+                               target="_blank" class="share-btn facebook" title="Share on Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(currentUrl) %>&text=<%= encodeURIComponent(hymn.title) %>" 
+                               target="_blank" class="share-btn twitter" title="Share on Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="https://wa.me/?text=<%= encodeURIComponent(hymn.title + ' - ' + currentUrl) %>" 
+                               target="_blank" class="share-btn whatsapp" title="Share on WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="https://t.me/share/url?url=<%= encodeURIComponent(currentUrl) %>&text=<%= encodeURIComponent(hymn.title) %>" 
+                               target="_blank" class="share-btn telegram" title="Share on Telegram">
+                                <i class="fab fa-telegram"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="description-section">
+                    <h2>Description</h2>
+                    <p><%= hymn.description %></p>
+                </div>
+                
+                <div class="lyrics-section">
+                    <h2>Lyrics</h2>
+                    <div class="lyrics-content">
+                        <pre><%= hymn.lyrics %></pre>
+                    </div>
+                </div>
+                
+                <% if (relatedHymns && relatedHymns.length > 0) { %>
+                    <div class="related-hymns">
+                        <h2>Related Hymns</h2>
+                        <div class="hymns-grid">
+                            <% relatedHymns.forEach(function(relatedHymn) { %>
+                                <div class="hymn-card">
+                                    <div class="hymn-image">
+                                        <div class="language-badge">
+                                            <%= relatedHymn.hymnLanguage.charAt(0).toUpperCase() + relatedHymn.hymnLanguage.slice(1) %>
+                                        </div>
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="hymn-content">
+                                        <h3><a href="/hymns/<%= relatedHymn._id %>"><%= relatedHymn.title %></a></h3>
+                                        <p><%= relatedHymn.description.substring(0, 100) %>...</p>
+                                        <div class="hymn-meta">
+                                            <span><i class="fas fa-play"></i> <%= relatedHymn.plays || 0 %></span>
+                                            <span><i class="fas fa-star"></i> <%= relatedHymn.rating ? relatedHymn.rating.toFixed(1) : '0.0' %></span>
+                                        </div>
+                                        <div class="hymn-actions">
+                                            <a href="/hymns/<%= relatedHymn._id %>" class="btn btn-primary">Listen</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <span>Hymns</span>
+                    </div>
+                    <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Audio player functionality
+        const audio = document.getElementById('hymn-audio');
+        const playBtn = document.getElementById('play-btn');
+        const progress = document.getElementById('progress');
+        const currentTime = document.getElementById('current-time');
+        const duration = document.getElementById('duration');
+        const progressBar = document.getElementById('progress-bar');
+
+        function updateAudioPlayer() {
+            if (audio.readyState > 0) {
+                duration.textContent = formatTime(audio.duration);
+                
+                audio.addEventListener('timeupdate', function() {
+                    const percent = (audio.currentTime / audio.duration) * 100;
+                    progress.style.width = percent + '%';
+                    currentTime.textContent = formatTime(audio.currentTime);
+                });
+
+                // Play/Pause functionality
+                playBtn.addEventListener('click', function() {
+                    if (audio.paused) {
+                        audio.play();
+                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    } else {
+                        audio.pause();
+                        playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    }
+                });
+
+                // Seek functionality
+                progressBar.addEventListener('click', function(e) {
+                    const clickX = e.offsetX;
+                    const width = this.offsetWidth;
+                    audio.currentTime = (clickX / width) * audio.duration;
+                });
+
+                // Reset when audio ends
+                audio.addEventListener('ended', function() {
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    progress.style.width = '0%';
+                });
+            } else {
+                setTimeout(updateAudioPlayer, 100);
+            }
+        }
+
+        // Initialize audio player
+        updateAudioPlayer();
+
+        // Format time function
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+
+        // Track download
+        function trackDownload(hymnId) {
+            fetch(`/hymns/${hymnId}/download`, { method: 'GET' })
+                .catch(err => console.log('Download tracked'));
+        }
+    </script>
+</body>
+</html>

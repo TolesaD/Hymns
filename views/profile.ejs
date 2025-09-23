@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Hymns</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                    <span>Hymns</span>
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form action="/search" method="GET">
+                    <div class="search-box">
+                        <input type="text" name="q" placeholder="Search hymns..." id="search-input">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#" class="nav-link">Languages <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="/amharic/worship">Amharic</a>
+                        <a href="/oromo/worship">Afan Oromo</a>
+                        <a href="/tigrigna/worship">Tigrigna</a>
+                        <a href="/english/worship">English</a>
+                    </div>
+                </div>
+                <a href="/users/profile" class="nav-link">Profile</a>
+                <a href="/users/logout" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="profile-container">
+        <div class="container">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-info">
+                        <h1><%= user.username %></h1>
+                        <p>Member since <%= new Date(user.createdAt).toLocaleDateString() %></p>
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <span class="stat-number"><%= user.favorites ? user.favorites.length : 0 %></span>
+                                <span class="stat-label">Favorites</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-number"><%= user.isSubscribed ? 'Yes' : 'No' %></span>
+                                <span class="stat-label">Newsletter</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-outline" id="edit-profile-btn">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </button>
+            </div>
+            
+            <div class="profile-content">
+                <div class="profile-sidebar">
+                    <nav class="profile-nav">
+                        <a href="#favorites" class="nav-item active" data-tab="favorites">
+                            <i class="fas fa-heart"></i>
+                            Favorite Hymns
+                        </a>
+                        <a href="#settings" class="nav-item" data-tab="settings">
+                            <i class="fas fa-cog"></i>
+                            Account Settings
+                        </a>
+                        <a href="#notifications" class="nav-item" data-tab="notifications">
+                            <i class="fas fa-bell"></i>
+                            Notifications
+                        </a>
+                    </nav>
+                </div>
+                
+                <div class="profile-main">
+                    <!-- Favorites Tab -->
+                    <div class="tab-content active" id="favorites-tab">
+                        <div class="tab-header">
+                            <h2>My Favorite Hymns</h2>
+                        </div>
+                        
+                        <% if (user.favorites && user.favorites.length > 0) { %>
+                            <div class="hymns-grid compact">
+                                <% user.favorites.forEach(function(hymn) { %>
+                                    <div class="hymn-card compact">
+                                        <div class="hymn-image">
+                                            <div class="language-badge">
+                                                <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
+                                            </div>
+                                            <i class="fas fa-music"></i>
+                                        </div>
+                                        <div class="hymn-content">
+                                            <h3><%= hymn.title %></h3>
+                                            <p><%= hymn.description ? hymn.description.substring(0, 80) + '...' : 'No description' %></p>
+                                            <div class="hymn-meta">
+                                                <span><i class="fas fa-play"></i> <%= hymn.plays || 0 %></span>
+                                                <span><i class="fas fa-star"></i> <%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %></span>
+                                            </div>
+                                            <div class="hymn-actions">
+                                                <a href="/hymns/<%= hymn._id %>" class="btn btn-primary btn-small">Listen</a>
+                                                <button class="btn-icon favorite-btn active" data-hymn-id="<%= hymn._id %>">
+                                                    <i class="fas fa-heart"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <div class="empty-state">
+                                <i class="fas fa-heart"></i>
+                                <h3>No favorite hymns yet</h3>
+                                <p>Start exploring hymns and add them to your favorites!</p>
+                                <a href="/" class="btn btn-primary">Browse Hymns</a>
+                            </div>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Settings Tab -->
+                    <div class="tab-content" id="settings-tab">
+                        <div class="tab-header">
+                            <h2>Account Settings</h2>
+                        </div>
+                        
+                        <form class="settings-form">
+                            <div class="form-section">
+                                <h3>Profile Information</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" value="<%= user.username %>" disabled>
+                                    <small class="form-help">Username cannot be changed</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" value="<%= user.email %>">
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3>Language Preferences</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Preferred Language</label>
+                                    <select class="form-control">
+                                        <option value="english" <%= user.languagePreference === 'english' ? 'selected' : '' %>>English</option>
+                                        <option value="amharic" <%= user.languagePreference === 'amharic' ? 'selected' : '' %>>Amharic</option>
+                                        <option value="oromo" <%= user.languagePreference === 'oromo' ? 'selected' : '' %>>Afan Oromo</option>
+                                        <option value="tigrigna" <%= user.languagePreference === 'tigrigna' ? 'selected' : '' %>>Tigrigna</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Notifications Tab -->
+                    <div class="tab-content" id="notifications-tab">
+                        <div class="tab-header">
+                            <h2>Notification Settings</h2>
+                        </div>
+                        
+                        <form class="settings-form">
+                            <div class="form-section">
+                                <h3>Email Notifications</h3>
+                                
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label large">
+                                        <input type="checkbox" name="newsletter" <%= user.isSubscribed ? 'checked' : '' %>>
+                                        <span class="checkmark"></span>
+                                        <div>
+                                            <strong>Newsletter Subscription</strong>
+                                            <p>Receive updates about new hymns, features, and community news</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Preferences</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <span>Hymns</span>
+                    </div>
+                    <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Simple tab functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabItems = document.querySelectorAll('.nav-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs
+                    tabItems.forEach(tab => tab.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to current tab
+                    this.classList.add('active');
+                    document.getElementById(tabName + '-tab').classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

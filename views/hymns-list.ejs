@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/">
+                    <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                    <span>Hymns</span>
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form action="/search" method="GET">
+                    <div class="search-box">
+                        <input type="text" name="q" placeholder="Search hymns..." id="search-input">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#" class="nav-link">Languages <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-content">
+                        <a href="/amharic/worship">Amharic</a>
+                        <a href="/oromo/worship">Afan Oromo</a>
+                        <a href="/tigrigna/worship">Tigrigna</a>
+                        <a href="/english/worship">English</a>
+                    </div>
+                </div>
+                <% if (user) { %>
+                    <a href="/users/profile" class="nav-link">Profile</a>
+                    <a href="/users/logout" class="nav-link">Logout</a>
+                <% } else { %>
+                    <a href="/users/login" class="nav-link">Login</a>
+                    <a href="/users/register" class="nav-link btn-primary">Sign Up</a>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hymns-list-container">
+        <div class="container">
+            <div class="page-header">
+                <h1><%= title %></h1>
+                <p>Discover beautiful Orthodox hymns in <%= language.charAt(0).toUpperCase() + language.slice(1) %> for <%= category.charAt(0).toUpperCase() + category.slice(1) %></p>
+            </div>
+            
+            <% if (hymns.length > 0) { %>
+                <div class="hymns-grid">
+                    <% hymns.forEach(function(hymn) { %>
+                        <div class="hymn-card">
+                            <div class="hymn-image">
+                                <div class="language-badge"><%= hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) %></div>
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <div class="hymn-content">
+                                <h3><a href="/hymns/<%= hymn._id %>"><%= hymn.title %></a></h3>
+                                <p class="hymn-description"><%= hymn.description.substring(0, 100) %>...</p>
+                                
+                                <div class="hymn-meta">
+                                    <span class="meta-item">
+                                        <i class="fas fa-play"></i>
+                                        <%= hymn.plays %> plays
+                                    </span>
+                                    <span class="meta-item">
+                                        <i class="fas fa-download"></i>
+                                        <%= hymn.downloads %> downloads
+                                    </span>
+                                    <span class="meta-item">
+                                        <i class="fas fa-star"></i>
+                                        <%= hymn.rating.toFixed(1) %> (<%= hymn.ratingCount %>)
+                                    </span>
+                                </div>
+                                
+                                <div class="hymn-actions">
+                                    <a href="/hymns/<%= hymn._id %>" class="btn btn-primary">
+                                        <i class="fas fa-play"></i> Listen
+                                    </a>
+                                    <a href="/hymns/<%= hymn._id %>/download" class="btn btn-outline">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <% if (user) { %>
+                                        <button class="btn-icon favorite-btn" data-hymn-id="<%= hymn._id %>">
+                                            <i class="far fa-heart"></i>
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+                
+                <% if (totalPages > 1) { %>
+                    <div class="pagination-container">
+                        <div class="pagination">
+                            <% if (currentPage > 1) { %>
+                                <a href="?page=<%= currentPage - 1 %>" class="page-link">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            <% } %>
+                            
+                            <% for (let i = 1; i <= totalPages; i++) { %>
+                                <a href="?page=<%= i %>" class="page-link <%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+                            <% } %>
+                            
+                            <% if (currentPage < totalPages) { %>
+                                <a href="?page=<%= currentPage + 1 %>" class="page-link">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-music"></i>
+                    <h3>No hymns found</h3>
+                    <p>We couldn't find any hymns in this category yet. Check back soon!</p>
+                    <div class="empty-state-actions">
+                        <a href="/" class="btn btn-primary">Back to Home</a>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <span>Hymns</span>
+                    </div>
+                    <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Languages</h3>
+                    <ul>
+                        <li><a href="/amharic/worship">Amharic Hymns</a></li>
+                        <li><a href="/oromo/worship">Afan Oromo Hymns</a></li>
+                        <li><a href="/tigrigna/worship">Tigrigna Hymns</a></li>
+                        <li><a href="/english/worship">English Hymns</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>
