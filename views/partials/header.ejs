@@ -3,6 +3,9 @@
     <a href="/">Home</a>
     <a href="/users/login">Login</a>
     <a href="/users/register">Register</a>
+    <% if (user) { %>
+      <a href="/users/profile">Profile</a>
+    <% } %>
     <% if (user && user.isAdmin) { %>
       <a href="/admin">Admin Dashboard</a>
     <% } %>

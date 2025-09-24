@@ -22,7 +22,7 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <a href="/">
-                    <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                    <img src="/assets/logo.png" alt="Hymns Logo" class="logo">
                     <span>Hymns</span>
                 </a>
             </div>
@@ -192,14 +192,14 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <img src="/assets/logo.png" alt="Hymns Logo">
                         <span>Hymns</span>
                     </div>
                     <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+                <p>&copy; 2025 Hymns Project. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -207,15 +207,25 @@
     <script src="/js/main.js"></script>
     <script>
         // Audio player functionality
-        const audio = document.getElementById('hymn-audio');
-        const playBtn = document.getElementById('play-btn');
-        const progress = document.getElementById('progress');
-        const currentTime = document.getElementById('current-time');
-        const duration = document.getElementById('duration');
-        const progressBar = document.getElementById('progress-bar');
+        document.addEventListener('DOMContentLoaded', function() {
+            const audio = document.getElementById('hymn-audio');
+            const playBtn = document.getElementById('play-btn');
+            const progress = document.getElementById('progress');
+            const currentTime = document.getElementById('current-time');
+            const duration = document.getElementById('duration');
+            const progressBar = document.getElementById('progress-bar');
 
-        function updateAudioPlayer() {
-            if (audio.readyState > 0) {
+            // Format time function
+            function formatTime(seconds) {
+                if (isNaN(seconds)) return '0:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return mins + ':' + (secs < 10 ? '0' : '') + secs;
+            }
+
+            // Initialize audio player when metadata is loaded
+            audio.addEventListener('loadedmetadata', function() {
+                console.log('Audio metadata loaded');
                 duration.textContent = formatTime(audio.duration);
                 
                 audio.addEventListener('timeupdate', function() {
@@ -227,8 +237,12 @@
                 // Play/Pause functionality
                 playBtn.addEventListener('click', function() {
                     if (audio.paused) {
-                        audio.play();
-                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        audio.play().then(() => {
+                            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        }).catch(error => {
+                            console.error('Error playing audio:', error);
+                            alert('Error playing audio. Please check the audio file.');
+                        });
                     } else {
                         audio.pause();
                         playBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -237,31 +251,37 @@
 
                 // Seek functionality
                 progressBar.addEventListener('click', function(e) {
-                    const clickX = e.offsetX;
+                    const rect = this.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
                     const width = this.offsetWidth;
-                    audio.currentTime = (clickX / width) * audio.duration;
+                    const seekTime = (clickX / width) * audio.duration;
+                    audio.currentTime = seekTime;
                 });
 
                 // Reset when audio ends
                 audio.addEventListener('ended', function() {
                     playBtn.innerHTML = '<i class="fas fa-play"></i>';
                     progress.style.width = '0%';
+                    currentTime.textContent = '0:00';
                 });
-            } else {
-                setTimeout(updateAudioPlayer, 100);
-            }
-        }
+            });
 
-        // Initialize audio player
-        updateAudioPlayer();
+            // Handle audio errors
+            audio.addEventListener('error', function(e) {
+                console.error('Audio error:', e);
+                console.log('Audio source:', audio.src);
+                playBtn.disabled = true;
+                playBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                playBtn.title = 'Error loading audio file';
+            });
 
-        // Format time function
-        function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return mins + ':' + (secs < 10 ? '0' : '') + secs;
-        }
+            // Try to load audio if metadata isn't loaded immediately
+            setTimeout(() => {
+                if (audio.readyState >= 1) { // HAVE_ENOUGH_DATA
+                    audio.dispatchEvent(new Event('loadedmetadata'));
+                }
+            }, 1000);
+        });
 
         // Track download
         function trackDownload(hymnId) {

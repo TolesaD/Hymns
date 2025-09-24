@@ -52,7 +52,7 @@
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="profile-info">
-                        <h1><%= user.username %></h1>
+                        <h1 id="username-display"><%= user.username %></h1>
                         <p>Member since <%= new Date(user.createdAt).toLocaleDateString() %></p>
                         <div class="profile-stats">
                             <div class="stat">
@@ -71,6 +71,41 @@
                 </button>
             </div>
             
+            <!-- Edit Profile Modal -->
+            <div id="edit-profile-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Edit Profile</h2>
+                        <button class="close-btn" id="close-modal">&times;</button>
+                    </div>
+                    <form id="edit-profile-form" class="modal-form">
+                        <div class="form-group">
+                            <label class="form-label">Username *</label>
+                            <input type="text" id="edit-username" name="username" class="form-control" 
+                                   value="<%= user.username %>" required maxlength="50">
+                            <small class="form-help">Choose a unique username (3-50 characters)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" id="edit-email" name="email" class="form-control" 
+                                   value="<%= user.email %>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="edit-fullname" name="fullName" class="form-control" 
+                                   value="<%= user.fullName || '' %>" placeholder="Optional">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
             <div class="profile-content">
                 <div class="profile-sidebar">
                     <nav class="profile-nav">
@@ -81,6 +116,10 @@
                         <a href="#settings" class="nav-item" data-tab="settings">
                             <i class="fas fa-cog"></i>
                             Account Settings
+                        </a>
+                        <a href="#password" class="nav-item" data-tab="password">
+                            <i class="fas fa-lock"></i>
+                            Change Password
                         </a>
                         <a href="#notifications" class="nav-item" data-tab="notifications">
                             <i class="fas fa-bell"></i>
@@ -139,18 +178,18 @@
                             <h2>Account Settings</h2>
                         </div>
                         
-                        <form class="settings-form">
+                        <form id="settings-form" class="settings-form">
                             <div class="form-section">
                                 <h3>Profile Information</h3>
                                 <div class="form-group">
                                     <label class="form-label">Username</label>
                                     <input type="text" class="form-control" value="<%= user.username %>" disabled>
-                                    <small class="form-help">Username cannot be changed</small>
+                                    <small class="form-help">Use the Edit Profile button above to change username</small>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" value="<%= user.email %>">
+                                    <input type="email" class="form-control" value="<%= user.email %>" disabled>
                                 </div>
                             </div>
                             
@@ -158,7 +197,7 @@
                                 <h3>Language Preferences</h3>
                                 <div class="form-group">
                                     <label class="form-label">Preferred Language</label>
-                                    <select class="form-control">
+                                    <select class="form-control" name="languagePreference">
                                         <option value="english" <%= user.languagePreference === 'english' ? 'selected' : '' %>>English</option>
                                         <option value="amharic" <%= user.languagePreference === 'amharic' ? 'selected' : '' %>>Amharic</option>
                                         <option value="oromo" <%= user.languagePreference === 'oromo' ? 'selected' : '' %>>Afan Oromo</option>
@@ -171,13 +210,42 @@
                         </form>
                     </div>
                     
+                    <!-- Password Tab -->
+                    <div class="tab-content" id="password-tab">
+                        <div class="tab-header">
+                            <h2>Change Password</h2>
+                        </div>
+                        
+                        <form id="password-form" class="settings-form">
+                            <div class="form-section">
+                                <div class="form-group">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" name="currentPassword" class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" name="newPassword" class="form-control" required minlength="6">
+                                    <small class="form-help">Minimum 6 characters</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" name="confirmPassword" class="form-control" required>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </form>
+                    </div>
+                    
                     <!-- Notifications Tab -->
                     <div class="tab-content" id="notifications-tab">
                         <div class="tab-header">
                             <h2>Notification Settings</h2>
                         </div>
                         
-                        <form class="settings-form">
+                        <form id="notifications-form" class="settings-form">
                             <div class="form-section">
                                 <h3>Email Notifications</h3>
                                 
@@ -206,22 +274,22 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <img src="/assets/logo.png" alt="Hymns Logo">
                         <span>Hymns</span>
                     </div>
                     <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+                <p>&copy; 2025 Hymns Project. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <script src="/js/main.js"></script>
     <script>
-        // Simple tab functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
             const tabItems = document.querySelectorAll('.nav-item');
             const tabContents = document.querySelectorAll('.tab-content');
             
@@ -238,6 +306,157 @@
                     this.classList.add('active');
                     document.getElementById(tabName + '-tab').classList.add('active');
                 });
+            });
+
+            // Edit Profile Modal
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            const editProfileModal = document.getElementById('edit-profile-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const cancelEditBtn = document.getElementById('cancel-edit');
+            const editProfileForm = document.getElementById('edit-profile-form');
+
+            // Open modal
+            editProfileBtn.addEventListener('click', function() {
+                editProfileModal.style.display = 'block';
+            });
+
+            // Close modal
+            function closeModal() {
+                editProfileModal.style.display = 'none';
+            }
+
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelEditBtn.addEventListener('click', closeModal);
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === editProfileModal) {
+                    closeModal();
+                }
+            });
+
+            // Handle edit profile form submission
+            editProfileForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const data = {
+                    username: formData.get('username'),
+                    email: formData.get('email'),
+                    fullName: formData.get('fullName')
+                };
+
+                try {
+                    const response = await fetch('/users/update-profile', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        // Update displayed username
+                        document.getElementById('username-display').textContent = data.username;
+                        alert('Profile updated successfully!');
+                        closeModal();
+                        // Optional: reload page to reflect changes
+                        // window.location.reload();
+                    } else {
+                        alert('Error: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    alert('Error updating profile. Please try again.');
+                }
+            });
+
+            // Handle settings form submission
+            document.getElementById('settings-form')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+
+                try {
+                    const response = await fetch('/users/update-settings', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        alert('Settings updated successfully!');
+                    } else {
+                        alert('Error updating settings');
+                    }
+                } catch (error) {
+                    console.error('Error updating settings:', error);
+                    alert('Error updating settings. Please try again.');
+                }
+            });
+
+            // Handle password form submission
+            document.getElementById('password-form')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+
+                if (data.newPassword !== data.confirmPassword) {
+                    alert('New passwords do not match!');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/users/change-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert('Password changed successfully!');
+                        this.reset();
+                    } else {
+                        alert('Error: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error changing password:', error);
+                    alert('Error changing password. Please try again.');
+                }
+            });
+
+            // Handle notifications form submission
+            document.getElementById('notifications-form')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+
+                try {
+                    const response = await fetch('/users/update-notifications', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        alert('Notification preferences updated!');
+                    } else {
+                        alert('Error updating preferences');
+                    }
+                } catch (error) {
+                    console.error('Error updating notifications:', error);
+                    alert('Error updating notification preferences. Please try again.');
+                }
             });
         });
     </script>

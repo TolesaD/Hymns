@@ -5,6 +5,7 @@ const fs = require('fs');
 const Hymn = require('../models/Hymn');
 const User = require('../models/User');
 const Comment = require('../models/Comment');
+const storageService = require('../services/storageService'); // ✅ Backblaze B2 service
 const router = express.Router();
 
 // Middleware to check if user is admin
@@ -17,7 +18,7 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-// ✅ Fix Multer configuration
+// Multer configuration
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, '../public/uploads');
@@ -27,7 +28,7 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(file.originalname);
         cb(null, uniqueName);
     }
 });
@@ -44,142 +45,9 @@ const upload = multer({
     }
 });
 
-// Add hymn form
-router.get('/hymns/add', isAdmin, (req, res) => {
-    res.render('admin/add-hymn', { title: 'Add New Hymn' });
-});
-
-// ✅ Add hymn with improved validation + error handling
-router.post('/hymns/add', isAdmin, upload.single('audioFile'), async (req, res) => {
-    try {
-        console.log('Request body:', req.body);
-        console.log('Uploaded file:', req.file);
-
-        const { title, description, hymnLanguage, category, lyrics, featured } = req.body;
-
-        // Validation
-        const errors = [];
-        if (!title?.trim()) errors.push('Title is required');
-        if (!description?.trim()) errors.push('Description is required');
-        if (!hymnLanguage) errors.push('Language is required');
-        if (!category) errors.push('Category is required');
-        if (!lyrics?.trim()) errors.push('Lyrics are required');
-
-        if (errors.length > 0) {
-            req.flash('error_msg', errors.join(', '));
-            return res.redirect('/admin/hymns/add');
-        }
-
-        // Allowed values
-        const validLanguages = ['amharic', 'oromo', 'tigrigna', 'english'];
-        const validCategories = ['worship', 'praise', 'thanksgiving', 'slow'];
-
-        const cleanLanguage = hymnLanguage.toLowerCase().trim();
-        const cleanCategory = category.toLowerCase().trim();
-
-        if (!validLanguages.includes(cleanLanguage)) {
-            req.flash('error_msg', `Invalid language. Must be one of: ${validLanguages.join(', ')}`);
-            return res.redirect('/admin/hymns/add');
-        }
-        if (!validCategories.includes(cleanCategory)) {
-            req.flash('error_msg', `Invalid category. Must be one of: ${validCategories.join(', ')}`);
-            return res.redirect('/admin/hymns/add');
-        }
-
-        // File handling
-        let audioFilePath = '/uploads/sample.mp3'; // fallback
-        if (req.file) {
-            audioFilePath = '/uploads/' + req.file.filename;
-        } else {
-            const defaultFilePath = path.join(__dirname, '../public/uploads/sample.mp3');
-            if (!fs.existsSync(defaultFilePath)) {
-                console.log('⚠️ Default sample file not found, using placeholder path');
-            }
-        }
-
-        // Check duplicates
-        const existingHymn = await Hymn.findOne({
-            title: { $regex: new RegExp('^' + title.trim() + '$', 'i') },
-            hymnLanguage: cleanLanguage
-        });
-        if (existingHymn) {
-            req.flash('error_msg', 'A hymn with this title already exists in the selected language.');
-            return res.redirect('/admin/hymns/add');
-        }
-
-        // Create hymn
-        const hymn = new Hymn({
-            title: title.trim(),
-            description: description.trim(),
-            hymnLanguage: cleanLanguage,
-            category: cleanCategory,
-            lyrics: lyrics.trim(),
-            audioFile: audioFilePath,
-            featured: featured === 'on',
-            plays: 0,
-            downloads: 0,
-            rating: 0,
-            ratingCount: 0
-        });
-
-        // Additional validations
-        if (hymn.title.length < 2) {
-            req.flash('error_msg', 'Title must be at least 2 characters long');
-            return res.redirect('/admin/hymns/add');
-        }
-        if (hymn.description.length < 10) {
-            req.flash('error_msg', 'Description must be at least 10 characters long');
-            return res.redirect('/admin/hymns/add');
-        }
-        if (hymn.lyrics.length < 10) {
-            req.flash('error_msg', 'Lyrics must be at least 10 characters long');
-            return res.redirect('/admin/hymns/add');
-        }
-
-        await hymn.save();
-        console.log('✅ Hymn saved successfully:', hymn._id);
-
-        req.flash('success_msg', `Hymn "${hymn.title}" added successfully!`);
-        res.redirect('/admin/hymns');
-
-    } catch (error) {
-        console.error('❌ Error adding hymn:', error);
-
-        let errorMessage = 'Error adding hymn. Please try again.';
-        if (error.name === 'ValidationError') {
-            errorMessage = 'Validation errors: ' + Object.values(error.errors).map(err => err.message).join(', ');
-        } else if (error.code === 11000) {
-            errorMessage = 'A hymn with this title already exists.';
-        } else if (error.code === 'LIMIT_FILE_SIZE') {
-            errorMessage = 'File too large. Maximum size is 10MB.';
-        } else if (error.message.includes('audio files')) {
-            errorMessage = 'Only audio files are allowed (MP3, WAV, etc.).';
-        } else {
-            errorMessage = error.message;
-        }
-
-        req.flash('error_msg', errorMessage);
-        res.redirect('/admin/hymns/add');
-    }
-});
-
-// Manage hymns page
-router.get('/hymns', isAdmin, async (req, res) => {
-    try {
-        const hymns = await Hymn.find().sort({ createdAt: -1 });
-        
-        res.render('admin/hymns', {
-            title: 'Manage Hymns',
-            hymns: hymns
-        });
-    } catch (error) {
-        console.error('Error loading hymns:', error);
-        req.flash('error_msg', 'Error loading hymns');
-        res.redirect('/admin');
-    }
-});
-
-// Admin dashboard
+// --------------------
+// Admin Dashboard
+// --------------------
 router.get('/', isAdmin, async (req, res) => {
     try {
         const hymnCount = await Hymn.countDocuments() || 0;
@@ -211,7 +79,101 @@ router.get('/', isAdmin, async (req, res) => {
     }
 });
 
-// Edit hymn form
+// --------------------
+// Add Hymn Form
+// --------------------
+router.get('/hymns/add', isAdmin, (req, res) => {
+    res.render('admin/add-hymn', { title: 'Add New Hymn' });
+});
+
+// Middleware to inject storage status
+router.use('/hymns/add', (req, res, next) => {
+    res.locals.storageStatus = storageService.getStatus();
+    next();
+});
+
+// Add Hymn with improved error handling and B2 fallback
+router.post('/hymns/add', isAdmin, upload.single('audioFile'), async (req, res) => {
+    try {
+        if (!req.file) {
+            req.flash('error_msg', 'Audio file is required');
+            return res.redirect('/admin/hymns/add');
+        }
+
+        console.log('Storage service status:', storageService.getStatus());
+        let audioUrl;
+
+        try {
+            const uploadResult = await storageService.uploadFile(req.file.path, `hymns/${Date.now()}-${req.file.originalname}`);
+            audioUrl = uploadResult.publicUrl;
+
+            if (uploadResult.isLocal) {
+                req.flash('info_msg', 'Hymn added using local storage (Backblaze B2 not configured)');
+            } else {
+                req.flash('success_msg', 'Hymn uploaded to Backblaze B2 successfully!');
+            }
+        } catch (uploadError) {
+            console.error('Upload error:', uploadError);
+            audioUrl = `/uploads/${req.file.filename}`;
+            req.flash('warning_msg', 'Hymn added with local storage fallback. Backblaze B2: ' + uploadError.message);
+        }
+
+        const { title, description, hymnLanguage, category, lyrics, featured, duration } = req.body;
+        const newHymn = new Hymn({
+            title,
+            description,
+            hymnLanguage,
+            category,
+            audioFile: audioUrl,
+            lyrics,
+            duration: parseInt(duration) || 0,
+            featured: featured === 'on',
+            plays: 0,
+            downloads: 0,
+            rating: 0,
+            ratingCount: 0
+        });
+
+        await newHymn.save();
+
+        try {
+            fs.unlinkSync(req.file.path); // cleanup local file
+        } catch (cleanupError) {
+            console.error('File cleanup error:', cleanupError);
+        }
+
+        res.redirect('/admin/hymns');
+    } catch (error) {
+        console.error('Add hymn error:', error);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (cleanupError) {
+                console.error('Error cleaning up file:', cleanupError);
+            }
+        }
+        req.flash('error_msg', 'Error adding hymn: ' + error.message);
+        res.redirect('/admin/hymns/add');
+    }
+});
+
+// --------------------
+// Manage Hymns
+// --------------------
+router.get('/hymns', isAdmin, async (req, res) => {
+    try {
+        const hymns = await Hymn.find().sort({ createdAt: -1 });
+        res.render('admin/hymns', { title: 'Manage Hymns', hymns });
+    } catch (error) {
+        console.error('Error loading hymns:', error);
+        req.flash('error_msg', 'Error loading hymns');
+        res.redirect('/admin');
+    }
+});
+
+// --------------------
+// Edit Hymn
+// --------------------
 router.get('/hymns/edit/:id', isAdmin, async (req, res) => {
     try {
         const hymn = await Hymn.findById(req.params.id);
@@ -219,11 +181,7 @@ router.get('/hymns/edit/:id', isAdmin, async (req, res) => {
             req.flash('error_msg', 'Hymn not found');
             return res.redirect('/admin/hymns');
         }
-        
-        res.render('admin/edit-hymn', {
-            title: 'Edit Hymn',
-            hymn: hymn
-        });
+        res.render('admin/edit-hymn', { title: 'Edit Hymn', hymn });
     } catch (error) {
         console.error('Error loading hymn for edit:', error);
         req.flash('error_msg', 'Error loading hymn');
@@ -231,7 +189,6 @@ router.get('/hymns/edit/:id', isAdmin, async (req, res) => {
     }
 });
 
-// Update hymn
 router.post('/hymns/edit/:id', isAdmin, upload.single('audioFile'), async (req, res) => {
     try {
         const hymn = await Hymn.findById(req.params.id);
@@ -241,70 +198,38 @@ router.post('/hymns/edit/:id', isAdmin, upload.single('audioFile'), async (req, 
         }
 
         const { title, description, hymnLanguage, category, lyrics, featured } = req.body;
-        
-        // Basic validation
-        if (!title || !title.trim()) {
-            req.flash('error_msg', 'Title is required');
-            return res.redirect(`/admin/hymns/edit/${req.params.id}`);
-        }
-        if (!description || !description.trim()) {
-            req.flash('error_msg', 'Description is required');
-            return res.redirect(`/admin/hymns/edit/${req.params.id}`);
-        }
-        if (!hymnLanguage) {
-            req.flash('error_msg', 'Language is required');
-            return res.redirect(`/admin/hymns/edit/${req.params.id}`);
-        }
-        if (!category) {
-            req.flash('error_msg', 'Category is required');
-            return res.redirect(`/admin/hymns/edit/${req.params.id}`);
-        }
-        if (!lyrics || !lyrics.trim()) {
-            req.flash('error_msg', 'Lyrics are required');
-            return res.redirect(`/admin/hymns/edit/${req.params.id}`);
-        }
-
-        // Update hymn fields
-        hymn.title = title.trim();
-        hymn.description = description.trim();
-        hymn.hymnLanguage = hymnLanguage.toLowerCase().trim();
-        hymn.category = category.toLowerCase().trim();
-        hymn.lyrics = lyrics.trim();
+        hymn.title = title;
+        hymn.description = description;
+        hymn.hymnLanguage = hymnLanguage;
+        hymn.category = category;
+        hymn.lyrics = lyrics;
         hymn.featured = featured === 'on';
 
-        // Update audio file if new one is uploaded
         if (req.file) {
-            hymn.audioFile = '/uploads/' + req.file.filename;
+            try {
+                const uploadResult = await storageService.uploadFile(req.file.path, `hymns/${Date.now()}-${req.file.originalname}`);
+                hymn.audioFile = uploadResult.publicUrl;
+            } catch (uploadError) {
+                hymn.audioFile = `/uploads/${req.file.filename}`;
+                req.flash('warning_msg', 'Audio updated with local fallback: ' + uploadError.message);
+            }
+
+            try { fs.unlinkSync(req.file.path); } catch (cleanupError) { console.error('Cleanup error:', cleanupError); }
         }
 
         await hymn.save();
-        console.log('✅ Hymn updated successfully:', hymn._id);
-        
         req.flash('success_msg', `Hymn "${hymn.title}" updated successfully!`);
         res.redirect('/admin/hymns');
-        
     } catch (error) {
         console.error('Error updating hymn:', error);
-        
-        let errorMessage = 'Error updating hymn. Please try again.';
-        
-        if (error.name === 'ValidationError') {
-            const errors = Object.values(error.errors).map(err => err.message);
-            errorMessage = errors.join(', ');
-        } else if (error.code === 11000) {
-            errorMessage = 'A hymn with this title already exists.';
-        } else if (error.code === 'LIMIT_FILE_SIZE') {
-            errorMessage = 'File too large. Maximum size is 10MB.';
-        } else {
-            errorMessage = error.message;
-        }
-        
-        req.flash('error_msg', errorMessage);
+        req.flash('error_msg', 'Error updating hymn: ' + error.message);
         res.redirect(`/admin/hymns/edit/${req.params.id}`);
     }
 });
 
-// Delete hymn
+// --------------------
+// Delete Hymn
+// --------------------
 router.post('/hymns/delete/:id', isAdmin, async (req, res) => {
     try {
         const hymn = await Hymn.findById(req.params.id);
@@ -312,13 +237,9 @@ router.post('/hymns/delete/:id', isAdmin, async (req, res) => {
             req.flash('error_msg', 'Hymn not found');
             return res.redirect('/admin/hymns');
         }
-
         await Hymn.findByIdAndDelete(req.params.id);
-        console.log('✅ Hymn deleted successfully:', req.params.id);
-        
         req.flash('success_msg', `Hymn "${hymn.title}" deleted successfully!`);
         res.redirect('/admin/hymns');
-        
     } catch (error) {
         console.error('Error deleting hymn:', error);
         req.flash('error_msg', 'Error deleting hymn');
@@ -326,7 +247,9 @@ router.post('/hymns/delete/:id', isAdmin, async (req, res) => {
     }
 });
 
-// User management
+// --------------------
+// User Management
+// --------------------
 router.get('/users', isAdmin, async (req, res) => {
     try {
         const users = await User.find().sort({ createdAt: -1 });
@@ -338,20 +261,13 @@ router.get('/users', isAdmin, async (req, res) => {
     }
 });
 
-// Comment moderation
+// --------------------
+// Comments
+// --------------------
 router.get('/comments', isAdmin, async (req, res) => {
     try {
-        const pendingComments = await Comment.find({ approved: false })
-            .populate('user', 'username')
-            .populate('hymn', 'title')
-            .sort({ createdAt: -1 });
-
-        const approvedComments = await Comment.find({ approved: true })
-            .populate('user', 'username')
-            .populate('hymn', 'title')
-            .sort({ createdAt: -1 })
-            .limit(20);
-
+        const pendingComments = await Comment.find({ approved: false }).populate('user', 'username').populate('hymn', 'title').sort({ createdAt: -1 });
+        const approvedComments = await Comment.find({ approved: true }).populate('user', 'username').populate('hymn', 'title').sort({ createdAt: -1 }).limit(20);
         res.render('admin/comments', { title: 'Moderate Comments', pendingComments, approvedComments });
     } catch (error) {
         console.error(error);
@@ -360,7 +276,6 @@ router.get('/comments', isAdmin, async (req, res) => {
     }
 });
 
-// Approve comment
 router.post('/comments/approve/:id', isAdmin, async (req, res) => {
     try {
         await Comment.findByIdAndUpdate(req.params.id, { approved: true });
@@ -373,7 +288,6 @@ router.post('/comments/approve/:id', isAdmin, async (req, res) => {
     }
 });
 
-// Delete comment
 router.post('/comments/delete/:id', isAdmin, async (req, res) => {
     try {
         await Comment.findByIdAndDelete(req.params.id);

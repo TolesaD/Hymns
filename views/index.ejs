@@ -13,7 +13,7 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <a href="/">
-                    <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                    <img src="/public/logo.png" alt="Hymns Logo" class="logo">
                     <span>Hymns</span>
                 </a>
             </div>
@@ -70,7 +70,7 @@
             <div class="languages-grid">
                 <div class="language-card">
                     <div class="language-icon">
-                        <i class="fas fa-globe-africa"></i>
+                        <i class="fas fa-church"></i>
                     </div>
                     <h3>Amharic</h3>
                     <p>Traditional hymns in Amharic</p>
@@ -83,13 +83,25 @@
                             <span>Praise</span>
                             <span class="count"><%= hymnData.amharic.praise %></span>
                         </div>
+                        <div class="stat">
+                            <span>Thanksgiving</span>
+                            <span class="count"><%= hymnData.amharic.thanksgiving %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Slow</span>
+                            <span class="count"><%= hymnData.amharic.slow %></span>
+                        </div>
+                        <div class="stat total">
+                            <strong>Total</strong>
+                            <strong class="count"><%= hymnData.amharic.total %></strong>
+                        </div>
                     </div>
                     <a href="/amharic/worship" class="btn btn-outline">Browse Amharic</a>
                 </div>
                 
                 <div class="language-card">
                     <div class="language-icon">
-                        <i class="fas fa-music"></i>
+                        <i class="fas fa-church"></i>
                     </div>
                     <h3>Afan Oromo</h3>
                     <p>Hymns in Afan Oromo</p>
@@ -101,6 +113,18 @@
                         <div class="stat">
                             <span>Praise</span>
                             <span class="count"><%= hymnData.oromo.praise %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Thanksgiving</span>
+                            <span class="count"><%= hymnData.oromo.thanksgiving %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Slow</span>
+                            <span class="count"><%= hymnData.oromo.slow %></span>
+                        </div>
+                        <div class="stat total">
+                            <strong>Total</strong>
+                            <strong class="count"><%= hymnData.oromo.total %></strong>
                         </div>
                     </div>
                     <a href="/oromo/worship" class="btn btn-outline">Browse Oromo</a>
@@ -121,13 +145,25 @@
                             <span>Praise</span>
                             <span class="count"><%= hymnData.tigrigna.praise %></span>
                         </div>
+                        <div class="stat">
+                            <span>Thanksgiving</span>
+                            <span class="count"><%= hymnData.tigrigna.thanksgiving %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Slow</span>
+                            <span class="count"><%= hymnData.tigrigna.slow %></span>
+                        </div>
+                        <div class="stat total">
+                            <strong>Total</strong>
+                            <strong class="count"><%= hymnData.tigrigna.total %></strong>
+                        </div>
                     </div>
                     <a href="/tigrigna/worship" class="btn btn-outline">Browse Tigrigna</a>
                 </div>
                 
                 <div class="language-card">
                     <div class="language-icon">
-                        <i class="fas fa-pray"></i>
+                        <i class="fas fa-church"></i>
                     </div>
                     <h3>English</h3>
                     <p>Hymns in English</p>
@@ -139,6 +175,18 @@
                         <div class="stat">
                             <span>Praise</span>
                             <span class="count"><%= hymnData.english.praise %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Thanksgiving</span>
+                            <span class="count"><%= hymnData.english.thanksgiving %></span>
+                        </div>
+                        <div class="stat">
+                            <span>Slow</span>
+                            <span class="count"><%= hymnData.english.slow %></span>
+                        </div>
+                        <div class="stat total">
+                            <strong>Total</strong>
+                            <strong class="count"><%= hymnData.english.total %></strong>
                         </div>
                     </div>
                     <a href="/english/worship" class="btn btn-outline">Browse English</a>
@@ -159,7 +207,7 @@
                                 <div class="language-badge">
                                     <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
                                 </div>
-                                <i class="fas fa-music"></i>
+                                <i class="fas fa-pray"></i>
                             </div>
                             <div class="hymn-content">
                                 <h3><%= hymn.title %></h3>
@@ -209,14 +257,14 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <img src="/assets/logo-white.svg" alt="Hymns Logo">
+                        <img src="/assets/logo.png" alt="Hymns Logo">
                         <span>Hymns</span>
                     </div>
                     <p>Sharing the beauty of Ethiopian Orthodox hymns with the world.</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 Hymns Project. All rights reserved.</p>
+                <p>&copy; 2025 Hymns Project. All rights reserved.</p>
             </div>
         </div>
     </footer>

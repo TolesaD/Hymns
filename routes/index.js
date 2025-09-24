@@ -11,26 +11,33 @@ router.get('/', async (req, res) => {
         
         // Get actual hymn counts from database using hymnLanguage field
         const hymnData = {
-            amharic: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 },
-            oromo: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 },
-            tigrigna: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 },
-            english: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 }
+            amharic: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 },
+            oromo: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 },
+            tigrigna: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 },
+            english: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 }
         };
         
         // Fetch actual counts from database
         for (let lang of languages) {
-            for (let cat of categories) {
-                try {
+            try {
+                // Get counts for each category
+                for (let cat of categories) {
                     const count = await Hymn.countDocuments({ 
-                        hymnLanguage: lang,  // Changed from language to hymnLanguage
+                        hymnLanguage: lang,
                         category: cat 
                     });
                     hymnData[lang][cat] = count;
-                    console.log(`Count for ${lang} ${cat}: ${count}`); // Debug log
-                } catch (error) {
-                    console.error(`Error counting ${lang} ${cat}:`, error);
-                    hymnData[lang][cat] = 0;
+                    hymnData[lang].total += count;
+                    console.log(`Count for ${lang} ${cat}: ${count}`);
                 }
+                
+                // Also get total count for the language
+                const totalCount = await Hymn.countDocuments({ hymnLanguage: lang });
+                hymnData[lang].total = totalCount;
+                console.log(`Total count for ${lang}: ${totalCount}`);
+                
+            } catch (error) {
+                console.error(`Error counting hymns for ${lang}:`, error);
             }
         }
         
@@ -47,10 +54,10 @@ router.get('/', async (req, res) => {
             title: 'Home - Ethiopian Orthodox Hymns',
             featuredHymns: [],
             hymnData: {
-                amharic: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 },
-                oromo: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 },
-                tigrigna: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 },
-                english: { worship: 0, praise: 0, thanksgiving: 0, slow: 0 }
+                amharic: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 },
+                oromo: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 },
+                tigrigna: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 },
+                english: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 }
             },
             languages: ['amharic', 'oromo', 'tigrigna', 'english'],
             categories: ['worship', 'praise', 'thanksgiving', 'slow']
@@ -155,7 +162,7 @@ router.get('/:language/:category', async (req, res, next) => {
         const skip = (page - 1) * limit;
         
         const hymns = await Hymn.find({ 
-            hymnLanguage: language,  // Changed from language to hymnLanguage
+            hymnLanguage: language,
             category: category 
         })
         .skip(skip)
@@ -163,7 +170,7 @@ router.get('/:language/:category', async (req, res, next) => {
         .sort({ createdAt: -1 });
         
         const total = await Hymn.countDocuments({ 
-            hymnLanguage: language,  // Changed from language to hymnLanguage
+            hymnLanguage: language,
             category: category 
         });
         
@@ -183,4 +190,5 @@ router.get('/:language/:category', async (req, res, next) => {
         res.redirect('/');
     }
 });
+
 module.exports = router;
