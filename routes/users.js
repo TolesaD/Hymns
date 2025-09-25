@@ -104,9 +104,11 @@ router.post('/login', [
         }
 
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        console.log('Login attempt for:', email);
 
+        const user = await User.findOne({ email });
         if (!user) {
+            console.log('User not found:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -116,6 +118,7 @@ router.post('/login', [
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
+            console.log('Invalid password for:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -123,23 +126,38 @@ router.post('/login', [
             });
         }
 
-        const isAdmin = user.username === 'Tolesa';
+        // Determine if user is admin
+        const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
+        
+        // Set session
         req.session.user = {
-            id: user._id,
+            id: user._id.toString(),
             username: user.username,
             email: user.email,
             isAdmin: isAdmin
         };
 
-        req.flash('success_msg', `Login successful${isAdmin ? ' as Admin' : ''}`);
+        console.log('Login successful:', user.username, 'Admin:', isAdmin);
 
-        if (isAdmin) {
-            res.redirect('/admin');
-        } else {
-            res.redirect('/');
-        }
+        // Save session explicitly
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                req.flash('error_msg', 'Login error');
+                return res.redirect('/users/login');
+            }
+            
+            req.flash('success_msg', `Welcome back, ${user.username}!`);
+            
+            if (isAdmin) {
+                res.redirect('/admin/dashboard');
+            } else {
+                res.redirect('/');
+            }
+        });
+
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error details:', error);
         req.flash('error_msg', 'Server error during login');
         res.redirect('/users/login');
     }
@@ -161,8 +179,6 @@ router.get('/logout', (req, res) => {
  *  Password Reset Routes
  * =======================
  */
-
-// 🔹 Better test email route
 router.get('/test-email', async (req, res) => {
     try {
         console.log('\n' + '='.repeat(50));
@@ -224,7 +240,6 @@ router.get('/forgot-password', (req, res) => {
     });
 });
 
-// 🔹 Updated forgot-password route with debugging
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
