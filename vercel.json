@@ -1,23 +1,16 @@
 {
   "version": 2,
-  "functions": {
-    "app.js": {
-      "runtime": "nodejs22.x",
-      "maxDuration": 10
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/app.js"
+      "dest": "/app.js",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "MONGODB_URI": "@mongodb_uri",
-    "SESSION_SECRET": "@session_secret",
-    "MAILERSEND_API_TOKEN": "@mailersend_api_token",
-    "B2_KEY_ID": "@b2_key_id",
-    "APP_URL": "@app_url"
-  }
+  ]
 }
