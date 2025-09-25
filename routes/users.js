@@ -161,6 +161,61 @@ router.get('/logout', (req, res) => {
  *  Password Reset Routes
  * =======================
  */
+
+// 🔹 Better test email route
+router.get('/test-email', async (req, res) => {
+    try {
+        console.log('\n' + '='.repeat(50));
+        console.log('TESTING MAILERSEND CONFIGURATION');
+        console.log('='.repeat(50));
+
+        // Test 1: Basic configuration
+        console.log('\n1. Testing basic configuration...');
+        const configTest = await emailService.testConfiguration();
+
+        if (!configTest) {
+            return res.json({ 
+                success: false, 
+                message: '❌ Basic configuration failed',
+                details: 'Check your .env file for MAILERSEND_API_TOKEN and MAILERSEND_FROM_EMAIL'
+            });
+        }
+
+        // Test 2: Send actual test email
+        console.log('\n2. Sending test email...');
+        const testEmail = 'your-email@gmail.com'; // CHANGE THIS TO YOUR REAL EMAIL
+        const emailSent = await emailService.sendTestEmail(testEmail);
+
+        if (emailSent) {
+            return res.json({ 
+                success: true, 
+                message: '✅ Test email sent successfully! Check your inbox.',
+                next_steps: 'If you dont receive the email within 5 minutes, check: 1) Spam folder 2) MailerSend dashboard 3) API token validity'
+            });
+        } else {
+            return res.json({ 
+                success: false, 
+                message: '❌ Failed to send test email',
+                details: 'Check the terminal logs for detailed error information',
+                config: {
+                    hasToken: !!process.env.MAILERSEND_API_TOKEN,
+                    fromEmail: process.env.MAILERSEND_FROM_EMAIL,
+                    fromName: process.env.MAILERSEND_FROM_NAME,
+                    tokenLength: process.env.MAILERSEND_API_TOKEN ? process.env.MAILERSEND_API_TOKEN.length : 0
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Test error:', error);
+        return res.json({ 
+            success: false, 
+            message: '❌ Test failed with exception',
+            error: error.message 
+        });
+    }
+});
+
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
@@ -169,9 +224,18 @@ router.get('/forgot-password', (req, res) => {
     });
 });
 
+// 🔹 Updated forgot-password route with debugging
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
+        console.log('Password reset requested for:', email);
+
+        const configTest = await emailService.testConfiguration();
+        if (!configTest) {
+            req.flash('error_msg', 'Email service is currently unavailable. Please try again later.');
+            return res.redirect('/users/forgot-password');
+        }
+
         const user = await User.findOne({ email });
 
         if (user) {
@@ -181,11 +245,19 @@ router.post('/forgot-password', async (req, res) => {
             await user.save();
 
             const resetLink = `${req.protocol}://${req.get('host')}/users/reset-password/${resetToken}`;
+            console.log('Generated reset link:', resetLink);
+
             const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, resetLink);
 
-            if (!emailSent) {
-                req.flash('error_msg', 'Error sending email. Please try again later.');
+            if (emailSent) {
+                console.log('Password reset email sent successfully to:', email);
+                req.flash('success_msg', 'Password reset link has been sent to your email.');
+            } else {
+                console.error('Failed to send password reset email to:', email);
+                req.flash('error_msg', 'Failed to send email. Please try again later.');
             }
+        } else {
+            console.log('Password reset requested for non-existent email:', email);
         }
 
         req.flash('success_msg', 'If an account with that email exists, a password reset link has been sent.');
