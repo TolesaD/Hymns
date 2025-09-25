@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hymns App - Health Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .status { padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .healthy { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Hymns App - Static Health Check</h1>
+    <div class="status healthy">
+        <h2>✅ Static Server Running</h2>
+        <p>This static page confirms the server is serving files.</p>
+        <p>Timestamp: <span id="timestamp"></span></p>
+    </div>
+    
+    <h3>Next Steps:</h3>
+    <ul>
+        <li><a href="/health">Dynamic Health Check</a> - Tests Node.js backend</li>
+        <li><a href="/debug-env">Environment Debug</a> - Checks configuration</li>
+        <li><a href="/">Homepage</a> - Main application</li>
+    </ul>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toISOString();
+    </script>
+</body>
+</html>

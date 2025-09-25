@@ -4,15 +4,11 @@ const { check, validationResult } = require('express-validator');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Hymn = require('../models/Hymn');
-const emailService = require('../services/emailService'); // MailerSend service
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
-/**
- * =======================
- *  Register Routes
- * =======================
- */
+// Register Routes
 router.get('/register', (req, res) => {
     if (req.session.user) {
         return res.redirect('/');
@@ -73,19 +69,18 @@ router.post('/register', [
     }
 });
 
-/**
- * =======================
- *  Login / Logout Routes
- * =======================
- */
+// Login Routes
 router.get('/login', (req, res) => {
     if (req.session.user) {
+        console.log('User already logged in, redirecting to home');
         return res.redirect('/');
     }
     res.render('login', { 
         title: 'Login',
         errors: [],
-        email: ''
+        email: '',
+        success_msg: req.flash('success_msg'),
+        error_msg: req.flash('error_msg')
     });
 });
 
@@ -94,6 +89,8 @@ router.post('/login', [
     check('password', 'Password is required').notEmpty()
 ], async (req, res) => {
     try {
+        console.log('🔐 Login attempt for:', req.body.email);
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.render('login', {
@@ -104,9 +101,10 @@ router.post('/login', [
         }
 
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
 
         if (!user) {
+            console.log('❌ User not found:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -116,6 +114,7 @@ router.post('/login', [
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
+            console.log('❌ Password mismatch for:', user.username);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -123,99 +122,151 @@ router.post('/login', [
             });
         }
 
-        const isAdmin = user.username === 'Tolesa';
-        req.session.user = {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            isAdmin: isAdmin
-        };
+        // Determine if user is admin
+        const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
+        console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        req.flash('success_msg', `Login successful${isAdmin ? ' as Admin' : ''}`);
+        // Regenerate session for security
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error('❌ Session regenerate error:', err);
+                return res.render('login', {
+                    title: 'Login',
+                    errors: [{ msg: 'Session error. Please try again.' }],
+                    email: req.body.email || ''
+                });
+            }
 
-        if (isAdmin) {
-            res.redirect('/admin');
-        } else {
-            res.redirect('/');
-        }
+            // Set session data
+            req.session.user = {
+                id: user._id.toString(),
+                username: user.username,
+                email: user.email,
+                isAdmin: isAdmin
+            };
+
+            console.log('💾 Session data set:', req.session.user);
+
+            // Save session and redirect
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('❌ Session save error:', saveErr);
+                    return res.render('login', {
+                        title: 'Login',
+                        errors: [{ msg: 'Login error. Please try again.' }],
+                        email: req.body.email || ''
+                    });
+                }
+
+                console.log('✅ Session saved successfully');
+                req.flash('success_msg', `Welcome back, ${user.username}!`);
+                
+                // FIXED: Redirect to /admin instead of /admin/dashboard
+                if (isAdmin) {
+                    console.log('➡️ Redirecting to admin dashboard');
+                    res.redirect('/admin'); // Changed from /admin/dashboard
+                } else {
+                    console.log('➡️ Redirecting to homepage');
+                    res.redirect('/');
+                }
+            });
+        });
+
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('💥 Login error:', error);
         req.flash('error_msg', 'Server error during login');
         res.redirect('/users/login');
     }
 });
 
+// FIXED: Logout Route
 router.get('/logout', (req, res) => {
-    req.flash('success_msg', 'You have been logged out');
-    req.session.destroy(err => {
+    const username = req.session.user ? req.session.user.username : 'Unknown user';
+    console.log('👋 Logout requested by:', username);
+    
+    // Store flash message BEFORE destroying session
+    req.flash('success_msg', 'You have been logged out successfully.');
+    
+    // Destroy the session
+    req.session.destroy((err) => {
         if (err) {
             console.error('Session destruction error:', err);
-            return res.redirect('/');
+            // Even if session destruction fails, redirect to login
+            return res.redirect('/users/login');
         }
-        res.redirect('/');
+        
+        // Clear the cookie
+        res.clearCookie('connect.sid');
+        
+        // Redirect to login page
+        res.redirect('/users/login');
     });
 });
 
-/**
- * =======================
- *  Password Reset Routes
- * =======================
- */
+// Profile Route
+router.get('/profile', async (req, res) => {
+    console.log('👤 Profile access attempt - Session user:', req.session.user);
+    
+    if (!req.session.user) {
+        console.log('❌ No session user - redirecting to login');
+        req.flash('error_msg', 'Please log in to view your profile');
+        return res.redirect('/users/login');
+    }
 
-// 🔹 Better test email route
-router.get('/test-email', async (req, res) => {
     try {
-        console.log('\n' + '='.repeat(50));
-        console.log('TESTING MAILERSEND CONFIGURATION');
-        console.log('='.repeat(50));
-
-        // Test 1: Basic configuration
-        console.log('\n1. Testing basic configuration...');
-        const configTest = await emailService.testConfiguration();
-
-        if (!configTest) {
-            return res.json({ 
-                success: false, 
-                message: '❌ Basic configuration failed',
-                details: 'Check your .env file for MAILERSEND_API_TOKEN and MAILERSEND_FROM_EMAIL'
-            });
+        const user = await User.findById(req.session.user.id).populate('favorites');
+        if (!user) {
+            console.log('❌ User not found in database');
+            req.session.destroy(); // Clear invalid session
+            req.flash('error_msg', 'User not found. Please log in again.');
+            return res.redirect('/users/login');
         }
 
-        // Test 2: Send actual test email
-        console.log('\n2. Sending test email...');
-        const testEmail = 'your-email@gmail.com'; // CHANGE THIS TO YOUR REAL EMAIL
-        const emailSent = await emailService.sendTestEmail(testEmail);
-
-        if (emailSent) {
-            return res.json({ 
-                success: true, 
-                message: '✅ Test email sent successfully! Check your inbox.',
-                next_steps: 'If you dont receive the email within 5 minutes, check: 1) Spam folder 2) MailerSend dashboard 3) API token validity'
-            });
-        } else {
-            return res.json({ 
-                success: false, 
-                message: '❌ Failed to send test email',
-                details: 'Check the terminal logs for detailed error information',
-                config: {
-                    hasToken: !!process.env.MAILERSEND_API_TOKEN,
-                    fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-                    fromName: process.env.MAILERSEND_FROM_NAME,
-                    tokenLength: process.env.MAILERSEND_API_TOKEN ? process.env.MAILERSEND_API_TOKEN.length : 0
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('Test error:', error);
-        return res.json({ 
-            success: false, 
-            message: '❌ Test failed with exception',
-            error: error.message 
+        console.log('✅ Profile loaded for:', user.username);
+        res.render('profile', {
+            title: 'My Profile',
+            user: user
         });
+    } catch (error) {
+        console.error('Profile error:', error);
+        req.flash('error_msg', 'Error loading profile');
+        res.redirect('/');
     }
 });
 
+// Favorites Route
+router.post('/favorites/:hymnId', async (req, res) => {
+    console.log('❤️ Favorites request - Session user:', req.session.user);
+    
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Please log in' });
+    }
+
+    try {
+        const user = await User.findById(req.session.user.id);
+        const hymnId = req.params.hymnId;
+
+        if (!user) {
+            req.session.destroy();
+            return res.status(401).json({ error: 'User not found. Please log in again.' });
+        }
+
+        if (user.favorites.includes(hymnId)) {
+            user.favorites = user.favorites.filter(id => id.toString() !== hymnId);
+            await user.save();
+            return res.json({ action: 'removed', message: 'Removed from favorites' });
+        } else {
+            user.favorites.push(hymnId);
+            await user.save();
+            return res.json({ action: 'added', message: 'Added to favorites' });
+        }
+    } catch (error) {
+        console.error('Favorites error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Password Reset Routes
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
@@ -224,17 +275,10 @@ router.get('/forgot-password', (req, res) => {
     });
 });
 
-// 🔹 Updated forgot-password route with debugging
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
         console.log('Password reset requested for:', email);
-
-        const configTest = await emailService.testConfiguration();
-        if (!configTest) {
-            req.flash('error_msg', 'Email service is currently unavailable. Please try again later.');
-            return res.redirect('/users/forgot-password');
-        }
 
         const user = await User.findOne({ email });
 
@@ -244,7 +288,7 @@ router.post('/forgot-password', async (req, res) => {
             user.resetPasswordExpires = Date.now() + 3600000;
             await user.save();
 
-            const resetLink = `${req.protocol}://${req.get('host')}/users/reset-password/${resetToken}`;
+            const resetLink = `${process.env.APP_URL || req.protocol + '://' + req.get('host')}/users/reset-password/${resetToken}`;
             console.log('Generated reset link:', resetLink);
 
             const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, resetLink);
@@ -270,119 +314,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-router.get('/reset-password/:token', async (req, res) => {
-    try {
-        const user = await User.findOne({
-            resetPasswordToken: req.params.token,
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) {
-            req.flash('error_msg', 'Password reset token is invalid or expired.');
-            return res.redirect('/users/forgot-password');
-        }
-
-        res.render('reset-password', {
-            title: 'Reset Password - Hymns',
-            token: req.params.token,
-            error_msg: req.flash('error_msg'),
-            success_msg: req.flash('success_msg')
-        });
-    } catch (error) {
-        console.error('Reset password error:', error);
-        req.flash('error_msg', 'Error processing request.');
-        res.redirect('/users/forgot-password');
-    }
-});
-
-router.post('/reset-password/:token', async (req, res) => {
-    try {
-        const { password, confirmPassword } = req.body;
-        if (password !== confirmPassword) {
-            req.flash('error_msg', 'Passwords do not match.');
-            return res.redirect(`/users/reset-password/${req.params.token}`);
-        }
-
-        const user = await User.findOne({
-            resetPasswordToken: req.params.token,
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) {
-            req.flash('error_msg', 'Password reset token is invalid or expired.');
-            return res.redirect('/users/forgot-password');
-        }
-
-        user.password = password;
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        await user.save();
-
-        req.flash('success_msg', 'Password reset successful. You can now log in.');
-        res.redirect('/users/login');
-    } catch (error) {
-        console.error('Reset password error:', error);
-        req.flash('error_msg', 'Error resetting password.');
-        res.redirect(`/users/reset-password/${req.params.token}`);
-    }
-});
-
-/**
- * =======================
- *  Profile & Favorites
- * =======================
- */
-router.get('/profile', async (req, res) => {
-    if (!req.session.user) {
-        req.flash('error_msg', 'Please log in to view your profile');
-        return res.redirect('/users/login');
-    }
-
-    try {
-        const user = await User.findById(req.session.user.id).populate('favorites');
-        if (!user) {
-            req.flash('error_msg', 'User not found');
-            return res.redirect('/');
-        }
-
-        res.render('profile', {
-            title: 'My Profile',
-            user: user
-        });
-    } catch (error) {
-        console.error('Profile error:', error);
-        req.flash('error_msg', 'Error loading profile');
-        res.redirect('/');
-    }
-});
-
-router.post('/favorites/:hymnId', async (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Please log in' });
-
-    try {
-        const user = await User.findById(req.session.user.id);
-        const hymnId = req.params.hymnId;
-
-        if (user.favorites.includes(hymnId)) {
-            user.favorites = user.favorites.filter(id => id.toString() !== hymnId);
-            await user.save();
-            return res.json({ action: 'removed', message: 'Removed from favorites' });
-        } else {
-            user.favorites.push(hymnId);
-            await user.save();
-            return res.json({ action: 'added', message: 'Added to favorites' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-/**
- * =======================
- *  Update Profile & Change Password
- * =======================
- */
+// Update Profile Route
 router.post('/update-profile', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -408,6 +340,7 @@ router.post('/update-profile', async (req, res) => {
     }
 });
 
+// Change Password Route
 router.post('/change-password', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -428,7 +361,7 @@ router.post('/change-password', async (req, res) => {
     }
 });
 
-// Update Notification Preferences Route
+// Update Notifications Route
 router.post('/update-notifications', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });

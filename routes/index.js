@@ -2,6 +2,39 @@ const express = require('express');
 const Hymn = require('../models/Hymn');
 const router = express.Router();
 
+// Health check endpoint - FIXED
+router.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString(),
+        session: {
+            id: req.sessionID,
+            user: req.session.user || null
+        },
+        database: 'Connected' // You might want to add a real DB check
+    });
+});
+
+// Debug environment endpoint - FIXED
+router.get('/debug-env', (req, res) => {
+    res.json({
+        environment: process.env.NODE_ENV || 'development',
+        appUrl: process.env.APP_URL || 'Not set',
+        nodeVersion: process.version,
+        features: {
+            mongodb: !!process.env.MONGODB_URI,
+            mailersend: !!process.env.MAILERSEND_API_TOKEN,
+            backblaze: !!process.env.B2_KEY_ID,
+            sessions: !!process.env.SESSION_SECRET
+        },
+        session: {
+            id: req.sessionID,
+            user: req.session.user
+        }
+    });
+});
+
 // Homepage
 router.get('/', async (req, res) => {
     try {
@@ -28,13 +61,11 @@ router.get('/', async (req, res) => {
                     });
                     hymnData[lang][cat] = count;
                     hymnData[lang].total += count;
-                    console.log(`Count for ${lang} ${cat}: ${count}`);
                 }
                 
                 // Also get total count for the language
                 const totalCount = await Hymn.countDocuments({ hymnLanguage: lang });
                 hymnData[lang].total = totalCount;
-                console.log(`Total count for ${lang}: ${totalCount}`);
                 
             } catch (error) {
                 console.error(`Error counting hymns for ${lang}:`, error);
@@ -46,7 +77,8 @@ router.get('/', async (req, res) => {
             featuredHymns,
             hymnData,
             languages,
-            categories
+            categories,
+            user: req.session.user || null // Add user to all renders
         });
     } catch (error) {
         console.error('Homepage error:', error);
@@ -60,7 +92,8 @@ router.get('/', async (req, res) => {
                 english: { worship: 0, praise: 0, thanksgiving: 0, slow: 0, total: 0 }
             },
             languages: ['amharic', 'oromo', 'tigrigna', 'english'],
-            categories: ['worship', 'praise', 'thanksgiving', 'slow']
+            categories: ['worship', 'praise', 'thanksgiving', 'slow'],
+            user: req.session.user || null
         });
     }
 });
@@ -88,7 +121,8 @@ router.get('/search', async (req, res) => {
         res.render('search', {
             title: `Search Results for "${query}"`,
             hymns: hymns || [],
-            query
+            query,
+            user: req.session.user || null
         });
     } catch (error) {
         console.error(error);
@@ -182,13 +216,27 @@ router.get('/:language/:category', async (req, res, next) => {
             language,
             category,
             currentPage: page,
-            totalPages
+            totalPages,
+            user: req.session.user || null
         });
     } catch (error) {
         console.error(error);
         req.flash('error_msg', 'Error loading hymns');
         res.redirect('/');
     }
+});
+
+// Test route for session debugging
+router.get('/test-session', (req, res) => {
+    res.json({
+        sessionId: req.sessionID,
+        sessionUser: req.session.user,
+        cookies: req.headers.cookie,
+        headers: {
+            'user-agent': req.headers['user-agent'],
+            'host': req.headers['host']
+        }
+    });
 });
 
 module.exports = router;

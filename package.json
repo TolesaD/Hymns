@@ -5,7 +5,12 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "vercel-build": "npm install && npm run build",
+    "build": "echo 'Building Hymns App...'"
+  },
+  "engines": {
+    "node": "22.x"
   },
   "dependencies": {
     "axios": "^1.12.2",

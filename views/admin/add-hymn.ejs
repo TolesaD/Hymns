@@ -147,25 +147,25 @@
         </div>
     </div>
 
-    <script>
-        // Form validation
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('.hymn-form');
+<script>
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.hymn-form');
+        
+        form.addEventListener('submit', function(e) {
+            const title = form.querySelector('input[name="title"]').value.trim();
+            const description = form.querySelector('textarea[name="description"]').value.trim();
+            const language = form.querySelector('select[name="hymnLanguage"]').value; // FIXED: hymnLanguage
+            const category = form.querySelector('select[name="category"]').value;
+            const lyrics = form.querySelector('textarea[name="lyrics"]').value.trim();
             
-            form.addEventListener('submit', function(e) {
-                const title = form.querySelector('input[name="title"]').value.trim();
-                const description = form.querySelector('textarea[name="description"]').value.trim();
-                const language = form.querySelector('select[name="language"]').value;
-                const category = form.querySelector('select[name="category"]').value;
-                const lyrics = form.querySelector('textarea[name="lyrics"]').value.trim();
-                
-                if (!title || !description || !language || !category || !lyrics) {
-                    e.preventDefault();
-                    alert('Please fill in all required fields marked with *');
-                    return false;
-                }
-            });
+            if (!title || !description || !language || !category || !lyrics) {
+                e.preventDefault();
+                alert('Please fill in all required fields marked with *');
+                return false;
+            }
         });
-    </script>
+    });
+</script>
 </body>
 </html>
