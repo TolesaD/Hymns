@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "app.js": {
-      "runtime": "vercel-node@3.0.0"
+      "runtime": "nodejs22.x",
+      "maxDuration": 10
     }
   },
   "routes": [
@@ -12,6 +13,11 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "MONGODB_URI": "@mongodb_uri",
+    "SESSION_SECRET": "@session_secret",
+    "MAILERSEND_API_TOKEN": "@mailersend_api_token",
+    "B2_KEY_ID": "@b2_key_id",
+    "APP_URL": "@app_url"
   }
 }
