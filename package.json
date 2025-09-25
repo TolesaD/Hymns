@@ -18,7 +18,7 @@
     "connect-flash": "^0.1.1",
     "bcryptjs": "^2.4.3",
     "express-validator": "^7.0.1",
-    "multer": "^1.4.5",
+    "multer": "^1.4.5-1st.1",
     "dotenv": "^16.0.3",
     "backblaze-b2": "^1.0.0",
     "axios": "^1.4.0",
