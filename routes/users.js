@@ -102,83 +102,116 @@ router.post('/login', [
     check('password', 'Password is required').notEmpty()
 ], async (req, res) => {
     try {
-        console.log('Login attempt started for:', req.body.email);
+        console.log('🔐 Login attempt started for:', req.body.email);
         
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log('Validation errors:', errors.array());
+            console.log('❌ Validation errors:', errors.array());
             return res.render('login', {
                 title: 'Login',
                 errors: errors.array(),
-                email: req.body.email || ''
+                email: req.body.email || '',
+                success_msg: [],
+                error_msg: []
             });
         }
 
         const { email, password } = req.body;
-        console.log('Looking for user with email:', email);
+        console.log('🔍 Looking for user with email:', email);
 
-        const user = await User.findOne({ email });
+        // Find user by email
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
         if (!user) {
-            console.log('User not found for email:', email);
+            console.log('❌ User not found for email:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
-                email: req.body.email || ''
+                email: req.body.email || '',
+                success_msg: [],
+                error_msg: []
             });
         }
 
-        console.log('User found:', user.username);
-        console.log('Comparing passwords...');
+        console.log('✅ User found:', user.username);
 
+        // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            console.log('Password mismatch for user:', user.username);
+            console.log('❌ Password mismatch for user:', user.username);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
-                email: req.body.email || ''
+                email: req.body.email || '',
+                success_msg: [],
+                error_msg: []
             });
         }
 
         // Determine if user is admin
         const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
-        console.log('Login successful. User:', user.username, 'Admin:', isAdmin);
+        console.log('🎉 Login successful. User:', user.username, 'Admin:', isAdmin);
 
         // Set session data
-        req.session.user = {
-            id: user._id.toString(),
-            username: user.username,
-            email: user.email,
-            isAdmin: isAdmin
-        };
-
-        console.log('Session data set:', req.session.user);
-
-        // Save session and then redirect
-        req.session.save((err) => {
+        req.session.regenerate((err) => {
             if (err) {
-                console.error('Session save error:', err);
-                req.flash('error_msg', 'Login error - session issue');
-                return res.redirect('/users/login');
+                console.error('❌ Session regenerate error:', err);
+                return res.render('login', {
+                    title: 'Login',
+                    errors: [{ msg: 'Session error. Please try again.' }],
+                    email: req.body.email || '',
+                    success_msg: [],
+                    error_msg: []
+                });
             }
-            
-            console.log('Session saved successfully');
-            req.flash('success_msg', `Welcome back, ${user.username}!`);
-            
-            if (isAdmin) {
-                console.log('Redirecting to admin dashboard');
-                res.redirect('/admin/dashboard');
-            } else {
-                console.log('Redirecting to homepage');
-                res.redirect('/');
-            }
+
+            req.session.user = {
+                id: user._id.toString(),
+                username: user.username,
+                email: user.email,
+                isAdmin: isAdmin
+            };
+
+            console.log('💾 Session data set:', req.session.user);
+
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('❌ Session save error:', saveErr);
+                    return res.render('login', {
+                        title: 'Login',
+                        errors: [{ msg: 'Login error. Please try again.' }],
+                        email: req.body.email || '',
+                        success_msg: [],
+                        error_msg: []
+                    });
+                }
+
+                console.log('✅ Session saved successfully');
+                
+                // Set flash message
+                req.flash('success_msg', `Welcome back, ${user.username}!`);
+                
+                // Redirect based on user type
+                if (isAdmin) {
+                    console.log('➡️ Redirecting to admin dashboard');
+                    return res.redirect('/admin/dashboard');
+                } else {
+                    console.log('➡️ Redirecting to homepage');
+                    return res.redirect('/');
+                }
+            });
         });
 
     } catch (error) {
-        console.error('Login error details:', error);
-        console.error('Error stack:', error.stack);
-        req.flash('error_msg', 'Server error during login');
-        res.redirect('/users/login');
+        console.error('💥 Login error details:', error);
+        console.error('💥 Error stack:', error.stack);
+        
+        return res.render('login', {
+            title: 'Login',
+            errors: [{ msg: 'Server error during login. Please try again.' }],
+            email: req.body.email || '',
+            success_msg: [],
+            error_msg: []
+        });
     }
 });
 
