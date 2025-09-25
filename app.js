@@ -4,11 +4,15 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 require('dotenv').config();
 
 const app = express();
 
-// Critical: Vercel serverless functions need proper connection handling
+// ----------------------
+// MongoDB Connection
+// ----------------------
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hymns-app', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -20,18 +24,21 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hymns-app
 .then(() => console.log('✅ MongoDB connected successfully'))
 .catch(err => {
     console.error('❌ MongoDB connection error:', err);
-    // Don't exit process in production
 });
 
 // Trust proxy for Vercel
 app.set('trust proxy', 1);
 
+// ----------------------
 // Middleware
+// ----------------------
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session configuration - CRITICAL FOR PRODUCTION
+// ----------------------
+// Session Configuration
+// ----------------------
 app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
     resave: false,
@@ -56,7 +63,7 @@ app.use(session({
 // Flash messages
 app.use(flash());
 
-// Global variables for templates
+// Global template variables
 app.use((req, res, next) => {
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
@@ -65,11 +72,44 @@ app.use((req, res, next) => {
     next();
 });
 
-// View engine setup
+// ----------------------
+// Multer 2.x Setup
+// ----------------------
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${uniqueSuffix}-${file.originalname}`);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('audio/') || file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only audio or image files are allowed!'), false);
+        }
+    }
+});
+
+// Make Multer available in routes via app.locals
+app.locals.upload = upload;
+
+// ----------------------
+// View Engine
+// ----------------------
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Debug middleware
+// ----------------------
+// Debug Middleware
+// ----------------------
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     console.log('Session ID:', req.sessionID);
@@ -77,13 +117,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// ----------------------
 // Routes
+// ----------------------
 app.use('/', require('./routes/index'));
 app.use('/users', require('./routes/users'));
 app.use('/hymns', require('./routes/hymns'));
 app.use('/admin', require('./routes/admin'));
 
-// Health check endpoint
+// ----------------------
+// Health Check
+// ----------------------
 app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'OK',
@@ -96,7 +140,9 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Debug endpoint to check environment variables (remove in production)
+// ----------------------
+// Debug Environment Variables
+// ----------------------
 app.get('/debug-env', (req, res) => {
     res.json({
         NODE_ENV: process.env.NODE_ENV,
@@ -108,7 +154,9 @@ app.get('/debug-env', (req, res) => {
     });
 });
 
-// 404 handler
+// ----------------------
+// 404 Handler
+// ----------------------
 app.use((req, res) => {
     console.log('404 Error - Route not found:', req.url);
     res.status(404).render('404', {
@@ -117,23 +165,28 @@ app.use((req, res) => {
     });
 });
 
-// Error handler
+// ----------------------
+// Error Handler
+// ----------------------
 app.use((err, req, res, next) => {
     console.error('🚨 Server Error:', err.stack);
+    req.flash('error_msg', err.message);
     res.status(500).render('error', {
         title: 'Server Error',
-        message: process.env.NODE_ENV === 'production' 
-            ? 'Something went wrong. Please try again later.' 
+        message: process.env.NODE_ENV === 'production'
+            ? 'Something went wrong. Please try again later.'
             : err.message,
         user: req.session.user || null
     });
 });
 
+// ----------------------
+// Server / Vercel Export
+// ----------------------
 const PORT = process.env.PORT || 3000;
 
-// Vercel requires module.exports for serverless functions
 if (process.env.NODE_ENV === 'production') {
-    module.exports = app;
+    module.exports = app; // for Vercel serverless
 } else {
     app.listen(PORT, () => {
         console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
