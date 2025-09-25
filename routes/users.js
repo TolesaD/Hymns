@@ -4,9 +4,15 @@ const { check, validationResult } = require('express-validator');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Hymn = require('../models/Hymn');
-const emailService = require('../services/emailService'); // MailerSend service
+const emailService = require('../services/emailService');
 
 const router = express.Router();
+
+// Debug middleware
+router.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 
 /**
  * =======================
@@ -85,7 +91,9 @@ router.get('/login', (req, res) => {
     res.render('login', { 
         title: 'Login',
         errors: [],
-        email: ''
+        email: '',
+        success_msg: req.flash('success_msg'),
+        error_msg: req.flash('error_msg')
     });
 });
 
@@ -94,8 +102,11 @@ router.post('/login', [
     check('password', 'Password is required').notEmpty()
 ], async (req, res) => {
     try {
+        console.log('Login attempt started for:', req.body.email);
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.log('Validation errors:', errors.array());
             return res.render('login', {
                 title: 'Login',
                 errors: errors.array(),
@@ -104,11 +115,11 @@ router.post('/login', [
         }
 
         const { email, password } = req.body;
-        console.log('Login attempt for:', email);
+        console.log('Looking for user with email:', email);
 
         const user = await User.findOne({ email });
         if (!user) {
-            console.log('User not found:', email);
+            console.log('User not found for email:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -116,9 +127,12 @@ router.post('/login', [
             });
         }
 
+        console.log('User found:', user.username);
+        console.log('Comparing passwords...');
+
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            console.log('Invalid password for:', email);
+            console.log('Password mismatch for user:', user.username);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -128,8 +142,9 @@ router.post('/login', [
 
         // Determine if user is admin
         const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
-        
-        // Set session
+        console.log('Login successful. User:', user.username, 'Admin:', isAdmin);
+
+        // Set session data
         req.session.user = {
             id: user._id.toString(),
             username: user.username,
@@ -137,39 +152,44 @@ router.post('/login', [
             isAdmin: isAdmin
         };
 
-        console.log('Login successful:', user.username, 'Admin:', isAdmin);
+        console.log('Session data set:', req.session.user);
 
-        // Save session explicitly
+        // Save session and then redirect
         req.session.save((err) => {
             if (err) {
                 console.error('Session save error:', err);
-                req.flash('error_msg', 'Login error');
+                req.flash('error_msg', 'Login error - session issue');
                 return res.redirect('/users/login');
             }
             
+            console.log('Session saved successfully');
             req.flash('success_msg', `Welcome back, ${user.username}!`);
             
             if (isAdmin) {
+                console.log('Redirecting to admin dashboard');
                 res.redirect('/admin/dashboard');
             } else {
+                console.log('Redirecting to homepage');
                 res.redirect('/');
             }
         });
 
     } catch (error) {
         console.error('Login error details:', error);
+        console.error('Error stack:', error.stack);
         req.flash('error_msg', 'Server error during login');
         res.redirect('/users/login');
     }
 });
 
 router.get('/logout', (req, res) => {
+    console.log('Logout requested by:', req.session.user?.username);
     req.flash('success_msg', 'You have been logged out');
-    req.session.destroy(err => {
+    req.session.destroy((err) => {
         if (err) {
             console.error('Session destruction error:', err);
-            return res.redirect('/');
         }
+        console.log('Session destroyed, redirecting to home');
         res.redirect('/');
     });
 });
@@ -179,59 +199,6 @@ router.get('/logout', (req, res) => {
  *  Password Reset Routes
  * =======================
  */
-router.get('/test-email', async (req, res) => {
-    try {
-        console.log('\n' + '='.repeat(50));
-        console.log('TESTING MAILERSEND CONFIGURATION');
-        console.log('='.repeat(50));
-
-        // Test 1: Basic configuration
-        console.log('\n1. Testing basic configuration...');
-        const configTest = await emailService.testConfiguration();
-
-        if (!configTest) {
-            return res.json({ 
-                success: false, 
-                message: '❌ Basic configuration failed',
-                details: 'Check your .env file for MAILERSEND_API_TOKEN and MAILERSEND_FROM_EMAIL'
-            });
-        }
-
-        // Test 2: Send actual test email
-        console.log('\n2. Sending test email...');
-        const testEmail = 'your-email@gmail.com'; // CHANGE THIS TO YOUR REAL EMAIL
-        const emailSent = await emailService.sendTestEmail(testEmail);
-
-        if (emailSent) {
-            return res.json({ 
-                success: true, 
-                message: '✅ Test email sent successfully! Check your inbox.',
-                next_steps: 'If you dont receive the email within 5 minutes, check: 1) Spam folder 2) MailerSend dashboard 3) API token validity'
-            });
-        } else {
-            return res.json({ 
-                success: false, 
-                message: '❌ Failed to send test email',
-                details: 'Check the terminal logs for detailed error information',
-                config: {
-                    hasToken: !!process.env.MAILERSEND_API_TOKEN,
-                    fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-                    fromName: process.env.MAILERSEND_FROM_NAME,
-                    tokenLength: process.env.MAILERSEND_API_TOKEN ? process.env.MAILERSEND_API_TOKEN.length : 0
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('Test error:', error);
-        return res.json({ 
-            success: false, 
-            message: '❌ Test failed with exception',
-            error: error.message 
-        });
-    }
-});
-
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
@@ -245,12 +212,6 @@ router.post('/forgot-password', async (req, res) => {
         const { email } = req.body;
         console.log('Password reset requested for:', email);
 
-        const configTest = await emailService.testConfiguration();
-        if (!configTest) {
-            req.flash('error_msg', 'Email service is currently unavailable. Please try again later.');
-            return res.redirect('/users/forgot-password');
-        }
-
         const user = await User.findOne({ email });
 
         if (user) {
@@ -259,7 +220,7 @@ router.post('/forgot-password', async (req, res) => {
             user.resetPasswordExpires = Date.now() + 3600000;
             await user.save();
 
-            const resetLink = `${req.protocol}://${req.get('host')}/users/reset-password/${resetToken}`;
+            const resetLink = `${process.env.APP_URL || req.protocol + '://' + req.get('host')}/users/reset-password/${resetToken}`;
             console.log('Generated reset link:', resetLink);
 
             const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, resetLink);
@@ -300,8 +261,7 @@ router.get('/reset-password/:token', async (req, res) => {
         res.render('reset-password', {
             title: 'Reset Password - Hymns',
             token: req.params.token,
-            error_msg: req.flash('error_msg'),
-            success_msg: req.flash('success_msg')
+            error_msg: req.flash('error_msg')
         });
     } catch (error) {
         console.error('Reset password error:', error);
@@ -344,7 +304,7 @@ router.post('/reset-password/:token', async (req, res) => {
 
 /**
  * =======================
- *  Profile & Favorites
+ *  Profile & Settings
  * =======================
  */
 router.get('/profile', async (req, res) => {
@@ -371,96 +331,48 @@ router.get('/profile', async (req, res) => {
     }
 });
 
-router.post('/favorites/:hymnId', async (req, res) => {
-    if (!req.session.user) return res.status(401).json({ error: 'Please log in' });
-
-    try {
-        const user = await User.findById(req.session.user.id);
-        const hymnId = req.params.hymnId;
-
-        if (user.favorites.includes(hymnId)) {
-            user.favorites = user.favorites.filter(id => id.toString() !== hymnId);
-            await user.save();
-            return res.json({ action: 'removed', message: 'Removed from favorites' });
-        } else {
-            user.favorites.push(hymnId);
-            await user.save();
-            return res.json({ action: 'added', message: 'Added to favorites' });
+// Production test route
+router.get('/production-test', (req, res) => {
+    res.json({
+        environment: process.env.NODE_ENV,
+        appUrl: process.env.APP_URL,
+        sessionUser: req.session.user,
+        sessionId: req.sessionID,
+        allEnvVars: {
+            NODE_ENV: process.env.NODE_ENV,
+            APP_URL: process.env.APP_URL || 'Not set',
+            MAILERSEND_API_TOKEN: process.env.MAILERSEND_API_TOKEN ? 'Set' : 'Missing',
+            B2_KEY_ID: process.env.B2_KEY_ID ? 'Set' : 'Missing',
+            MONGODB_URI: process.env.MONGODB_URI ? 'Set' : 'Missing'
         }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error' });
-    }
+    });
 });
 
-/**
- * =======================
- *  Update Profile & Change Password
- * =======================
- */
-router.post('/update-profile', async (req, res) => {
+// Test email route
+router.get('/test-email', async (req, res) => {
     try {
-        if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+        console.log('Testing email configuration...');
+        
+        const configTest = await emailService.testConfiguration();
+        
+        if (!configTest) {
+            return res.json({ 
+                success: false, 
+                message: 'Email service not configured properly' 
+            });
+        }
 
-        const { username, email, fullName } = req.body;
-        const existingUser = await User.findOne({ username, _id: { $ne: req.session.user.id } });
+        const testEmail = 'tolesadebushe9@gmail.com';
+        const testResult = await emailService.sendTestEmail(testEmail);
 
-        if (existingUser) return res.status(400).json({ error: 'Username already taken' });
+        res.json({ 
+            success: testResult, 
+            message: testResult ? 'Test email sent successfully' : 'Failed to send test email'
+        });
 
-        const user = await User.findByIdAndUpdate(
-            req.session.user.id,
-            { username, email, fullName },
-            { new: true }
-        );
-
-        req.session.user.username = username;
-        req.session.user.email = email;
-
-        res.json({ message: 'Profile updated successfully' });
     } catch (error) {
-        console.error('Update profile error:', error);
-        res.status(500).json({ error: 'Error updating profile' });
-    }
-});
-
-router.post('/change-password', async (req, res) => {
-    try {
-        if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
-
-        const { currentPassword, newPassword } = req.body;
-        const user = await User.findById(req.session.user.id);
-
-        const isMatch = await user.comparePassword(currentPassword);
-        if (!isMatch) return res.status(400).json({ error: 'Current password is incorrect' });
-
-        user.password = newPassword;
-        await user.save();
-
-        res.json({ message: 'Password changed successfully' });
-    } catch (error) {
-        console.error('Change password error:', error);
-        res.status(500).json({ error: 'Error changing password' });
-    }
-});
-
-// Update Notification Preferences Route
-router.post('/update-notifications', async (req, res) => {
-    try {
-        if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
-
-        const { newsletter } = req.body;
-        const user = await User.findByIdAndUpdate(
-            req.session.user.id,
-            { isSubscribed: newsletter === 'on' || newsletter === true },
-            { new: true }
-        );
-
-        req.session.user.isSubscribed = user.isSubscribed;
-
-        res.json({ message: 'Notification preferences updated successfully' });
-    } catch (error) {
-        console.error('Update notifications error:', error);
-        res.status(500).json({ error: 'Error updating notification preferences' });
+        console.error('Email test error:', error);
+        res.json({ success: false, message: 'Test failed: ' + error.message });
     }
 });
 

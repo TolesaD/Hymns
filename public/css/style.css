@@ -661,40 +661,14 @@ p {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .nav-container {
-        flex-direction: column;
-        padding: 10px;
-    }
-    
-    .nav-logo {
-        margin-bottom: 10px;
-        text-align: center;
-    }
-    
-    .nav-logo img {
-        height: 30px;
-    }
-    
-    .nav-search {
-        width: 100%;
-        margin: 10px 0;
-        max-width: none;
-    }
-    
-    .search-box {
-        width: 100%;
-    }
-    
     .nav-menu {
         display: none;
-        flex-direction: column;
-        width: 100%;
-        align-items: center;
         position: absolute;
         top: 100%;
         left: 0;
         right: 0;
         background: var(--white);
+        flex-direction: column;
         padding: 1rem;
         box-shadow: var(--shadow-lg);
     }
@@ -703,198 +677,36 @@ p {
         display: flex;
     }
     
-    .nav-link {
-        padding: 10px;
-        width: 100%;
-        text-align: center;
-        border-bottom: 1px solid #eee;
-    }
-    
-    .nav-dropdown {
-        width: 100%;
-    }
-    
-    .dropdown-content {
-        position: static;
-        width: 100%;
-        box-shadow: none;
-    }
-    
     .nav-toggle {
         display: flex;
+    }
+    
+    .nav-search {
+        margin: 1rem 0;
+        max-width: none;
     }
     
     .hero-content h1 {
         font-size: 2rem;
     }
     
-    .hero-content p {
-        font-size: 1rem;
-    }
-    
     .hero-buttons {
         flex-direction: column;
-        gap: 10px;
         align-items: center;
-    }
-    
-    .languages-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .language-card {
-        padding: 15px;
-    }
-    
-    .hymns-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .hymn-card {
-        margin: 10px 0;
     }
     
     .newsletter-form {
         flex-direction: column;
     }
     
-    .auth-container {
-        flex-direction: column;
-        padding: 10px;
-    }
-    
-    .auth-card {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    
-    .auth-features {
-        width: 100%;
-        display: none;
-    }
-    
-    .hymn-detail {
-        padding: 10px;
-    }
-    
-    .audio-player {
-        flex-direction: column;
-    }
-    
     .player-controls {
-        width: 100%;
         flex-direction: column;
         gap: 0.5rem;
-        margin-top: 10px;
     }
     
-    .action-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .share-buttons {
-        justify-content: center;
-    }
-    
-    .admin-container {
-        flex-direction: column;
-    }
-    
-    .admin-sidebar {
-        width: 100%;
-        position: static;
-    }
-    
-    .admin-main {
-        width: 100%;
-        padding: 15px;
-        margin-left: 0;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .hymns-table {
-        overflow-x: auto;
-    }
-    
-    table {
-        font-size: 0.8rem;
-    }
-    
-    .profile-header {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .profile-content {
-        flex-direction: column;
-    }
-    
-    .profile-sidebar {
+    .progress-bar {
         width: 100%;
     }
-    
-    .profile-main {
-        width: 100%;
-    }
-    
-    .hide-mobile {
-        display: none !important;
-    }
-    
-    .show-mobile {
-        display: block !important;
-    }
-    
-    .text-center-mobile {
-        text-align: center;
-    }
-    
-    .mobile-menu-toggle {
-        display: block;
-        position: absolute;
-        right: 15px;
-        top: 15px;
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: #333;
-        cursor: pointer;
-    }
-}
-
-/* Tablet Styles */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .languages-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .hymns-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .nav-menu {
-        gap: 10px;
-    }
-    
-    .nav-link {
-        padding: 8px 12px;
-        font-size: 0.9rem;
-    }
-}
-
-/* Mobile Menu Toggle */
-.mobile-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #333;
-    cursor: pointer;
 }
 
 /* Dark Mode Support */
@@ -926,7 +738,6 @@ p {
 .favorite-active {
     color: var(--error) !important;
 }
-
 /* Auth Pages */
 .auth-container {
     display: grid;
@@ -1681,6 +1492,14 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 768px) {
+    .auth-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .auth-features {
+        display: none;
+    }
+    
     .admin-sidebar {
         transform: translateX(-100%);
         transition: var(--transition);
@@ -1689,6 +1508,22 @@ input:checked + .slider:before {
     
     .admin-sidebar.active {
         transform: translateX(0);
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+    
+    .profile-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-sidebar {
+        order: 2;
+    }
+    
+    .profile-main {
+        order: 1;
     }
     
     .content-header {
@@ -1700,5 +1535,281 @@ input:checked + .slider:before {
     .content-actions {
         width: 100%;
         flex-wrap: wrap;
+    }
+}
+/* ============================================= */
+/* MOBILE RESPONSIVE STYLES */
+/* ============================================= */
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #333;
+    cursor: pointer;
+    padding: 10px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 1000;
+}
+
+/* Mobile Styles (max-width: 768px) */
+@media (max-width: 768px) {
+    /* Navigation */
+    .nav-container {
+        flex-direction: column;
+        padding: 10px;
+        position: relative;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    .nav-menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        background: white;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 999;
+    }
+    
+    .nav-menu.active {
+        display: flex;
+    }
+    
+    .nav-link {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        width: 100%;
+        text-align: left;
+    }
+    
+    .nav-dropdown {
+        width: 100%;
+    }
+    
+    .dropdown-content {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+    }
+    
+    .nav-search {
+        width: 100%;
+        margin: 10px 0;
+        order: 3;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    /* Hero Section */
+    .hero {
+        padding: 40px 0;
+    }
+    
+    .hero-content h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+    
+    .hero-content p {
+        font-size: 1rem;
+        margin: 15px 0;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    /* Language Cards */
+    .languages-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .language-card {
+        padding: 20px;
+    }
+    
+    /* Hymn Cards */
+    .hymns-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .hymn-card {
+        margin: 0;
+    }
+    
+    /* Forms */
+    .auth-container {
+        flex-direction: column;
+        padding: 10px;
+    }
+    
+    .auth-card {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .auth-features {
+        width: 100%;
+    }
+    
+    /* Hymn Detail Page */
+    .container {
+        padding: 10px;
+    }
+    
+    .hymn-detail {
+        padding: 0;
+    }
+    
+    .audio-player {
+        flex-direction: column;
+    }
+    
+    .player-controls {
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    /* Admin Dashboard */
+    .admin-container {
+        flex-direction: column;
+    }
+    
+    .admin-sidebar {
+        width: 100%;
+        position: static;
+    }
+    
+    .admin-main {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    /* Tables */
+    .hymns-table {
+        overflow-x: auto;
+        display: block;
+    }
+    
+    table {
+        min-width: 600px;
+        font-size: 0.8rem;
+    }
+    
+    /* Profile Page */
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .profile-content {
+        flex-direction: column;
+    }
+    
+    .profile-sidebar {
+        width: 100%;
+    }
+    
+    .profile-main {
+        width: 100%;
+    }
+    
+    /* Utility Classes */
+    .hide-mobile {
+        display: none !important;
+    }
+    
+    .text-center-mobile {
+        text-align: center;
+    }
+}
+
+/* Tablet Styles (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .languages-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .hymns-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .nav-menu {
+        gap: 10px;
+    }
+    
+    .nav-link {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Ensure images are responsive */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Fix button sizes on mobile */
+@media (max-width: 768px) {
+    .btn-primary, .btn-secondary, .btn-outline {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+}
+
+/* Fix modal on mobile */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+}
+
+/* Fix footer on mobile */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
     }
 }
