@@ -1,53 +1,15 @@
 {
   "version": 2,
-  "functions": {
-    "app.js": {
-      "runtime": "@vercel/node@2.15.11"
-    }
-  },
-  "routes": [
+  "builds": [
     {
-      "src": "/health",
-      "dest": "/app.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "/debug-env",
-      "dest": "/app.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "/test-session",
-      "dest": "/app.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/app.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-    },
-    {
-      "src": "/users/(.*)",
-      "dest": "/app.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-    },
-    {
-      "src": "/hymns/(.*)",
-      "dest": "/app.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-    },
-    {
-      "src": "/admin/(.*)",
-      "dest": "/app.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/app.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+      "src": "app.js",
+      "use": "@vercel/node"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/app.js"
+    }
+  ]
 }
