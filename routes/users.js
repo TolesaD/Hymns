@@ -84,7 +84,6 @@ router.get('/login', (req, res) => {
     });
 });
 
-// 🔑 CRITICAL FIX: VERCEL-COMPATIBLE LOGIN
 router.post('/login', [
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Password is required').notEmpty()
@@ -105,7 +104,6 @@ router.post('/login', [
         const user = await User.findOne({ email: email.toLowerCase().trim() });
 
         if (!user) {
-            console.log('❌ User not found:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -115,7 +113,6 @@ router.post('/login', [
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            console.log('❌ Password mismatch for:', user.username);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -123,46 +120,43 @@ router.post('/login', [
             });
         }
 
-        // Determine if user is admin
-        const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
-        console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
-
-        // VERCEL-COMPATIBLE SESSION APPROACH
+        // Simple session assignment (NO REGENERATION)
         req.session.user = {
             id: user._id.toString(),
             username: user.username,
             email: user.email,
-            isAdmin: isAdmin
+            isAdmin: user.username === 'Tolesa' || user.isAdmin === true
         };
 
-        console.log('💾 Session data set:', req.session.user);
+        console.log('💾 Setting session for user:', user.username);
 
-        // Use promise wrapper for session save
-        await new Promise((resolve, reject) => {
+        // Simple session save with timeout
+        const saveSession = () => new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Session save timeout'));
+            }, 5000); // 5 second timeout
+            
             req.session.save((err) => {
-                if (err) {
-                    console.error('❌ Session save error:', err);
-                    reject(err);
-                    return;
-                }
-                console.log('✅ Session saved successfully');
-                resolve();
+                clearTimeout(timeout);
+                if (err) reject(err);
+                else resolve();
             });
         });
 
+        await saveSession();
+        console.log('✅ Login successful for:', user.username);
+
         req.flash('success_msg', `Welcome back, ${user.username}!`);
         
-        if (isAdmin) {
-            console.log('➡️ Redirecting to admin dashboard');
+        if (req.session.user.isAdmin) {
             res.redirect('/admin');
         } else {
-            console.log('➡️ Redirecting to homepage');
             res.redirect('/');
         }
 
     } catch (error) {
-        console.error('💥 Login error:', error);
-        req.flash('error_msg', 'Server error during login');
+        console.error('💥 Login error:', error.message);
+        req.flash('error_msg', 'Login failed. Please try again.');
         res.redirect('/users/login');
     }
 });
