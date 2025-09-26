@@ -7,19 +7,8 @@ const path = require('path');
 
 const app = express();
 
-// Vercel-specific configuration
-const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+// Enhanced MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
-
-console.log('🚀 Initializing app...');
-console.log('Environment:', {
-  isVercel,
-  nodeEnv: process.env.NODE_ENV,
-  hasMongoURI: !!MONGODB_URI
-});
-
-// MongoDB connection with Vercel optimization
-let mongooseConnection = null;
 
 const connectDB = async () => {
   if (!MONGODB_URI) {
@@ -28,25 +17,16 @@ const connectDB = async () => {
   }
 
   try {
-    // Reuse existing connection if available
-    if (mongoose.connection.readyState === 1) {
-      console.log('✅ Using existing MongoDB connection');
-      return mongoose.connection;
-    }
-
-    // Close any existing connection
+    // Close existing connection if any
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
     }
 
-    console.log('🔌 Connecting to MongoDB...');
     const conn = await mongoose.connect(MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 30000,
-      bufferCommands: false, // Critical for serverless
-      bufferMaxEntries: 0,   // Critical for serverless
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
     });
     
     console.log('✅ MongoDB connected successfully');
@@ -57,10 +37,20 @@ const connectDB = async () => {
   }
 };
 
-// Trust proxy for Vercel
-if (isVercel) {
+// Initialize DB connection
+let isDBConnected = false;
+
+const initializeApp = async () => {
+  if (!isDBConnected && MONGODB_URI) {
+    await connectDB();
+    isDBConnected = true;
+  }
+};
+
+// Trust proxy for Vercel (only in production)
+if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
-  console.log('🔒 Trust proxy enabled for Vercel');
+  console.log('🔒 Production mode: Trust proxy enabled');
 }
 
 // Middleware
@@ -68,33 +58,36 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// VERCEL-OPTIMIZED SESSION CONFIGURATION
+// Enhanced Session configuration for both local and production
+const isProduction = process.env.NODE_ENV === 'production';
 const sessionConfig = {
   name: 'hymns.sid',
-  secret: process.env.SESSION_SECRET || 'fallback-secret-key-' + Date.now(),
+  secret: process.env.SESSION_SECRET || 'fallback-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   rolling: true,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    secure: isVercel, // HTTPS only on Vercel
-    sameSite: isVercel ? 'none' : 'lax',
+    secure: isProduction, // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax', // Adjust for local vs production
   }
 };
 
-// Only add store if MongoDB is available
+// Use MongoStore if MongoDB URI is available
 if (MONGODB_URI) {
   sessionConfig.store = MongoStore.create({
     mongoUrl: MONGODB_URI,
     ttl: 14 * 24 * 60 * 60,
-    autoRemove: 'interval',
-    autoRemoveInterval: 10,
+    autoRemove: 'native',
     crypto: {
       secret: process.env.SESSION_SECRET || 'fallback-secret'
     },
     collectionName: 'sessions'
   });
+  console.log('💾 Using MongoDB session store');
+} else {
+  console.warn('⚠️  MONGODB_URI not set, using memory session store (sessions will not persist)');
 }
 
 app.use(session(sessionConfig));
@@ -102,37 +95,28 @@ app.use(session(sessionConfig));
 // Flash messages
 app.use(flash());
 
-// Enhanced request logging for Vercel
-app.use((req, res, next) => {
-  const start = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log('📊 Request:', {
-      method: req.method,
-      path: req.path,
-      status: res.statusCode,
-      duration: duration + 'ms',
-      sessionId: req.sessionID ? req.sessionID.substring(0, 8) + '...' : 'none',
-      hasUser: !!req.session.user
-    });
-  });
-  
-  next();
-});
-
-// Initialize database before routes
-app.use(async (req, res, next) => {
-  try {
-    if (!mongooseConnection && MONGODB_URI) {
-      mongooseConnection = await connectDB();
+// Debug middleware for sessions (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    // Log session info for auth-related routes
+    if (req.path.includes('/login') || req.path.includes('/admin') || req.path.includes('/debug')) {
+      console.log('🔍 SESSION DEBUG:', {
+        path: req.path,
+        sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
+        hasUser: !!req.session.user,
+        user: req.session.user ? { 
+          username: req.session.user.username,
+          isAdmin: req.session.user.isAdmin 
+        } : null,
+        headers: {
+          cookie: req.headers.cookie ? 'present' : 'missing',
+          host: req.get('host')
+        }
+      });
     }
     next();
-  } catch (error) {
-    console.error('❌ Database initialization error:', error);
-    next(error);
-  }
-});
+  });
+}
 
 // Global variables for templates
 app.use((req, res, next) => {
@@ -146,62 +130,97 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Health check (no session dependency)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    environment: process.env.NODE_ENV,
-    vercel: isVercel,
-    mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    timestamp: new Date().toISOString()
-  });
+// Initialize app on first request
+app.use(async (req, res, next) => {
+  await initializeApp();
+  next();
 });
 
-// Session debug endpoint
-app.get('/debug', (req, res) => {
-  if (!req.session.visits) req.session.visits = 0;
-  req.session.visits++;
-  
-  res.json({
-    session: {
-      id: req.sessionID,
-      visits: req.session.visits,
-      user: req.session.user,
-      cookie: req.session.cookie
-    },
-    headers: {
+// Debug endpoints (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/debug-session', (req, res) => {
+    if (!req.session.visitCount) {
+      req.session.visitCount = 0;
+    }
+    req.session.visitCount++;
+    
+    res.json({
+      session: {
+        id: req.sessionID,
+        visitCount: req.session.visitCount,
+        user: req.session.user || null,
+        createdAt: req.session.createdAt || new Date().toISOString()
+      },
+      cookies: req.headers.cookie || 'No cookies',
+      secure: req.secure,
       host: req.get('host'),
-      'user-agent': req.get('user-agent')?.substring(0, 50)
-    }
-  });
-});
-
-// Test login endpoint
-app.get('/test-login', (req, res) => {
-  req.session.user = {
-    id: 'test-' + Date.now(),
-    username: 'testuser',
-    email: 'test@example.com',
-    isAdmin: false
-  };
-  
-  req.session.save((err) => {
-    if (err) {
-      return res.json({ error: err.message });
-    }
-    res.json({ 
-      message: 'Test login successful',
-      user: req.session.user,
-      sessionId: req.sessionID 
+      appUrl: process.env.APP_URL,
+      nodeEnv: process.env.NODE_ENV
     });
   });
-});
+
+  app.get('/debug-login', (req, res) => {
+    req.session.user = {
+      id: 'debug-user-id',
+      username: 'debuguser',
+      email: 'debug@test.com',
+      isAdmin: true
+    };
+    
+    req.session.save((err) => {
+      if (err) {
+        return res.json({ error: 'Session save failed', details: err.message });
+      }
+      
+      res.json({
+        message: 'Debug login successful',
+        user: req.session.user,
+        sessionId: req.sessionID,
+        instructions: 'Now visit /debug-session to check if session persists'
+      });
+    });
+  });
+}
 
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/users', require('./routes/users'));
 app.use('/hymns', require('./routes/hymns'));
 app.use('/admin', require('./routes/admin'));
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
+  res.status(200).json({
+    status: 'OK',
+    environment: process.env.NODE_ENV || 'development',
+    database: dbStatus,
+    session: {
+      id: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
+      user: req.session.user ? 'logged_in' : 'anonymous'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test endpoint
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'Server is working!',
+    environment: process.env.NODE_ENV,
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none'
+  });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.render('index', { 
+    title: 'Ethiopian Orthodox Hymns',
+    user: req.session.user || null
+  });
+});
 
 // 404 handler
 app.use((req, res) => {
@@ -213,25 +232,29 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('🚨 Error:', err.message);
-  if (!isVercel) {
-    console.error('Stack:', err.stack);
-  }
+  console.error('🚨 Server Error:', err.message);
   
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
+  }
+
   res.status(500).render('error', {
     title: 'Server Error',
-    message: 'Something went wrong! Please try again later.',
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Something went wrong! Please try again later.' 
+      : err.message,
     user: req.session.user || null
   });
 });
 
-// Export for Vercel
-if (isVercel) {
+// Start server locally, export for Vercel
+if (process.env.NODE_ENV === 'production') {
   module.exports = app;
 } else {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`📍 Server running on http://localhost:${PORT}`);
-    console.log(`🔧 Mode: ${isVercel ? 'Production' : 'Development'}`);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 http://localhost:${PORT}`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }

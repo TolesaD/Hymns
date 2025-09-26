@@ -8,7 +8,7 @@ const emailService = require('../services/emailService');
 
 const router = express.Router();
 
-// Register Routes
+// Register Routes (keep your existing code)
 router.get('/register', (req, res) => {
     if (req.session.user) {
         return res.redirect('/');
@@ -69,7 +69,7 @@ router.post('/register', [
     }
 });
 
-// Login Routes - FIXED FOR VERCEL
+// FIXED LOGIN ROUTE - Session Persistence
 router.get('/login', (req, res) => {
     if (req.session.user) {
         console.log('User already logged in, redirecting to home');
@@ -104,6 +104,7 @@ router.post('/login', [
         const user = await User.findOne({ email: email.toLowerCase().trim() });
 
         if (!user) {
+            console.log('❌ User not found:', email);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -113,6 +114,7 @@ router.post('/login', [
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
+            console.log('❌ Password mismatch for:', user.username);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -120,66 +122,87 @@ router.post('/login', [
             });
         }
 
-        // Simple session assignment (NO REGENERATION)
-        req.session.user = {
-            id: user._id.toString(),
-            username: user.username,
-            email: user.email,
-            isAdmin: user.username === 'Tolesa' || user.isAdmin === true
-        };
+        // Determine if user is admin
+        const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
+        console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        console.log('💾 Setting session for user:', user.username);
+        // Regenerate session for security
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error('❌ Session regenerate error:', err);
+                return res.render('login', {
+                    title: 'Login',
+                    errors: [{ msg: 'Session error. Please try again.' }],
+                    email: req.body.email || ''
+                });
+            }
 
-        // Simple session save with timeout
-        const saveSession = () => new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Session save timeout'));
-            }, 5000); // 5 second timeout
-            
-            req.session.save((err) => {
-                clearTimeout(timeout);
-                if (err) reject(err);
-                else resolve();
+            // Set session data
+            req.session.user = {
+                id: user._id.toString(),
+                username: user.username,
+                email: user.email,
+                isAdmin: isAdmin
+            };
+
+            console.log('💾 Session data set:', req.session.user);
+
+            // Save session and redirect
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('❌ Session save error:', saveErr);
+                    return res.render('login', {
+                        title: 'Login',
+                        errors: [{ msg: 'Login error. Please try again.' }],
+                        email: req.body.email || ''
+                    });
+                }
+
+                console.log('✅ Session saved successfully');
+                req.flash('success_msg', `Welcome back, ${user.username}!`);
+                
+                if (isAdmin) {
+                    console.log('➡️ Redirecting to admin dashboard');
+                    res.redirect('/admin/dashboard');
+                } else {
+                    console.log('➡️ Redirecting to homepage');
+                    res.redirect('/');
+                }
             });
         });
 
-        await saveSession();
-        console.log('✅ Login successful for:', user.username);
-
-        req.flash('success_msg', `Welcome back, ${user.username}!`);
-        
-        if (req.session.user.isAdmin) {
-            res.redirect('/admin');
-        } else {
-            res.redirect('/');
-        }
-
     } catch (error) {
-        console.error('💥 Login error:', error.message);
-        req.flash('error_msg', 'Login failed. Please try again.');
+        console.error('💥 Login error:', error);
+        req.flash('error_msg', 'Server error during login');
         res.redirect('/users/login');
     }
 });
 
-// Logout Route
+// FIXED LOGOUT ROUTE - Flash message before session destruction
 router.get('/logout', (req, res) => {
     const username = req.session.user ? req.session.user.username : 'Unknown user';
     console.log('👋 Logout requested by:', username);
     
+    // Store flash message BEFORE destroying session
     req.flash('success_msg', 'You have been logged out successfully.');
     
+    // Destroy the session
     req.session.destroy((err) => {
         if (err) {
             console.error('Session destruction error:', err);
+            // Even if session destruction fails, redirect to login
             return res.redirect('/users/login');
         }
         
-        res.clearCookie('hymns.sid'); 
+        // Clear the cookie
+        res.clearCookie('connect.sid');
+        
+        // Redirect to login page
         res.redirect('/users/login');
     });
 });
 
-// Profile Route
+// FIXED PROFILE ROUTE - Better session checking
 router.get('/profile', async (req, res) => {
     console.log('👤 Profile access attempt - Session user:', req.session.user);
     
@@ -193,7 +216,7 @@ router.get('/profile', async (req, res) => {
         const user = await User.findById(req.session.user.id).populate('favorites');
         if (!user) {
             console.log('❌ User not found in database');
-            req.session.destroy();
+            req.session.destroy(); // Clear invalid session
             req.flash('error_msg', 'User not found. Please log in again.');
             return res.redirect('/users/login');
         }
@@ -210,7 +233,7 @@ router.get('/profile', async (req, res) => {
     }
 });
 
-// Favorites Route
+// FIXED FAVORITES ROUTE
 router.post('/favorites/:hymnId', async (req, res) => {
     console.log('❤️ Favorites request - Session user:', req.session.user);
     
@@ -242,7 +265,7 @@ router.post('/favorites/:hymnId', async (req, res) => {
     }
 });
 
-// Password Reset Routes
+// Keep your existing password reset routes (they look good)
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
@@ -290,7 +313,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// Update Profile Route
+// Keep the rest of your routes (update-profile, change-password, etc.)
 router.post('/update-profile', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -316,7 +339,6 @@ router.post('/update-profile', async (req, res) => {
     }
 });
 
-// Change Password Route
 router.post('/change-password', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -337,7 +359,6 @@ router.post('/change-password', async (req, res) => {
     }
 });
 
-// Update Notifications Route
 router.post('/update-notifications', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
