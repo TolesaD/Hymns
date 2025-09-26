@@ -1,15 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "app.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
+  "functions": {
+    "app.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
     }
-  ],
+  },
   "routes": [
     {
       "src": "/health",
@@ -54,11 +50,6 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "app.js": {
-      "maxDuration": 30
-    }
   },
   "regions": ["all"]
 }

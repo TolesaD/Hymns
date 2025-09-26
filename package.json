@@ -10,7 +10,7 @@
     "build": "echo 'Building Hymns App...'"
   },
   "engines": {
-    "node": "22.x"
+    "node": "20.x"
   },
   "dependencies": {
     "axios": "^1.12.2",
