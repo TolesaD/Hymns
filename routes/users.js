@@ -69,7 +69,7 @@ router.post('/register', [
     }
 });
 
-// Login Routes
+// Login Routes - FIXED FOR VERCELL
 router.get('/login', (req, res) => {
     if (req.session.user) {
         console.log('User already logged in, redirecting to home');
@@ -90,10 +90,6 @@ router.post('/login', [
 ], async (req, res) => {
     try {
         console.log('🔐 Login attempt for:', req.body.email);
-        console.log('📋 Session before login:', {
-            sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
-            hasUser: !!req.session.user
-        });
         
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -128,72 +124,44 @@ router.post('/login', [
 
         // Determine if user is admin
         const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
-        
         console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        // Create a new session (regenerate for security)
-        return new Promise((resolve, reject) => {
-            req.session.regenerate((err) => {
-                if (err) {
-                    console.error('❌ Session regenerate error:', err);
-                    reject(err);
-                    return;
-                }
+        // SIMPLIFIED APPROACH - Remove session.regenerate for Vercel compatibility
+        req.session.user = {
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            isAdmin: isAdmin
+        };
 
-                // Set session data
-                req.session.user = {
-                    id: user._id.toString(),
-                    username: user.username,
-                    email: user.email,
-                    isAdmin: isAdmin
-                };
+        console.log('💾 Session data set:', req.session.user);
 
-                console.log('💾 Session data set:', req.session.user);
-
-                // Save session
-                req.session.save((saveErr) => {
-                    if (saveErr) {
-                        console.error('❌ Session save error:', saveErr);
-                        reject(saveErr);
-                        return;
-                    }
-
-                    console.log('✅ Session saved successfully');
-                    console.log('🔐 Final session state:', {
-                        sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
-                        user: req.session.user
-                    });
-
-                    req.flash('success_msg', `Welcome back, ${user.username}!`);
-                    
-                   // In the POST /login route, update the cookie setting part:
-
-// Set cookie manually for extra security
-res.cookie('hymns.sid', req.sessionID, {
-    maxAge: 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Only secure in production
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
-});
-                    
-                    if (isAdmin) {
-                        console.log('➡️ Redirecting to admin dashboard');
-                        res.redirect('/admin');
-                    } else {
-                        console.log('➡️ Redirecting to homepage');
-                        res.redirect('/');
-                    }
-                    resolve();
+        // Save session with callback
+        req.session.save((err) => {
+            if (err) {
+                console.error('❌ Session save error:', err);
+                return res.render('login', {
+                    title: 'Login',
+                    errors: [{ msg: 'Login error. Please try again.' }],
+                    email: req.body.email || ''
                 });
+            }
+
+            console.log('✅ Session saved successfully');
+            console.log('🔐 Final session state:', {
+                sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
+                user: req.session.user
             });
-        }).catch((error) => {
-            console.error('💥 Login process error:', error);
-            return res.render('login', {
-                title: 'Login',
-                errors: [{ msg: 'Login error. Please try again.' }],
-                email: req.body.email || ''
-            });
+
+            req.flash('success_msg', `Welcome back, ${user.username}!`);
+            
+            if (isAdmin) {
+                console.log('➡️ Redirecting to admin dashboard');
+                res.redirect('/admin');
+            } else {
+                console.log('➡️ Redirecting to homepage');
+                res.redirect('/');
+            }
         });
 
     } catch (error) {

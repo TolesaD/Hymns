@@ -74,12 +74,7 @@ const sessionConfig = {
   }
 };
 
-// Set domain only in production
-if (isProduction) {
-  sessionConfig.cookie.domain = '.vercel.app';
-}
-
-// Use MongoStore if MongoDB URI is available, otherwise memory store for local dev
+// Use MongoStore if MongoDB URI is available
 if (MONGODB_URI) {
   sessionConfig.store = MongoStore.create({
     mongoUrl: MONGODB_URI,
