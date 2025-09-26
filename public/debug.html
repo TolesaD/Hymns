@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Session Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Session Debug Tool</h1>
+    
+    <div class="section">
+        <h3>Current Cookies:</h3>
+        <div id="currentCookies"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Test Actions:</h3>
+        <button onclick="testSession()">Test Session</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="clearCookies()">Clear Cookies</button>
+        <button onclick="testHealth()">Test Health</button>
+    </div>
+    
+    <div class="section">
+        <h3>Results:</h3>
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        function updateCookieDisplay() {
+            document.getElementById('currentCookies').innerHTML = 
+                '<pre>' + (document.cookie || 'No cookies') + '</pre>';
+        }
+        
+        async function testSession() {
+            try {
+                const response = await fetch('/debug-session', {
+                    credentials: 'include' // Important: include cookies
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h4>Session Test Result:</h4><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<h4>Error:</h4><pre>' + error.message + '</pre>';
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch('/debug-login', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h4>Login Test Result:</h4><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<h4>Error:</h4><pre>' + error.message + '</pre>';
+            }
+        }
+        
+        async function testHealth() {
+            try {
+                const response = await fetch('/health', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h4>Health Check:</h4><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<h4>Error:</h4><pre>' + error.message + '</pre>';
+            }
+        }
+        
+        function clearCookies() {
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/;domain=.vercel.app");
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            updateCookieDisplay();
+            document.getElementById('result').innerHTML = '<p>Cookies cleared</p>';
+        }
+        
+        // Initialize
+        updateCookieDisplay();
+    </script>
+</body>
+</html>

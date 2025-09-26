@@ -90,6 +90,10 @@ router.post('/login', [
 ], async (req, res) => {
     try {
         console.log('🔐 Login attempt for:', req.body.email);
+        console.log('📋 Session before login:', {
+            sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
+            hasUser: !!req.session.user
+        });
         
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -124,47 +128,72 @@ router.post('/login', [
 
         // Determine if user is admin
         const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
+        
         console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        // Set session data directly (simpler approach for production)
-        req.session.user = {
-            id: user._id.toString(),
-            username: user.username,
-            email: user.email,
-            isAdmin: isAdmin
-        };
+        // Create a new session (regenerate for security)
+        return new Promise((resolve, reject) => {
+            req.session.regenerate((err) => {
+                if (err) {
+                    console.error('❌ Session regenerate error:', err);
+                    reject(err);
+                    return;
+                }
 
-        console.log('💾 Session data set:', req.session.user);
+                // Set session data
+                req.session.user = {
+                    id: user._id.toString(),
+                    username: user.username,
+                    email: user.email,
+                    isAdmin: isAdmin
+                };
 
-        // Manual session save with error handling
-        req.session.save((err) => {
-            if (err) {
-                console.error('❌ Session save error:', err);
-                return res.render('login', {
-                    title: 'Login',
-                    errors: [{ msg: 'Login error. Please try again.' }],
-                    email: req.body.email || ''
+                console.log('💾 Session data set:', req.session.user);
+
+                // Save session
+                req.session.save((saveErr) => {
+                    if (saveErr) {
+                        console.error('❌ Session save error:', saveErr);
+                        reject(saveErr);
+                        return;
+                    }
+
+                    console.log('✅ Session saved successfully');
+                    console.log('🔐 Final session state:', {
+                        sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
+                        user: req.session.user
+                    });
+
+                    req.flash('success_msg', `Welcome back, ${user.username}!`);
+                    
+                   // In the POST /login route, update the cookie setting part:
+
+// Set cookie manually for extra security
+res.cookie('hymns.sid', req.sessionID, {
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // Only secure in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+});
+                    
+                    if (isAdmin) {
+                        console.log('➡️ Redirecting to admin dashboard');
+                        res.redirect('/admin');
+                    } else {
+                        console.log('➡️ Redirecting to homepage');
+                        res.redirect('/');
+                    }
+                    resolve();
                 });
-            }
-
-            console.log('✅ Session saved successfully');
-            req.flash('success_msg', `Welcome back, ${user.username}!`);
-            
-            // Set cookie manually for production
-            res.cookie('connect.sid', req.sessionID, {
-                maxAge: 24 * 60 * 60 * 1000, // 24 hours
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production', // HTTPS in production
-                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
             });
-            
-            if (isAdmin) {
-                console.log('➡️ Redirecting to admin dashboard');
-                res.redirect('/admin');
-            } else {
-                console.log('➡️ Redirecting to homepage');
-                res.redirect('/');
-            }
+        }).catch((error) => {
+            console.error('💥 Login process error:', error);
+            return res.render('login', {
+                title: 'Login',
+                errors: [{ msg: 'Login error. Please try again.' }],
+                email: req.body.email || ''
+            });
         });
 
     } catch (error) {
@@ -191,9 +220,7 @@ router.get('/logout', (req, res) => {
         }
         
         // Clear the cookie
-        res.clearCookie('connect.sid');
-        
-        // Redirect to login page
+        res.clearCookie('hymns.sid'); // Updated to match hymns.sid
         res.redirect('/users/login');
     });
 });
@@ -213,7 +240,7 @@ router.get('/profile', async (req, res) => {
         if (!user) {
             console.log('❌ User not found in database');
             req.session.destroy();
-            REQ.flash('error_msg', 'User not found. Please log in again.');
+            req.flash('error_msg', 'User not found. Please log in again.');
             return res.redirect('/users/login');
         }
 

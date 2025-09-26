@@ -4,8 +4,8 @@
   "description": "Ethiopian Orthodox Hymns Web Application",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node -r dotenv/config app.js",
+    "dev": "nodemon -r dotenv/config app.js",
     "vercel-build": "npm install && npm run build",
     "build": "echo 'Building Hymns App...'"
   },

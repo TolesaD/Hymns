@@ -7,7 +7,7 @@ const path = require('path');
 
 const app = express();
 
-// Enhanced MongoDB connection for Vercel
+// Enhanced MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
 
 const connectDB = async () => {
@@ -37,7 +37,7 @@ const connectDB = async () => {
   }
 };
 
-// Initialize DB connection on cold start
+// Initialize DB connection
 let isDBConnected = false;
 
 const initializeApp = async () => {
@@ -47,30 +47,39 @@ const initializeApp = async () => {
   }
 };
 
-// Trust proxy for Vercel (CRITICAL)
-app.set('trust proxy', 1);
+// Trust proxy for Vercel (only in production)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+  console.log('🔒 Production mode: Trust proxy enabled');
+}
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Enhanced Session configuration for Vercel production
+// Enhanced Session configuration for both local and production
+const isProduction = process.env.NODE_ENV === 'production';
 const sessionConfig = {
+  name: 'hymns.sid',
   secret: process.env.SESSION_SECRET || 'fallback-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  rolling: true, // Reset maxAge on every request
-  cookie: { 
+  rolling: true,
+  cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    secure: true, // FORCE HTTPS in production
-    sameSite: 'none', // Required for cross-origin requests
-    domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined // Allow subdomains
+    secure: isProduction, // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax', // Adjust for local vs production
   }
 };
 
-// Only use MongoStore if MongoDB URI is available
+// Set domain only in production
+if (isProduction) {
+  sessionConfig.cookie.domain = '.vercel.app';
+}
+
+// Use MongoStore if MongoDB URI is available, otherwise memory store for local dev
 if (MONGODB_URI) {
   sessionConfig.store = MongoStore.create({
     mongoUrl: MONGODB_URI,
@@ -78,16 +87,41 @@ if (MONGODB_URI) {
     autoRemove: 'native',
     crypto: {
       secret: process.env.SESSION_SECRET || 'fallback-secret'
-    }
+    },
+    collectionName: 'sessions'
   });
+  console.log('💾 Using MongoDB session store');
 } else {
-  console.warn('⚠️  MONGODB_URI not set, using memory session store');
+  console.warn('⚠️  MONGODB_URI not set, using memory session store (sessions will not persist)');
 }
 
 app.use(session(sessionConfig));
 
 // Flash messages
 app.use(flash());
+
+// Debug middleware for sessions (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    // Log session info for auth-related routes
+    if (req.path.includes('/login') || req.path.includes('/admin') || req.path.includes('/debug')) {
+      console.log('🔍 SESSION DEBUG:', {
+        path: req.path,
+        sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
+        hasUser: !!req.session.user,
+        user: req.session.user ? { 
+          username: req.session.user.username,
+          isAdmin: req.session.user.isAdmin 
+        } : null,
+        headers: {
+          cookie: req.headers.cookie ? 'present' : 'missing',
+          host: req.get('host')
+        }
+      });
+    }
+    next();
+  });
+}
 
 // Global variables for templates
 app.use((req, res, next) => {
@@ -104,20 +138,54 @@ app.set('views', path.join(__dirname, 'views'));
 // Initialize app on first request
 app.use(async (req, res, next) => {
   await initializeApp();
-  
-  // Debug logging for session issues
-  if (process.env.NODE_ENV === 'production') {
-    console.log('🔍 Session Debug:', {
-      sessionId: req.sessionID,
-      hasUser: !!req.session.user,
-      secure: req.secure,
-      host: req.get('host'),
-      originalUrl: req.originalUrl
-    });
-  }
-  
   next();
 });
+
+// Debug endpoints (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/debug-session', (req, res) => {
+    if (!req.session.visitCount) {
+      req.session.visitCount = 0;
+    }
+    req.session.visitCount++;
+    
+    res.json({
+      session: {
+        id: req.sessionID,
+        visitCount: req.session.visitCount,
+        user: req.session.user || null,
+        createdAt: req.session.createdAt || new Date().toISOString()
+      },
+      cookies: req.headers.cookie || 'No cookies',
+      secure: req.secure,
+      host: req.get('host'),
+      appUrl: process.env.APP_URL,
+      nodeEnv: process.env.NODE_ENV
+    });
+  });
+
+  app.get('/debug-login', (req, res) => {
+    req.session.user = {
+      id: 'debug-user-id',
+      username: 'debuguser',
+      email: 'debug@test.com',
+      isAdmin: true
+    };
+    
+    req.session.save((err) => {
+      if (err) {
+        return res.json({ error: 'Session save failed', details: err.message });
+      }
+      
+      res.json({
+        message: 'Debug login successful',
+        user: req.session.user,
+        sessionId: req.sessionID,
+        instructions: 'Now visit /debug-session to check if session persists'
+      });
+    });
+  });
+}
 
 // Routes
 app.use('/', require('./routes/index'));
@@ -134,24 +202,10 @@ app.get('/health', async (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     database: dbStatus,
     session: {
-      id: req.sessionID,
+      id: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
       user: req.session.user ? 'logged_in' : 'anonymous'
     },
     timestamp: new Date().toISOString()
-  });
-});
-
-// Session test endpoint
-app.get('/session-test', (req, res) => {
-  // Test session functionality
-  req.session.testValue = req.session.testValue ? req.session.testValue + 1 : 1;
-  
-  res.json({
-    sessionId: req.sessionID,
-    testValue: req.session.testValue,
-    user: req.session.user || null,
-    cookie: req.headers.cookie,
-    secure: req.secure
   });
 });
 
@@ -160,7 +214,8 @@ app.get('/test', (req, res) => {
   res.json({ 
     message: 'Server is working!',
     environment: process.env.NODE_ENV,
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none'
   });
 });
 
@@ -197,5 +252,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Export the app for Vercel
-module.exports = app;
+// Start server locally, export for Vercel
+if (process.env.NODE_ENV === 'production') {
+  module.exports = app;
+} else {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 http://localhost:${PORT}`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
