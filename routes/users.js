@@ -126,50 +126,45 @@ router.post('/login', [
         const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
         console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        // Regenerate session for security
-        req.session.regenerate((err) => {
+        // Set session data directly (simpler approach for production)
+        req.session.user = {
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            isAdmin: isAdmin
+        };
+
+        console.log('💾 Session data set:', req.session.user);
+
+        // Manual session save with error handling
+        req.session.save((err) => {
             if (err) {
-                console.error('❌ Session regenerate error:', err);
+                console.error('❌ Session save error:', err);
                 return res.render('login', {
                     title: 'Login',
-                    errors: [{ msg: 'Session error. Please try again.' }],
+                    errors: [{ msg: 'Login error. Please try again.' }],
                     email: req.body.email || ''
                 });
             }
 
-            // Set session data
-            req.session.user = {
-                id: user._id.toString(),
-                username: user.username,
-                email: user.email,
-                isAdmin: isAdmin
-            };
-
-            console.log('💾 Session data set:', req.session.user);
-
-            // Save session and redirect
-            req.session.save((saveErr) => {
-                if (saveErr) {
-                    console.error('❌ Session save error:', saveErr);
-                    return res.render('login', {
-                        title: 'Login',
-                        errors: [{ msg: 'Login error. Please try again.' }],
-                        email: req.body.email || ''
-                    });
-                }
-
-                console.log('✅ Session saved successfully');
-                req.flash('success_msg', `Welcome back, ${user.username}!`);
-                
-                // FIXED: Redirect to /admin instead of /admin/dashboard
-                if (isAdmin) {
-                    console.log('➡️ Redirecting to admin dashboard');
-                    res.redirect('/admin'); // Changed from /admin/dashboard
-                } else {
-                    console.log('➡️ Redirecting to homepage');
-                    res.redirect('/');
-                }
+            console.log('✅ Session saved successfully');
+            req.flash('success_msg', `Welcome back, ${user.username}!`);
+            
+            // Set cookie manually for production
+            res.cookie('connect.sid', req.sessionID, {
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // HTTPS in production
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
             });
+            
+            if (isAdmin) {
+                console.log('➡️ Redirecting to admin dashboard');
+                res.redirect('/admin');
+            } else {
+                console.log('➡️ Redirecting to homepage');
+                res.redirect('/');
+            }
         });
 
     } catch (error) {
@@ -179,7 +174,7 @@ router.post('/login', [
     }
 });
 
-// FIXED: Logout Route
+// Logout Route
 router.get('/logout', (req, res) => {
     const username = req.session.user ? req.session.user.username : 'Unknown user';
     console.log('👋 Logout requested by:', username);
@@ -217,8 +212,8 @@ router.get('/profile', async (req, res) => {
         const user = await User.findById(req.session.user.id).populate('favorites');
         if (!user) {
             console.log('❌ User not found in database');
-            req.session.destroy(); // Clear invalid session
-            req.flash('error_msg', 'User not found. Please log in again.');
+            req.session.destroy();
+            REQ.flash('error_msg', 'User not found. Please log in again.');
             return res.redirect('/users/login');
         }
 
