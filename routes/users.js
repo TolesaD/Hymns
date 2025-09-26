@@ -69,7 +69,7 @@ router.post('/register', [
     }
 });
 
-// Login Routes - FIXED FOR VERCELL
+// Login Routes - FIXED FOR VERCEL
 router.get('/login', (req, res) => {
     if (req.session.user) {
         console.log('User already logged in, redirecting to home');
@@ -84,6 +84,7 @@ router.get('/login', (req, res) => {
     });
 });
 
+// 🔑 CRITICAL FIX: VERCEL-COMPATIBLE LOGIN
 router.post('/login', [
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Password is required').notEmpty()
@@ -126,7 +127,7 @@ router.post('/login', [
         const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
         console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        // SIMPLIFIED APPROACH - Remove session.regenerate for Vercel compatibility
+        // VERCEL-COMPATIBLE SESSION APPROACH
         req.session.user = {
             id: user._id.toString(),
             username: user.username,
@@ -136,33 +137,28 @@ router.post('/login', [
 
         console.log('💾 Session data set:', req.session.user);
 
-        // Save session with callback
-        req.session.save((err) => {
-            if (err) {
-                console.error('❌ Session save error:', err);
-                return res.render('login', {
-                    title: 'Login',
-                    errors: [{ msg: 'Login error. Please try again.' }],
-                    email: req.body.email || ''
-                });
-            }
-
-            console.log('✅ Session saved successfully');
-            console.log('🔐 Final session state:', {
-                sessionId: req.sessionID ? req.sessionID.substring(0, 10) + '...' : 'none',
-                user: req.session.user
+        // Use promise wrapper for session save
+        await new Promise((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('❌ Session save error:', err);
+                    reject(err);
+                    return;
+                }
+                console.log('✅ Session saved successfully');
+                resolve();
             });
-
-            req.flash('success_msg', `Welcome back, ${user.username}!`);
-            
-            if (isAdmin) {
-                console.log('➡️ Redirecting to admin dashboard');
-                res.redirect('/admin');
-            } else {
-                console.log('➡️ Redirecting to homepage');
-                res.redirect('/');
-            }
         });
+
+        req.flash('success_msg', `Welcome back, ${user.username}!`);
+        
+        if (isAdmin) {
+            console.log('➡️ Redirecting to admin dashboard');
+            res.redirect('/admin');
+        } else {
+            console.log('➡️ Redirecting to homepage');
+            res.redirect('/');
+        }
 
     } catch (error) {
         console.error('💥 Login error:', error);
@@ -176,19 +172,15 @@ router.get('/logout', (req, res) => {
     const username = req.session.user ? req.session.user.username : 'Unknown user';
     console.log('👋 Logout requested by:', username);
     
-    // Store flash message BEFORE destroying session
     req.flash('success_msg', 'You have been logged out successfully.');
     
-    // Destroy the session
     req.session.destroy((err) => {
         if (err) {
             console.error('Session destruction error:', err);
-            // Even if session destruction fails, redirect to login
             return res.redirect('/users/login');
         }
         
-        // Clear the cookie
-        res.clearCookie('hymns.sid'); // Updated to match hymns.sid
+        res.clearCookie('hymns.sid'); 
         res.redirect('/users/login');
     });
 });
