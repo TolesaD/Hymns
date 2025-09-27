@@ -6,8 +6,10 @@
   "scripts": {
     "start": "node -r dotenv/config app.js",
     "dev": "nodemon -r dotenv/config app.js",
+    "dev:local": "MONGODB_URI=mongodb://localhost:27017/hymns-app nodemon -r dotenv/config app.js",
     "vercel-build": "npm install && npm run build",
-    "build": "echo 'Building Hymns App...'"
+    "build": "echo 'Building Hymns App...'",
+    "test:db": "node -r dotenv/config scripts/test-db.js"
   },
   "engines": {
     "node": "20.x"
