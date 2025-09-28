@@ -1,11 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // ADD THIS
 const flash = require('connect-flash');
 const path = require('path');
 require('dotenv').config();
 
 const app = express();
+
+// Trust proxy for Vercel - ADD THIS
+app.set('trust proxy', 1);
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hymns-app', {
@@ -20,14 +24,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session configuration
+// FIXED Session configuration for Vercel
 app.use(session({
     secret: process.env.SESSION_SECRET || 'hymns-secret-key-change-in-production',
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({ // ADD THIS FOR PERSISTENT SESSIONS
+        mongoUrl: process.env.MONGODB_URI,
+        collectionName: 'sessions',
+        ttl: 24 * 60 * 60 // 1 day
+    }),
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        httpOnly: true
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Auto true on Vercel
+        sameSite: 'lax'
     }
 }));
 
@@ -70,5 +81,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
