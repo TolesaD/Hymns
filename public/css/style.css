@@ -38,13 +38,14 @@ body {
     padding: 0 20px;
 }
 
-/* Navigation - FIXED MOBILE FIRST */
+/* Navigation - MOBILE FIRST APPROACH */
 .navbar {
     background: var(--white);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
     z-index: 1000;
+    width: 100%;
 }
 
 .nav-container {
@@ -72,6 +73,25 @@ body {
     margin-right: 10px;
 }
 
+/* Mobile Menu Toggle - VISIBLE ON MOBILE */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: var(--transition);
+    z-index: 1001;
+}
+
+.mobile-menu-toggle:hover {
+    background: var(--gray-light);
+}
+
+/* Search Bar */
 .nav-search {
     flex: 1;
     max-width: 400px;
@@ -114,24 +134,6 @@ body {
 
 .search-box button:hover {
     background: var(--primary-dark);
-}
-
-/* Mobile Menu Toggle - HIDDEN ON DESKTOP */
-.mobile-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: var(--text-dark);
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
-    transition: var(--transition);
-    z-index: 1001;
-}
-
-.mobile-menu-toggle:hover {
-    background: var(--gray-light);
 }
 
 /* Main Navigation Menu - DESKTOP STYLES */
@@ -1497,7 +1499,7 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Mobile Responsive Styles */
+/* MOBILE RESPONSIVE STYLES - FIXED */
 @media (max-width: 768px) {
     /* Mobile Navigation Container */
     .nav-container {
@@ -1508,8 +1510,7 @@ html {
     /* Show Mobile Menu Toggle */
     .mobile-menu-toggle {
         display: block;
-        order: 3;
-        margin-left: auto;
+        order: 2;
     }
     
     /* Logo Adjustments */
@@ -1528,11 +1529,12 @@ html {
     
     /* Search Bar - Full Width */
     .nav-search {
-        order: 4;
+        order: 3;
         width: 100%;
         margin: 10px 0 0 0;
         max-width: none;
         flex: 0 0 100%;
+        display: block;
     }
     
     /* Mobile Navigation Menu */
@@ -1549,6 +1551,7 @@ html {
         z-index: 1000;
         max-height: 70vh;
         overflow-y: auto;
+        border-top: 1px solid var(--gray-light);
     }
     
     .nav-menu.active {
@@ -1561,6 +1564,9 @@ html {
         width: 100%;
         text-align: left;
         font-size: 1rem;
+        display: flex;
+        align-items: center;
+        min-height: 44px; /* Minimum touch target size */
     }
     
     .nav-link:last-child {
@@ -1572,6 +1578,7 @@ html {
         width: calc(100% - 40px);
         text-align: center;
         border-radius: var(--border-radius);
+        justify-content: center;
     }
     
     /* Mobile Dropdown Styles */
@@ -1606,6 +1613,9 @@ html {
         padding: 12px 20px 12px 40px;
         border-bottom: 1px solid rgba(0,0,0,0.1);
         font-size: 0.95rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
     }
     
     /* Hide dropdown arrow on mobile since we have chevron */
@@ -1669,29 +1679,12 @@ html {
         padding: 40px 0 20px;
     }
     
-    /* Better touch targets for mobile */
-    .nav-link,
-    .btn,
-    .dropdown-content a {
-        min-height: 44px; /* Minimum touch target size */
-        display: flex;
-        align-items: center;
-    }
-    
-    /* Mobile Auth Pages */
-    .auth-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .auth-features {
-        display: none;
-    }
-    
     /* Mobile Admin Styles */
     .admin-sidebar {
         transform: translateX(-100%);
         transition: var(--transition);
         z-index: 1000;
+        width: 280px;
     }
     
     .admin-sidebar.active {
@@ -1700,6 +1693,7 @@ html {
     
     .admin-main {
         margin-left: 0;
+        width: 100%;
     }
     
     .profile-content {
@@ -1723,6 +1717,11 @@ html {
     .content-actions {
         width: 100%;
         flex-wrap: wrap;
+    }
+    
+    /* Ensure proper spacing on mobile */
+    .container {
+        padding: 0 15px;
     }
 }
 
