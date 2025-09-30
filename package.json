@@ -4,30 +4,27 @@
   "description": "Ethiopian Orthodox Hymns Web Application",
   "main": "app.js",
   "scripts": {
-    "start": "node -r dotenv/config app.js",
-    "dev": "nodemon -r dotenv/config app.js",
-    "dev:local": "MONGODB_URI=mongodb://localhost:27017/hymns-app nodemon -r dotenv/config app.js",
-    "vercel-build": "npm install && npm run build",
-    "build": "echo 'Building Hymns App...'",
-    "test:db": "node -r dotenv/config scripts/test-db.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "dev:local": "MONGODB_URI=mongodb://localhost:27017/hymns-app nodemon app.js",
+    "init-admin": "node config/initAdmin.js",
+    "vercel-build": "npm install",
+    "build": "echo 'Building Hymns App...'"
   },
   "engines": {
     "node": "20.x"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
     "axios": "^1.12.2",
-    "backblaze-b2": "^1.7.1",
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "connect-flash": "^0.1.1",
-    "connect-mongo": "^5.1.0",
+    "connect-mongo": "^5.0.0",
     "dotenv": "^16.3.1",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
-    "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.17.3",
     "express-validator": "^7.0.1",
-    "method-override": "^3.0.0",
     "mongoose": "^7.5.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.1"

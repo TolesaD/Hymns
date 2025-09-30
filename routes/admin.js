@@ -4,41 +4,50 @@ const Hymn = require('../models/Hymn');
 const User = require('../models/User');
 const Comment = require('../models/Comment');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const supabaseService = require('../services/supabaseService');
 
-// Configure multer for file uploads - FIXED FOR VERCEL
-const storage = multer.memoryStorage(); // Use memory storage for Vercel
-
-const fileFilter = (req, file, cb) => {
-    // Check if file is audio
-    if (file.mimetype.startsWith('audio/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only audio files are allowed!'), false);
-    }
-};
-
+// Configure multer for memory storage (Vercel compatible)
+const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
-    fileFilter: fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit for Vercel compatibility
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('audio/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only audio files are allowed!'), false);
+        }
     }
 });
 
-// Admin middleware - FIXED FOR MOBILE
+// STRICT Admin middleware - Only Tolesa with correct email
 const requireAdmin = (req, res, next) => {
-    console.log('🔐 Admin access check - Session:', req.session.user);
+    console.log('🔐 STRICT Admin access check - Session:', req.session.user);
     
     if (!req.session.user) {
-        console.log('❌ No user session');
+        console.log('❌ No user session - redirecting to login');
         req.flash('error_msg', 'Please log in to access admin area');
         return res.redirect('/users/login');
     }
     
-    if (!req.session.user.isAdmin) {
-        console.log('❌ User is not admin:', req.session.user.username);
+    // STRICT: Only Tolesa with marosetofficial@gmail.com is admin
+    const isTolesa = req.session.user.username === 'Tolesa';
+    const isCorrectEmail = req.session.user.email === 'marosetofficial@gmail.com';
+    const isAdmin = isTolesa && isCorrectEmail && req.session.user.isAdmin === true;
+    
+    console.log('🔍 STRICT Admin middleware check:', {
+        username: req.session.user.username,
+        isTolesa: isTolesa,
+        email: req.session.user.email,
+        isCorrectEmail: isCorrectEmail,
+        sessionAdminFlag: req.session.user.isAdmin,
+        finalIsAdmin: isAdmin
+    });
+    
+    if (!isAdmin) {
+        console.log('❌ User is not the designated admin');
         req.flash('error_msg', 'Admin access required');
         return res.redirect('/');
     }
@@ -47,7 +56,7 @@ const requireAdmin = (req, res, next) => {
     next();
 };
 
-// Admin dashboard route - FIXED FOR MOBILE
+// Admin dashboard route
 router.get(['/', '/dashboard'], requireAdmin, async (req, res) => {
     try {
         console.log('📊 Admin dashboard accessed by:', req.session.user.username);
@@ -103,7 +112,7 @@ router.get('/hymns/add', requireAdmin, (req, res) => {
     });
 });
 
-// Add new hymn (POST route) - FIXED FOR VERCEL
+// Add new hymn (POST route) - UPDATED FOR SUPABASE
 router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, res) => {
     try {
         console.log('🎵 POST /admin/hymns/add - Starting hymn creation');
@@ -136,23 +145,29 @@ router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, 
         
         console.log('✅ All validation passed');
         
-        // Handle audio file - FIXED FOR VERCEL
-        let audioFilePath = '';
+        // Handle audio file with Supabase
+        let audioFileUrl = '';
+        let supabaseFilePath = '';
+        
         if (req.file) {
-            // For Vercel, we need to use a cloud storage solution
-            // For now, we'll store file info and handle uploads differently
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            const fileName = 'hymn-' + uniqueSuffix + path.extname(req.file.originalname);
-            
-            // In production, you should upload to Backblaze B2 or similar
-            // For now, we'll store the file buffer info
-            audioFilePath = `/uploads/audio/${fileName}`;
-            console.log('📁 Audio file reference created:', audioFilePath);
-            
-            // TODO: Implement actual file upload to Backblaze B2
-            // For now, we'll proceed without file validation in production
+            try {
+                console.log('📤 Uploading to Supabase...');
+                const uploadResult = await supabaseService.uploadFile(
+                    req.file.buffer,
+                    req.file.originalname,
+                    req.file.mimetype
+                );
+                
+                audioFileUrl = uploadResult.publicUrl;
+                supabaseFilePath = uploadResult.filePath;
+                console.log('✅ File uploaded to Supabase:', audioFileUrl);
+                
+            } catch (uploadError) {
+                console.error('❌ Supabase upload failed:', uploadError);
+                req.flash('error_msg', 'File upload failed: ' + uploadError.message);
+                return res.redirect('/admin/hymns/add');
+            }
         } else {
-            // No file uploaded, use placeholder or require file
             req.flash('error_msg', 'Audio file is required');
             return res.redirect('/admin/hymns/add');
         }
@@ -163,15 +178,14 @@ router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, 
             description: description.trim(),
             hymnLanguage: hymnLanguage.trim(),
             category: category.trim(),
-            audioFile: audioFilePath,
+            audioFile: audioFileUrl,
+            supabaseFilePath: supabaseFilePath, // Store for future deletion
             lyrics: lyrics.trim(),
-            duration: duration ? parseInt(duration) : 180, // Default 3 minutes
+            duration: duration ? parseInt(duration) : 180,
             featured: featured === 'on'
         });
         
-        console.log('💾 Saving hymn to database:', newHymn);
-        
-        // Save to database
+        console.log('💾 Saving hymn to database');
         await newHymn.save();
         
         console.log('✅ Hymn saved successfully with ID:', newHymn._id);
@@ -181,14 +195,13 @@ router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, 
     } catch (error) {
         console.error('❌ Error adding hymn:', error);
         
-        // More specific error messages
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             req.flash('error_msg', `Validation error: ${messages.join(', ')}`);
         } else if (error.code === 11000) {
             req.flash('error_msg', 'A hymn with this title already exists');
         } else if (error.code === 'LIMIT_FILE_SIZE') {
-            req.flash('error_msg', 'File too large. Maximum size is 5MB.');
+            req.flash('error_msg', 'File too large. Maximum size is 10MB.');
         } else {
             req.flash('error_msg', 'Server error while adding hymn: ' + error.message);
         }
@@ -222,7 +235,7 @@ router.get('/hymns/edit/:id', requireAdmin, async (req, res) => {
     }
 });
 
-// Edit hymn (POST route) - FIXED FOR VERCEL
+// Edit hymn (POST route) - UPDATED FOR SUPABASE
 router.post('/hymns/edit/:id', requireAdmin, upload.single('audioFile'), async (req, res) => {
     try {
         console.log('✏️ POST /admin/hymns/edit - Editing hymn:', req.params.id);
@@ -257,6 +270,28 @@ router.post('/hymns/edit/:id', requireAdmin, upload.single('audioFile'), async (
             return res.redirect(`/admin/hymns/edit/${req.params.id}`);
         }
 
+        // Handle new audio file upload with Supabase
+        if (req.file) {
+            try {
+                console.log('📤 Uploading new file to Supabase...');
+                const uploadResult = await supabaseService.updateFile(
+                    hymn.supabaseFilePath, // Old file path for deletion
+                    req.file.buffer,
+                    req.file.originalname,
+                    req.file.mimetype
+                );
+                
+                hymn.audioFile = uploadResult.publicUrl;
+                hymn.supabaseFilePath = uploadResult.filePath;
+                console.log('✅ New file uploaded to Supabase:', hymn.audioFile);
+                
+            } catch (uploadError) {
+                console.error('❌ Supabase upload failed:', uploadError);
+                req.flash('error_msg', 'File upload failed: ' + uploadError.message);
+                return res.redirect(`/admin/hymns/edit/${req.params.id}`);
+            }
+        }
+
         // Update hymn data
         hymn.title = title.trim();
         hymn.description = description.trim();
@@ -265,15 +300,6 @@ router.post('/hymns/edit/:id', requireAdmin, upload.single('audioFile'), async (
         hymn.lyrics = lyrics.trim();
         hymn.duration = duration ? parseInt(duration) : hymn.duration;
         hymn.featured = featured === 'on';
-
-        // Handle new audio file upload - FIXED FOR VERCEL
-        if (req.file) {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            const fileName = 'hymn-' + uniqueSuffix + path.extname(req.file.originalname);
-            hymn.audioFile = '/uploads/audio/' + fileName;
-            
-            console.log('📁 New audio file reference:', hymn.audioFile);
-        }
 
         await hymn.save();
         
@@ -285,7 +311,7 @@ router.post('/hymns/edit/:id', requireAdmin, upload.single('audioFile'), async (
         console.error('❌ Error updating hymn:', error);
         
         if (error.code === 'LIMIT_FILE_SIZE') {
-            req.flash('error_msg', 'File too large. Maximum size is 5MB.');
+            req.flash('error_msg', 'File too large. Maximum size is 10MB.');
         } else {
             req.flash('error_msg', 'Error updating hymn: ' + error.message);
         }
@@ -293,11 +319,16 @@ router.post('/hymns/edit/:id', requireAdmin, upload.single('audioFile'), async (
     }
 });
 
-// Delete hymn
+// Delete hymn - UPDATED FOR SUPABASE
 router.post('/hymns/delete/:id', requireAdmin, async (req, res) => {
     try {
         const hymn = await Hymn.findById(req.params.id);
         if (hymn) {
+            // Delete file from Supabase if it exists
+            if (hymn.supabaseFilePath) {
+                await supabaseService.deleteFile(hymn.supabaseFilePath);
+            }
+            
             await Hymn.findByIdAndDelete(req.params.id);
             req.flash('success_msg', 'Hymn deleted successfully');
         }
@@ -329,13 +360,11 @@ router.get('/comments', requireAdmin, async (req, res) => {
     try {
         console.log('💬 Admin comments moderation accessed');
         
-        // Get comments with user and hymn data populated
         const comments = await Comment.find()
             .populate('user', 'username email')
             .populate('hymn', 'title')
             .sort({ createdAt: -1 });
         
-        // Separate pending and approved comments based on your schema
         const pendingComments = comments.filter(comment => !comment.approved);
         const approvedComments = comments.filter(comment => comment.approved);
         

@@ -8,7 +8,7 @@ const emailService = require('../services/emailService');
 
 const router = express.Router();
 
-// Register Routes (keep your existing code)
+// Register Routes
 router.get('/register', (req, res) => {
     if (req.session.user) {
         return res.redirect('/');
@@ -69,7 +69,7 @@ router.post('/register', [
     }
 });
 
-// FIXED LOGIN ROUTE - Session Persistence
+// Login Routes
 router.get('/login', (req, res) => {
     if (req.session.user) {
         console.log('User already logged in, redirecting to home');
@@ -101,10 +101,15 @@ router.post('/login', [
         }
 
         const { email, password } = req.body;
-        const user = await User.findOne({ email: email.toLowerCase().trim() });
-
+        
+        // Better email normalization
+        const normalizedEmail = email.toLowerCase().trim();
+        console.log('📧 Normalized email:', normalizedEmail);
+        
+        const user = await User.findOne({ email: normalizedEmail });
+        
         if (!user) {
-            console.log('❌ User not found:', email);
+            console.log('❌ User not found:', normalizedEmail);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
@@ -112,7 +117,11 @@ router.post('/login', [
             });
         }
 
+        console.log('👤 User found:', user.username);
+        console.log('🔍 Admin status - Username:', user.username, 'isAdmin flag:', user.isAdmin);
+
         const isMatch = await user.comparePassword(password);
+        
         if (!isMatch) {
             console.log('❌ Password mismatch for:', user.username);
             return res.render('login', {
@@ -122,87 +131,125 @@ router.post('/login', [
             });
         }
 
-        // Determine if user is admin
-        const isAdmin = user.username === 'Tolesa' || user.isAdmin === true;
+        // STRICT: Only Tolesa with marosetofficial@gmail.com is admin
+        const isTolesa = user.username === 'Tolesa';
+        const isCorrectEmail = user.email === 'marosetofficial@gmail.com';
+        const isAdmin = isTolesa && isCorrectEmail && user.isAdmin === true;
+        
+        console.log('🔍 STRICT Admin check:', {
+            username: user.username,
+            isTolesa: isTolesa,
+            email: user.email,
+            isCorrectEmail: isCorrectEmail,
+            isAdminFlag: user.isAdmin,
+            finalIsAdmin: isAdmin
+        });
+
         console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        // Regenerate session for security
-        req.session.regenerate((err) => {
+        // Set session data
+        req.session.user = {
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            isAdmin: isAdmin
+        };
+
+        console.log('💾 Session data set:', req.session.user);
+
+        // Use session save with callback for better reliability
+        req.session.save((err) => {
             if (err) {
-                console.error('❌ Session regenerate error:', err);
+                console.error('❌ Session save error:', err);
                 return res.render('login', {
                     title: 'Login',
-                    errors: [{ msg: 'Session error. Please try again.' }],
+                    errors: [{ msg: 'Login error. Please try again.' }],
                     email: req.body.email || ''
                 });
             }
 
-            // Set session data
-            req.session.user = {
-                id: user._id.toString(),
-                username: user.username,
-                email: user.email,
-                isAdmin: isAdmin
-            };
-
-            console.log('💾 Session data set:', req.session.user);
-
-            // Save session and redirect
-            req.session.save((saveErr) => {
-                if (saveErr) {
-                    console.error('❌ Session save error:', saveErr);
-                    return res.render('login', {
-                        title: 'Login',
-                        errors: [{ msg: 'Login error. Please try again.' }],
-                        email: req.body.email || ''
-                    });
-                }
-
-                console.log('✅ Session saved successfully');
-                req.flash('success_msg', `Welcome back, ${user.username}!`);
-                
-                if (isAdmin) {
-                    console.log('➡️ Redirecting to admin dashboard');
-                    res.redirect('/admin/dashboard');
-                } else {
-                    console.log('➡️ Redirecting to homepage');
-                    res.redirect('/');
-                }
-            });
+            console.log('✅ Session saved successfully');
+            console.log('🔍 Final session check:', req.session.user);
+            
+            req.flash('success_msg', `Welcome back, ${user.username}!`);
+            
+            if (isAdmin) {
+                console.log('➡️ Redirecting to admin dashboard');
+                return res.redirect('/admin/dashboard');
+            } else {
+                console.log('➡️ Redirecting to homepage');
+                return res.redirect('/');
+            }
         });
 
     } catch (error) {
-        console.error('💥 Login error:', error);
-        req.flash('error_msg', 'Server error during login');
-        res.redirect('/users/login');
+        console.error('💥 CRITICAL Login error:', error);
+        console.error('💥 Error stack:', error.stack);
+        
+        let errorMessage = 'Server error during login';
+        
+        if (error.name === 'MongoError') {
+            errorMessage = 'Database connection error. Please try again.';
+        } else if (error.name === 'ValidationError') {
+            errorMessage = 'Data validation error. Please check your input.';
+        } else if (error.message && error.message.includes('bcrypt')) {
+            errorMessage = 'Password processing error. Please try again.';
+        }
+        
+        return res.render('login', {
+            title: 'Login',
+            errors: [{ msg: errorMessage }],
+            email: req.body.email || ''
+        });
     }
 });
 
-// FIXED LOGOUT ROUTE - Flash message before session destruction
+// Debug admin route
+router.get('/debug-admin', async (req, res) => {
+    try {
+        const testEmail = 'marosetofficial@gmail.com';
+        const user = await User.findOne({ email: testEmail });
+        
+        if (user) {
+            const isTolesa = user.username === 'Tolesa';
+            const isCorrectEmail = user.email === 'marosetofficial@gmail.com';
+            const isAdmin = isTolesa && isCorrectEmail && user.isAdmin === true;
+            
+            res.json({
+                userFound: true,
+                username: user.username,
+                email: user.email,
+                isAdmin: isAdmin,
+                isAdminFlag: user.isAdmin,
+                isTolesa: user.username === 'Tolesa',
+                computedAdminStatus: isAdmin,
+                sessionUser: req.session.user
+            });
+        } else {
+            res.json({ userFound: false, message: 'Admin user not found' });
+        }
+    } catch (error) {
+        res.json({ error: error.message });
+    }
+});
+
+// Logout Route
 router.get('/logout', (req, res) => {
     const username = req.session.user ? req.session.user.username : 'Unknown user';
     console.log('👋 Logout requested by:', username);
     
-    // Store flash message BEFORE destroying session
     req.flash('success_msg', 'You have been logged out successfully.');
     
-    // Destroy the session
     req.session.destroy((err) => {
         if (err) {
             console.error('Session destruction error:', err);
-            // Even if session destruction fails, redirect to login
-            return res.redirect('/users/login');
         }
-        
-        // Clear the cookie
         res.clearCookie('connect.sid');
-        
-        // Redirect to login page
         res.redirect('/users/login');
     });
 });
 
-// FIXED PROFILE ROUTE - Better session checking
+// Profile Route
 router.get('/profile', async (req, res) => {
     console.log('👤 Profile access attempt - Session user:', req.session.user);
     
@@ -216,7 +263,7 @@ router.get('/profile', async (req, res) => {
         const user = await User.findById(req.session.user.id).populate('favorites');
         if (!user) {
             console.log('❌ User not found in database');
-            req.session.destroy(); // Clear invalid session
+            req.session.destroy();
             req.flash('error_msg', 'User not found. Please log in again.');
             return res.redirect('/users/login');
         }
@@ -233,7 +280,7 @@ router.get('/profile', async (req, res) => {
     }
 });
 
-// FIXED FAVORITES ROUTE
+// Favorites Route
 router.post('/favorites/:hymnId', async (req, res) => {
     console.log('❤️ Favorites request - Session user:', req.session.user);
     
@@ -265,7 +312,7 @@ router.post('/favorites/:hymnId', async (req, res) => {
     }
 });
 
-// Keep your existing password reset routes (they look good)
+// Forgot Password Routes
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
@@ -313,7 +360,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// Keep the rest of your routes (update-profile, change-password, etc.)
+// Update Profile Route
 router.post('/update-profile', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -339,6 +386,7 @@ router.post('/update-profile', async (req, res) => {
     }
 });
 
+// Change Password Route
 router.post('/change-password', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -359,6 +407,7 @@ router.post('/change-password', async (req, res) => {
     }
 });
 
+// Update Notifications Route
 router.post('/update-notifications', async (req, res) => {
     try {
         if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });

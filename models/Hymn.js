@@ -15,7 +15,7 @@ const hymnSchema = new mongoose.Schema({
         minlength: [10, 'Description must be at least 10 characters long'],
         maxlength: [1000, 'Description cannot exceed 1000 characters']
     },
-    hymnLanguage: {  // Changed from 'language' to avoid conflict
+    hymnLanguage: {
         type: String,
         required: [true, 'Language is required'],
         enum: {
@@ -33,7 +33,11 @@ const hymnSchema = new mongoose.Schema({
     },
     audioFile: {
         type: String,
-        required: [true, 'Audio file path is required']
+        required: [true, 'Audio file URL is required']
+    },
+    supabaseFilePath: {
+        type: String, // Store the file path for deletion
+        required: false
     },
     lyrics: {
         type: String,
@@ -76,21 +80,14 @@ const hymnSchema = new mongoose.Schema({
         default: Date.now
     }
 }, {
-    // Disable automatic index creation to avoid conflicts
     autoIndex: false
 });
 
-// Create safe indexes manually
+// Indexes
 hymnSchema.index({ hymnLanguage: 1, category: 1 });
 hymnSchema.index({ featured: 1 });
 hymnSchema.index({ createdAt: -1 });
-hymnSchema.index({ title: 1 }); // Regular index for searching
+hymnSchema.index({ title: 1 });
 hymnSchema.index({ description: 1 });
-
-// Prevent text indexes that cause language override issues
-hymnSchema.pre('save', function(next) {
-    // Ensure no text index fields are present
-    next();
-});
 
 module.exports = mongoose.model('Hymn', hymnSchema);
