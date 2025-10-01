@@ -12,7 +12,7 @@
     <div class="admin-container">
         <div class="admin-sidebar">
             <div class="admin-brand">
-                <img src="/assets/logo.png" alt="Hymns Logo">
+                <img src="/assets/logo.png" alt="Hymns Logo" onerror="this.style.display='none'">
                 <span>Admin Panel</span>
             </div>
             
@@ -56,116 +56,125 @@
 
             <div class="admin-content">
                 <% if (error_msg && error_msg.length > 0) { %>
-                    <div class="flash-message error">
-                        <div class="container">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span><%= error_msg %></span>
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div>
+                            <% if (Array.isArray(error_msg)) { %>
+                                <% error_msg.forEach(function(msg) { %>
+                                    <p><%= msg %></p>
+                                <% }); %>
+                            <% } else { %>
+                                <p><%= error_msg %></p>
+                            <% } %>
                         </div>
                     </div>
                 <% } %>
 
                 <% if (success_msg && success_msg.length > 0) { %>
-                    <div class="flash-message success">
-                        <div class="container">
-                            <i class="fas fa-check-circle"></i>
-                            <span><%= success_msg %></span>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <% if (Array.isArray(success_msg)) { %>
+                                <% success_msg.forEach(function(msg) { %>
+                                    <p><%= msg %></p>
+                                <% }); %>
+                            <% } else { %>
+                                <p><%= success_msg %></p>
+                            <% } %>
                         </div>
                     </div>
                 <% } %>
 
                 <form method="POST" action="/admin/hymns/add" class="hymn-form" enctype="multipart/form-data">
-    <!-- Important: Add enctype="multipart/form-data" -->
-    
-    <div class="form-group">
-        <label class="form-label">Title *</label>
-        <input type="text" name="title" class="form-control" required 
-               value="<%= typeof title !== 'undefined' ? title : '' %>"
-               placeholder="Enter hymn title">
-    </div>
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" class="form-control" required 
+                               value="<%= typeof title !== 'undefined' ? title : '' %>"
+                               placeholder="Enter hymn title">
+                    </div>
 
-    <div class="form-group">
-        <label class="form-label">Description *</label>
-        <textarea name="description" class="form-control" rows="3" required
-                  placeholder="Brief description of the hymn"><%= typeof description !== 'undefined' ? description : '' %></textarea>
-    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description *</label>
+                        <textarea name="description" class="form-control" rows="3" required
+                                  placeholder="Brief description of the hymn"><%= typeof description !== 'undefined' ? description : '' %></textarea>
+                    </div>
 
-    <div class="form-row">
-        <div class="form-group">
-            <label class="form-label">Language *</label>
-            <select name="hymnLanguage" class="form-control" required>
-                <option value="">Select Language</option>
-                <option value="amharic" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'amharic') ? 'selected' : '' %>>Amharic</option>
-                <option value="oromo" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'oromo') ? 'selected' : '' %>>Afan Oromo</option>
-                <option value="tigrigna" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'tigrigna') ? 'selected' : '' %>>Tigrigna</option>
-                <option value="english" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'english') ? 'selected' : '' %>>English</option>
-            </select>
-        </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Language *</label>
+                            <select name="hymnLanguage" class="form-control" required>
+                                <option value="">Select Language</option>
+                                <option value="amharic" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'amharic') ? 'selected' : '' %>>Amharic</option>
+                                <option value="oromo" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'oromo') ? 'selected' : '' %>>Afan Oromo</option>
+                                <option value="tigrigna" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'tigrigna') ? 'selected' : '' %>>Tigrigna</option>
+                                <option value="english" <%= (typeof hymnLanguage !== 'undefined' && hymnLanguage === 'english') ? 'selected' : '' %>>English</option>
+                            </select>
+                        </div>
 
-        <div class="form-group">
-            <label class="form-label">Category *</label>
-            <select name="category" class="form-control" required>
-                <option value="">Select Category</option>
-                <option value="worship" <%= (typeof category !== 'undefined' && category === 'worship') ? 'selected' : '' %>>Worship</option>
-                <option value="praise" <%= (typeof category !== 'undefined' && category === 'praise') ? 'selected' : '' %>>Praise</option>
-                <option value="thanksgiving" <%= (typeof category !== 'undefined' && category === 'thanksgiving') ? 'selected' : '' %>>Thanksgiving</option>
-                <option value="slow" <%= (typeof category !== 'undefined' && category === 'slow') ? 'selected' : '' %>>Slow Hymns</option>
-            </select>
-        </div>
-    </div>
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <select name="category" class="form-control" required>
+                                <option value="">Select Category</option>
+                                <option value="worship" <%= (typeof category !== 'undefined' && category === 'worship') ? 'selected' : '' %>>Worship</option>
+                                <option value="praise" <%= (typeof category !== 'undefined' && category === 'praise') ? 'selected' : '' %>>Praise</option>
+                                <option value="thanksgiving" <%= (typeof category !== 'undefined' && category === 'thanksgiving') ? 'selected' : '' %>>Thanksgiving</option>
+                                <option value="slow" <%= (typeof category !== 'undefined' && category === 'slow') ? 'selected' : '' %>>Slow Hymns</option>
+                            </select>
+                        </div>
+                    </div>
 
-    <div class="form-group">
-        <label class="form-label">Lyrics *</label>
-        <textarea name="lyrics" class="form-control" rows="10" required 
-                  placeholder="Enter the complete hymn lyrics"><%= typeof lyrics !== 'undefined' ? lyrics : '' %></textarea>
-    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lyrics *</label>
+                        <textarea name="lyrics" class="form-control" rows="10" required 
+                                  placeholder="Enter the complete hymn lyrics"><%= typeof lyrics !== 'undefined' ? lyrics : '' %></textarea>
+                    </div>
 
-    <div class="form-group">
-        <label class="form-label">Audio File (Optional)</label>
-        <div class="file-upload">
-            <input type="file" name="audioFile" class="form-control" 
-                   accept="audio/mp3,audio/wav,audio/mpeg,audio/*">
-            <small class="form-help">Supported formats: MP3, WAV. Max size: 10MB</small>
-        </div>
-    </div>
+                    <div class="form-group">
+                        <label class="form-label">Audio File (Optional)</label>
+                        <div class="file-upload">
+                            <input type="file" name="audioFile" class="form-control" 
+                                   accept="audio/mp3,audio/wav,audio/mpeg,audio/*">
+                            <small class="form-help">Supported formats: MP3, WAV. Max size: 10MB</small>
+                        </div>
+                    </div>
 
-    <div class="form-group">
-        <label class="checkbox-label">
-            <input type="checkbox" name="featured" <%= (typeof featured !== 'undefined' && featured) ? 'checked' : '' %>>
-            <span class="checkmark"></span>
-            Feature this hymn on homepage
-        </label>
-    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="featured" <%= (typeof featured !== 'undefined' && featured) ? 'checked' : '' %>>
+                            <span class="checkmark"></span>
+                            Feature this hymn on homepage
+                        </label>
+                    </div>
 
-    <div class="form-actions">
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Hymn
-        </button>
-        <a href="/admin/hymns" class="btn btn-outline">Cancel</a>
-    </div>
-</form>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Hymn
+                        </button>
+                        <a href="/admin/hymns" class="btn btn-outline">Cancel</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-<script>
-    // Form validation
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('.hymn-form');
-        
-        form.addEventListener('submit', function(e) {
-            const title = form.querySelector('input[name="title"]').value.trim();
-            const description = form.querySelector('textarea[name="description"]').value.trim();
-            const language = form.querySelector('select[name="hymnLanguage"]').value; // FIXED: hymnLanguage
-            const category = form.querySelector('select[name="category"]').value;
-            const lyrics = form.querySelector('textarea[name="lyrics"]').value.trim();
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.hymn-form');
             
-            if (!title || !description || !language || !category || !lyrics) {
-                e.preventDefault();
-                alert('Please fill in all required fields marked with *');
-                return false;
-            }
+            form.addEventListener('submit', function(e) {
+                const title = form.querySelector('input[name="title"]').value.trim();
+                const description = form.querySelector('textarea[name="description"]').value.trim();
+                const language = form.querySelector('select[name="hymnLanguage"]').value;
+                const category = form.querySelector('select[name="category"]').value;
+                const lyrics = form.querySelector('textarea[name="lyrics"]').value.trim();
+                
+                if (!title || !description || !language || !category || !lyrics) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields marked with *');
+                    return false;
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>

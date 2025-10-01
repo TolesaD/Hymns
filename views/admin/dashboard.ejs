@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title><%= title %> - Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
@@ -12,7 +12,7 @@
     <div class="admin-container">
         <div class="admin-sidebar">
             <div class="admin-brand">
-                <img src="/assets/logo.png" alt="Hymns Logo">
+                <img src="/assets/logo.png" alt="Hymns Logo" onerror="this.style.display='none'">
                 <span>Admin Panel</span>
             </div>
             
@@ -53,6 +53,24 @@
                 <h1>Admin Dashboard</h1>
                 <p>Welcome, <%= user ? user.username : 'Admin' %></p>
             </div>
+
+            <% if (success_msg && success_msg.length > 0) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <p><%= success_msg %></p>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (error_msg && error_msg.length > 0) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <p><%= error_msg %></p>
+                    </div>
+                </div>
+            <% } %>
             
             <!-- Stats Overview -->
             <div class="stats-grid">
@@ -61,11 +79,8 @@
                         <i class="fas fa-music"></i>
                     </div>
                     <div class="stat-info">
-                        <h3><%= hymnCount %></h3>
+                        <h3><%= hymnCount || 0 %></h3>
                         <p>Total Hymns</p>
-                    </div>
-                    <div class="stat-trend up">
-                        <i class="fas fa-arrow-up"></i> 12%
                     </div>
                 </div>
                 
@@ -74,11 +89,8 @@
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="stat-info">
-                        <h3><%= userCount %></h3>
+                        <h3><%= userCount || 0 %></h3>
                         <p>Registered Users</p>
-                    </div>
-                    <div class="stat-trend up">
-                        <i class="fas fa-arrow-up"></i> 8%
                     </div>
                 </div>
                 
@@ -87,11 +99,8 @@
                         <i class="fas fa-comments"></i>
                     </div>
                     <div class="stat-info">
-                        <h3><%= commentCount %></h3>
+                        <h3><%= commentCount || 0 %></h3>
                         <p>Total Comments</p>
-                    </div>
-                    <div class="stat-trend down">
-                        <i class="fas fa-arrow-down"></i> 3%
                     </div>
                 </div>
                 
@@ -100,11 +109,8 @@
                         <i class="fas fa-clock"></i>
                     </div>
                     <div class="stat-info">
-                        <h3><%= pendingComments %></h3>
+                        <h3><%= pendingComments || 0 %></h3>
                         <p>Pending Reviews</p>
-                    </div>
-                    <div class="stat-trend up">
-                        <i class="fas fa-arrow-up"></i> 15%
                     </div>
                 </div>
             </div>
@@ -146,7 +152,7 @@
                         <tbody>
                             <% if (popularHymns && popularHymns.length > 0) { %>
                                 <% popularHymns.forEach(function(hymn) { %>
-                                    <% if (hymn && hymn.hymnLanguage) { %>
+                                    <% if (hymn) { %>
                                         <tr>
                                             <td>
                                                 <div class="hymn-title">
@@ -193,5 +199,59 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .quick-actions {
+            margin: 2rem 0;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .action-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: var(--transition);
+            text-align: center;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            color: var(--primary-color);
+        }
+        
+        .action-card i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .action-card span {
+            font-weight: 500;
+        }
+        
+        .rating-display {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .rating-display .fa-star {
+            color: #ffc107;
+        }
+    </style>
 </body>
 </html>

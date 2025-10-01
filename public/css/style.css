@@ -1537,8 +1537,9 @@ html {
         display: block;
     }
     
-   /* MOBILE NAVIGATION FIXES */
+   /* MOBILE RESPONSIVE STYLES - FIXED */
 @media (max-width: 768px) {
+    /* Mobile Navigation Container */
     .nav-container {
         padding: 8px 15px;
         flex-wrap: nowrap;
@@ -1587,9 +1588,71 @@ html {
         display: block;
     }
     
-    /* Mobile Navigation Menu */
+/* MOBILE RESPONSIVE STYLES - COMPLETELY FIXED */
+@media (max-width: 768px) {
+    /* Mobile Navigation Container */
+    .nav-container {
+        padding: 8px 15px;
+        flex-wrap: nowrap;
+        min-height: 60px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    /* Mobile Menu Toggle - FIXED VISIBILITY */
+    .mobile-menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        order: 3;
+        width: 44px;
+        height: 44px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        cursor: pointer;
+        z-index: 1001;
+        margin-left: auto;
+    }
+    
+    /* Logo Adjustments */
+    .nav-logo {
+        order: 1;
+        flex: 0 0 auto;
+    }
+    
+    .nav-logo a {
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+    
+    .logo {
+        height: 32px;
+        width: auto;
+        margin-right: 8px;
+    }
+    
+    /* Search Bar */
+    .nav-search {
+        order: 2;
+        flex: 1;
+        margin: 0 15px;
+        max-width: none;
+        display: block;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    /* Mobile Navigation Menu - COMPLETELY FIXED */
     .nav-menu {
-        display: none;
+        display: none !important;
         position: fixed;
         top: 60px;
         left: 0;
@@ -1597,15 +1660,17 @@ html {
         bottom: 0;
         background: var(--white);
         flex-direction: column;
-        padding: 0;
+        padding: 20px 0;
         box-shadow: var(--shadow-lg);
         z-index: 1000;
         overflow-y: auto;
         height: calc(100vh - 60px);
+        gap: 0;
+        align-items: stretch;
     }
     
     .nav-menu.active {
-        display: flex;
+        display: flex !important;
     }
     
     .nav-link {
@@ -1619,6 +1684,14 @@ html {
         min-height: 50px;
         font-weight: 500;
         text-decoration: none;
+        color: var(--text-dark);
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .nav-link:hover {
+        background: var(--gray-light);
         color: var(--text-dark);
     }
     
@@ -1635,11 +1708,19 @@ html {
         background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
         color: white;
         font-weight: 600;
+        border: none;
+    }
+    
+    .nav-link.btn-primary:hover {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+        color: white;
+        transform: none;
     }
     
     /* Mobile Dropdown Styles */
     .nav-dropdown {
         width: 100%;
+        position: relative;
     }
     
     .nav-dropdown .nav-link {
@@ -1676,21 +1757,75 @@ html {
         color: var(--text-dark);
         text-decoration: none;
         font-weight: 400;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
     }
     
     .dropdown-content a:hover {
         background: rgba(74, 111, 165, 0.1);
+        color: var(--primary-color);
     }
     
     /* Body lock when menu is open */
     body.menu-open {
         overflow: hidden;
+        height: 100vh;
     }
     
-    /* Prevent scrolling when menu is open */
-    html.menu-open, 
-    body.menu-open {
-        height: 100%;
-        overflow: hidden;
+    /* Hide desktop-specific hover effects on mobile */
+    .nav-dropdown:hover .dropdown-content {
+        display: none;
+    }
+    
+    /* Ensure other elements don't interfere */
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+    }
+    
+    /* Container adjustments for mobile */
+    .container {
+        padding: 0 15px;
+    }
+}
+
+/* Additional fix for very small screens */
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 8px 10px;
+    }
+    
+    .nav-logo a {
+        font-size: 1.1rem;
+    }
+    
+    .logo {
+        height: 28px;
+    }
+    
+    .nav-search {
+        margin: 0 10px;
+    }
+    
+    .mobile-menu-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 1.3rem;
+    }
+}
+
+/* Ensure desktop menu is properly hidden on mobile */
+@media (max-width: 768px) {
+    /* Hide desktop navigation by default */
+    .nav-menu:not(.active) {
+        display: none !important;
+    }
+    
+    /* Ensure the toggle button is always visible */
+    .mobile-menu-toggle {
+        display: flex !important;
     }
 }

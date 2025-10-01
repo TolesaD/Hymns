@@ -12,7 +12,7 @@
     <div class="admin-container">
         <div class="admin-sidebar">
             <div class="admin-brand">
-                <img src="/assets/logo.png" alt="Hymns Logo">
+                <img src="/assets/logo.png" alt="Hymns Logo" onerror="this.style.display='none'">
                 <span>Admin Panel</span>
             </div>
             
@@ -56,19 +56,19 @@
 
             <div class="admin-content">
                 <% if (error_msg && error_msg.length > 0) { %>
-                    <div class="flash-message error">
-                        <div class="container">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span><%= error_msg %></span>
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div>
+                            <p><%= error_msg %></p>
                         </div>
                     </div>
                 <% } %>
 
                 <% if (success_msg && success_msg.length > 0) { %>
-                    <div class="flash-message success">
-                        <div class="container">
-                            <i class="fas fa-check-circle"></i>
-                            <span><%= success_msg %></span>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <p><%= success_msg %></p>
                         </div>
                     </div>
                 <% } %>
@@ -115,19 +115,21 @@
                                   placeholder="Enter the complete hymn lyrics"><%= hymn.lyrics %></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Current Audio File</label>
-                        <div class="current-file">
-                            <p><strong>Current file:</strong> <%= hymn.audioFile.split('/').pop() %></p>
-                            <audio controls style="width: 100%; margin-top: 10px;">
-                                <source src="<%= hymn.audioFile %>" type="audio/mpeg">
-                                Your browser does not support the audio element.
-                            </audio>
+                    <% if (hymn.audioFile) { %>
+                        <div class="form-group">
+                            <label class="form-label">Current Audio File</label>
+                            <div class="current-file">
+                                <p><strong>Current file:</strong> <%= hymn.audioFile.split('/').pop() %></p>
+                                <audio controls style="width: 100%; margin-top: 10px;">
+                                    <source src="<%= hymn.audioFile %>" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
                         </div>
-                    </div>
+                    <% } %>
 
                     <div class="form-group">
-                        <label class="form-label">Replace Audio File (Optional)</label>
+                        <label class="form-label"><%= hymn.audioFile ? 'Replace' : 'Upload' %> Audio File (Optional)</label>
                         <div class="file-upload">
                             <input type="file" name="audioFile" class="form-control" 
                                    accept="audio/mp3,audio/wav,audio/mpeg,audio/*">
@@ -155,7 +157,6 @@
     </div>
 
     <script>
-        // Form validation
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.querySelector('.hymn-form');
             

@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+    <%- include('partials/header') %>
+
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
@@ -28,19 +30,19 @@
             <% } %>
             
             <% if (success_msg && success_msg.length > 0) { %>
-                <div class="flash-message success">
-                    <div class="container">
-                        <i class="fas fa-check-circle"></i>
-                        <span><%= success_msg %></span>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <p><%= success_msg %></p>
                     </div>
                 </div>
             <% } %>
             
             <% if (error_msg && error_msg.length > 0) { %>
-                <div class="flash-message error">
-                    <div class="container">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span><%= error_msg %></span>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <p><%= error_msg %></p>
                     </div>
                 </div>
             <% } %>

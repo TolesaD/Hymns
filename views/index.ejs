@@ -9,45 +9,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="/">
-                    <img src="/public/logo.png" alt="Hymns Logo" class="logo">
-                    <span>Hymns</span>
-                </a>
-            </div>
-            
-            <div class="nav-search">
-                <form action="/search" method="GET">
-                    <div class="search-box">
-                        <input type="text" name="q" placeholder="Search hymns..." id="search-input">
-                        <button type="submit"><i class="fas fa-search"></i></button>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="nav-menu">
-                <a href="/" class="nav-link">Home</a>
-                <div class="nav-dropdown">
-                    <a href="#" class="nav-link">Languages <i class="fas fa-chevron-down"></i></a>
-                    <div class="dropdown-content">
-                        <a href="/amharic/worship">Amharic</a>
-                        <a href="/oromo/worship">Afan Oromo</a>
-                        <a href="/tigrigna/worship">Tigrigna</a>
-                        <a href="/english/worship">English</a>
-                    </div>
-                </div>
-                <% if (user) { %>
-                    <a href="/users/profile" class="nav-link">Profile</a>
-                    <a href="/users/logout" class="nav-link">Logout</a>
-                <% } else { %>
-                    <a href="/users/login" class="nav-link">Login</a>
-                    <a href="/users/register" class="nav-link btn-primary">Sign Up</a>
-                <% } %>
-            </div>
-        </div>
-    </nav>
+    <%- include('partials/header') %>
 
     <!-- Hero Section -->
     <section class="hero">

@@ -1,14 +1,7 @@
 // DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Mobile Navigation Toggle
-    const navToggle = document.querySelector('.nav-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    if (navToggle) {
-        navToggle.addEventListener('click', function() {
-            navMenu.classList.toggle('active');
-        });
-    }
+    // NOTE: Mobile Navigation is now handled in header.ejs
+    // Remove the duplicate mobile navigation code from here
     
     // Close flash messages
     const flashCloseButtons = document.querySelectorAll('.flash-close');
@@ -30,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-input');
     const searchSuggestions = document.getElementById('search-suggestions');
     
-    if (searchInput) {
+    if (searchInput && searchSuggestions) {
         let timeoutId;
         
         searchInput.addEventListener('input', function() {
@@ -49,7 +42,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Hide suggestions when clicking outside
         document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+            if (searchInput && searchSuggestions && 
+                !searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
                 searchSuggestions.style.display = 'none';
             }
         });
@@ -72,7 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (newsletterForm) {
         newsletterForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = this.querySelector('input[type="email"]').value;
+            const emailInput = this.querySelector('input[type="email"]');
+            const email = emailInput ? emailInput.value : '';
             subscribeNewsletter(email, this);
         });
     }
@@ -92,6 +87,8 @@ async function fetchSearchSuggestions(query) {
 
 function displaySearchSuggestions(suggestions) {
     const searchSuggestions = document.getElementById('search-suggestions');
+    
+    if (!searchSuggestions) return;
     
     if (suggestions.length === 0) {
         searchSuggestions.innerHTML = '<div class="suggestion-item">No results found</div>';
@@ -168,34 +165,37 @@ function initializeAudioPlayers() {
         // Update progress bar
         audio.addEventListener('timeupdate', function() {
             const percent = (audio.currentTime / audio.duration) * 100;
-            progress.style.width = `${percent}%`;
-            currentTime.textContent = formatTime(audio.currentTime);
+            if (progress) progress.style.width = `${percent}%`;
+            if (currentTime) currentTime.textContent = formatTime(audio.currentTime);
         });
         
         // Set duration
         audio.addEventListener('loadedmetadata', function() {
-            duration.textContent = formatTime(audio.duration);
+            if (duration) duration.textContent = formatTime(audio.duration);
         });
         
         // Seek on progress bar click
-        progressBar.addEventListener('click', function(e) {
-            const clickX = e.offsetX;
-            const width = this.offsetWidth;
-            const duration = audio.duration;
-            
-            audio.currentTime = (clickX / width) * duration;
-        });
+        if (progressBar) {
+            progressBar.addEventListener('click', function(e) {
+                const clickX = e.offsetX;
+                const width = this.offsetWidth;
+                const duration = audio.duration;
+                
+                audio.currentTime = (clickX / width) * duration;
+            });
+        }
         
         // Reset play button when audio ends
         audio.addEventListener('ended', function() {
-            playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            progress.style.width = '0%';
-            currentTime.textContent = '0:00';
+            if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            if (progress) progress.style.width = '0%';
+            if (currentTime) currentTime.textContent = '0:00';
         });
     });
 }
 
 function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -203,6 +203,11 @@ function formatTime(seconds) {
 
 // Newsletter subscription
 async function subscribeNewsletter(email, form) {
+    if (!email) {
+        showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+
     try {
         const response = await fetch('/api/newsletter', {
             method: 'POST',
@@ -216,7 +221,7 @@ async function subscribeNewsletter(email, form) {
         
         if (response.ok) {
             showNotification('Successfully subscribed to newsletter!', 'success');
-            form.reset();
+            if (form) form.reset();
         } else {
             showNotification(result.error || 'Subscription failed. Please try again.', 'error');
         }
@@ -224,23 +229,6 @@ async function subscribeNewsletter(email, form) {
         console.error('Error subscribing to newsletter:', error);
         showNotification('Network error. Please check your connection and try again.', 'error');
     }
-}
-
-// Update the form submission handler
-const newsletterForm = document.getElementById('newsletter-form');
-if (newsletterForm) {
-    newsletterForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const emailInput = this.querySelector('input[name="email"]');
-        const email = emailInput.value.trim();
-        
-        if (!email) {
-            showNotification('Please enter a valid email address', 'error');
-            return;
-        }
-        
-        subscribeNewsletter(email, this);
-    });
 }
 
 // Notification system
@@ -297,6 +285,7 @@ function showNotification(message, type = 'info') {
                 border: none;
                 cursor: pointer;
                 margin-left: auto;
+                color: inherit;
             }
             
             @keyframes slideIn {
@@ -311,9 +300,12 @@ function showNotification(message, type = 'info') {
     document.body.appendChild(notification);
     
     // Close button
-    notification.querySelector('.notification-close').addEventListener('click', function() {
-        notification.remove();
-    });
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            notification.remove();
+        });
+    }
     
     // Auto remove after 5 seconds
     setTimeout(() => {

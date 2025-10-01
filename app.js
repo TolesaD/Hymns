@@ -36,7 +36,11 @@ connectDB();
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '10mb' }));
+
+// FIXED: Serve static files from multiple directories
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/assets', express.static(path.join(__dirname, 'models/assets')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Session configuration - DIFFERENT FOR LOCAL vs PRODUCTION
 const sessionConfig = {

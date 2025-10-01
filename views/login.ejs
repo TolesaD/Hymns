@@ -9,41 +9,44 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+    <%- include('partials/header') %>
+
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
                 <h1>Welcome Back</h1>
                 <p>Sign in to your Hymns account</p>
             </div>
-<% if (success_msg && success_msg.length > 0) { %>
-    <div class="alert alert-success">
-        <i class="fas fa-check-circle"></i>
-        <div>
-            <% if (Array.isArray(success_msg)) { %>
-                <% success_msg.forEach(function(msg) { %>
-                    <p><%= msg %></p>
-                <% }); %>
-            <% } else { %>
-                <p><%= success_msg %></p>
-            <% } %>
-        </div>
-    </div>
-<% } %>
 
-<% if (error_msg && error_msg.length > 0) { %>
-    <div class="alert alert-error">
-        <i class="fas fa-exclamation-circle"></i>
-        <div>
-            <% if (Array.isArray(error_msg)) { %>
-                <% error_msg.forEach(function(msg) { %>
-                    <p><%= msg %></p>
-                <% }); %>
-            <% } else { %>
-                <p><%= error_msg %></p>
+            <% if (success_msg && success_msg.length > 0) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <% if (Array.isArray(success_msg)) { %>
+                            <% success_msg.forEach(function(msg) { %>
+                                <p><%= msg %></p>
+                            <% }); %>
+                        <% } else { %>
+                            <p><%= success_msg %></p>
+                        <% } %>
+                    </div>
+                </div>
             <% } %>
-        </div>
-    </div>
-<% } %>
+
+            <% if (error_msg && error_msg.length > 0) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <% if (Array.isArray(error_msg)) { %>
+                            <% error_msg.forEach(function(msg) { %>
+                                <p><%= msg %></p>
+                            <% }); %>
+                        <% } else { %>
+                            <p><%= error_msg %></p>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
             
             <form class="auth-form" method="POST" action="/users/login">
                 <div class="form-group">

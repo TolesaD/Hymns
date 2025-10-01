@@ -8,7 +8,8 @@
         <!-- Logo -->
         <div class="nav-logo">
             <a href="/">
-                <img src="/assets/logo.svg" alt="Hymns Logo" class="logo">
+                <img src="/assets/logo.png" alt="Hymns Logo" class="logo" 
+                     onerror="this.style.display='none'; document.querySelector('.nav-logo span').style.marginLeft='0';">
                 <span>Hymns</span>
             </a>
         </div>
@@ -57,16 +58,20 @@
 </nav>
 
 <script>
-// Enhanced Mobile menu functionality
+// Enhanced Mobile menu functionality - FIXED
 document.addEventListener('DOMContentLoaded', function() {
     const mobileToggle = document.getElementById('mobileMenuToggle');
     const navMenu = document.getElementById('navMenu');
     const navDropdowns = document.querySelectorAll('.nav-dropdown');
     const body = document.body;
     
-    console.log('📱 Mobile menu initialized');
+    console.log('📱 Mobile menu initialized - Elements found:', {
+        mobileToggle: !!mobileToggle,
+        navMenu: !!navMenu,
+        navDropdowns: navDropdowns.length
+    });
     
-    // Mobile menu toggle
+    // Mobile menu toggle - FIXED
     if (mobileToggle && navMenu) {
         mobileToggle.addEventListener('click', function(e) {
             e.preventDefault();
@@ -74,18 +79,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const isOpening = !navMenu.classList.contains('active');
             
+            // Toggle menu
             navMenu.classList.toggle('active');
             this.classList.toggle('active');
             body.classList.toggle('menu-open', isOpening);
             
             // Toggle icon between bars and times
             const icon = this.querySelector('i');
-            if (icon.classList.contains('fa-bars')) {
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
-            } else {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
+            if (icon) {
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
             }
             
             console.log('📱 Mobile menu ' + (isOpening ? 'opened' : 'closed'));
@@ -100,53 +108,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Close menu when clicking on a link
+        // Close menu when clicking on a link (except dropdown toggles)
         navMenu.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' || e.target.parentElement.tagName === 'A') {
+            const target = e.target.closest('a');
+            if (target) {
                 // Don't close for dropdown toggles
-                if (!e.target.classList.contains('nav-link') || !e.target.querySelector('i')) {
+                const isDropdownToggle = target.parentElement.classList.contains('nav-dropdown') && 
+                                       target.querySelector('i.fa-chevron-down');
+                if (!isDropdownToggle) {
                     closeMobileMenu();
                 }
             }
         });
-        
-        // Close menu function
-        function closeMobileMenu() {
-            navMenu.classList.remove('active');
-            mobileToggle.classList.remove('active');
-            body.classList.remove('menu-open');
-            
-            const icon = mobileToggle.querySelector('i');
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
-            
-            // Close all dropdowns
-            navDropdowns.forEach(dropdown => {
-                dropdown.classList.remove('active');
-            });
-        }
     }
     
-    // Mobile dropdown functionality
+    // Mobile dropdown functionality - FIXED
     navDropdowns.forEach(dropdown => {
         const link = dropdown.querySelector('.nav-link');
         
-        link.addEventListener('click', function(e) {
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Close other dropdowns
-                navDropdowns.forEach(otherDropdown => {
-                    if (otherDropdown !== dropdown) {
-                        otherDropdown.classList.remove('active');
-                    }
-                });
-                
-                // Toggle current dropdown
-                dropdown.classList.toggle('active');
-            }
-        });
+        if (link) {
+            link.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Close other dropdowns
+                    navDropdowns.forEach(otherDropdown => {
+                        if (otherDropdown !== dropdown) {
+                            otherDropdown.classList.remove('active');
+                        }
+                    });
+                    
+                    // Toggle current dropdown
+                    dropdown.classList.toggle('active');
+                }
+            });
+        }
     });
     
     // Handle window resize
@@ -158,14 +155,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Escape key to close menu
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+        if (e.key === 'Escape' && navMenu && navMenu.classList.contains('active')) {
             closeMobileMenu();
         }
     });
     
-    // Initialize close function
+    // Close menu function
     function closeMobileMenu() {
-        if (navMenu) navMenu.classList.remove('active');
+        if (navMenu) {
+            navMenu.classList.remove('active');
+        }
         if (mobileToggle) {
             mobileToggle.classList.remove('active');
             const icon = mobileToggle.querySelector('i');
@@ -176,9 +175,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         body.classList.remove('menu-open');
         
+        // Close all dropdowns
         navDropdowns.forEach(dropdown => {
             dropdown.classList.remove('active');
         });
     }
+    
+    // Initialize menu state
+    closeMobileMenu();
 });
 </script>
