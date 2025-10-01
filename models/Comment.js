@@ -13,12 +13,16 @@ const commentSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true
+    required: [true, 'Comment content is required'],
+    minlength: [1, 'Comment cannot be empty'],
+    maxlength: [1000, 'Comment cannot exceed 1000 characters'],
+    trim: true
   },
   rating: {
     type: Number,
-    min: 1,
-    max: 5
+    min: [1, 'Rating must be at least 1'],
+    max: [5, 'Rating cannot exceed 5'],
+    required: [true, 'Rating is required']
   },
   approved: {
     type: Boolean,
@@ -29,5 +33,8 @@ const commentSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// Prevent duplicate comments from same user on same hymn
+commentSchema.index({ hymn: 1, user: 1 }, { unique: true });
 
 module.exports = mongoose.model('Comment', commentSchema);

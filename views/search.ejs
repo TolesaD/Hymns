@@ -7,21 +7,466 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        .search-results-container {
+            padding: 2rem 0;
+            min-height: 70vh;
+        }
+
+        .search-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .search-header h1 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .search-header p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .search-query {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .search-results {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .search-result-item {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .search-result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .result-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .result-image {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 1.5rem;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .result-details {
+            flex: 1;
+        }
+
+        .result-details h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .result-details h3 a {
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .result-details h3 a:hover {
+            color: var(--primary-color);
+        }
+
+        .result-description {
+            color: var(--text-light);
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .result-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .category-tag {
+            background: var(--gray-light);
+            color: var(--text-dark);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .meta-item i {
+            color: var(--primary-color);
+        }
+
+        .result-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .search-filters {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .filter-options {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 500;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid var(--gray);
+            border-radius: 4px;
+            background: var(--white);
+            font-size: 0.9rem;
+        }
+
+        .search-suggestions {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-top: 2rem;
+        }
+
+        .suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .suggestion-item {
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: var(--border-radius);
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: var(--transition);
+        }
+
+        .suggestion-item:hover {
+            background: var(--primary-color);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
+
+        .suggestion-item i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .search-results-container {
+                padding: 1rem 0;
+            }
+
+            .search-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .search-result-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .result-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .result-image {
+                width: 60px;
+                height: 60px;
+                font-size: 1.2rem;
+            }
+
+            .result-details h3 {
+                font-size: 1.1rem;
+            }
+
+            .result-meta {
+                gap: 0.5rem;
+            }
+
+            .result-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .result-actions .btn {
+                flex: 1;
+            }
+
+            .filter-options {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .suggestions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-header {
+                margin-bottom: 1rem;
+            }
+
+            .search-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .search-header p {
+                font-size: 1rem;
+            }
+
+            .result-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+
+            .empty-state-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .empty-state-actions .btn {
+                width: 100%;
+            }
+        }
+
+        /* Loading state */
+        .loading-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .loading-spinner {
+            border: 3px solid var(--gray-light);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* No results state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--gray);
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .empty-state-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Search tips */
+        .search-tips {
+            background: var(--bg-light);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .search-tips h4 {
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .search-tips ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .search-tips li {
+            padding: 0.25rem 0;
+            color: var(--text-light);
+        }
+
+        .search-tips li:before {
+            content: "•";
+            color: var(--primary-color);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+    </style>
 </head>
 <body>
     <%- include('partials/header') %>
 
     <div class="search-results-container">
         <div class="container">
+            <!-- Search Header -->
             <div class="search-header">
-                <h1>Search Results for "<%= query %>"</h1>
-                <p>Found <%= hymns.length %> hymns matching your search</p>
+                <h1>Search Results for "<span class="search-query"><%= query %></span>"</h1>
+                <p>
+                    <% if (hymns.length > 0) { %>
+                        Found <strong><%= hymns.length %></strong> hymn<%= hymns.length !== 1 ? 's' : '' %> matching your search
+                    <% } else { %>
+                        No hymns found matching your search
+                    <% } %>
+                </p>
             </div>
-            
+
+            <!-- Search Filters -->
             <% if (hymns.length > 0) { %>
-                <div class="search-results">
+                <div class="search-filters">
+                    <div class="filter-header">
+                        <h3>Filter Results</h3>
+                    </div>
+                    <div class="filter-options">
+                        <div class="filter-group">
+                            <label class="filter-label">Language</label>
+                            <select class="filter-select" id="language-filter">
+                                <option value="">All Languages</option>
+                                <option value="amharic">Amharic</option>
+                                <option value="oromo">Afan Oromo</option>
+                                <option value="tigrigna">Tigrigna</option>
+                                <option value="english">English</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Category</label>
+                            <select class="filter-select" id="category-filter">
+                                <option value="">All Categories</option>
+                                <option value="worship">Worship</option>
+                                <option value="praise">Praise</option>
+                                <option value="thanksgiving">Thanksgiving</option>
+                                <option value="slow">Slow</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Sort By</label>
+                            <select class="filter-select" id="sort-filter">
+                                <option value="relevance">Relevance</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="rating">Highest Rated</option>
+                                <option value="newest">Newest First</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- Search Results -->
+            <% if (hymns.length > 0) { %>
+                <div class="search-results" id="search-results">
                     <% hymns.forEach(function(hymn) { %>
-                        <div class="search-result-item">
+                        <div class="search-result-item" 
+                             data-language="<%= hymn.hymnLanguage %>" 
+                             data-category="<%= hymn.category %>"
+                             data-plays="<%= hymn.plays || 0 %>"
+                             data-rating="<%= hymn.rating || 0 %>"
+                             data-created="<%= hymn.createdAt %>">
                             <div class="result-content">
                                 <div class="result-image">
                                     <div class="language-badge">
@@ -42,7 +487,10 @@
                                             <i class="fas fa-play"></i> <%= hymn.plays || 0 %> plays
                                         </span>
                                         <span class="meta-item">
-                                            <i class="fas fa-star"></i> <%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %>
+                                            <i class="fas fa-download"></i> <%= hymn.downloads || 0 %> downloads
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-star"></i> <%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %> (<%= hymn.ratingCount || 0 %>)
                                         </span>
                                     </div>
                                 </div>
@@ -53,23 +501,68 @@
                                     <i class="fas fa-play"></i> Listen
                                 </a>
                                 <% if (user) { %>
-                                    <button class="btn-icon favorite-btn" data-hymn-id="<%= hymn._id %>">
-                                        <i class="far fa-heart"></i>
+                                    <button class="btn-icon favorite-btn <%= user.favorites && user.favorites.includes(hymn._id.toString()) ? 'active' : '' %>" 
+                                            data-hymn-id="<%= hymn._id %>"
+                                            title="<%= user.favorites && user.favorites.includes(hymn._id.toString()) ? 'Remove from favorites' : 'Add to favorites' %>">
+                                        <i class="<%= user.favorites && user.favorites.includes(hymn._id.toString()) ? 'fas' : 'far' %> fa-heart"></i>
                                     </button>
+                                <% } else { %>
+                                    <a href="/users/login" class="btn-icon" title="Login to add favorites">
+                                        <i class="far fa-heart"></i>
+                                    </a>
                                 <% } %>
                             </div>
                         </div>
                     <% }); %>
                 </div>
             <% } else { %>
+                <!-- No Results State -->
                 <div class="empty-state">
                     <i class="fas fa-search"></i>
-                    <h3>No results found</h3>
-                    <p>We couldn't find any hymns matching "<%= query %>". Try adjusting your search terms or browse by language and category.</p>
+                    <h3>No results found for "<%= query %>"</h3>
+                    <p>We couldn't find any hymns matching your search. Try adjusting your search terms or browse by language and category.</p>
                     
                     <div class="empty-state-actions">
-                        <a href="/" class="btn btn-primary">Back to Home</a>
-                        <a href="/amharic/worship" class="btn btn-outline">Browse All Hymns</a>
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                        <a href="/amharic/worship" class="btn btn-outline">
+                            <i class="fas fa-music"></i> Browse All Hymns
+                        </a>
+                    </div>
+
+                    <!-- Search Tips -->
+                    <div class="search-tips">
+                        <h4>Search Tips:</h4>
+                        <ul>
+                            <li>Try different keywords or spellings</li>
+                            <li>Use more general terms</li>
+                            <li>Search by language or category using the navigation</li>
+                            <li>Check out our featured hymns on the home page</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Search Suggestions -->
+                <div class="search-suggestions">
+                    <h3>You might be interested in:</h3>
+                    <div class="suggestions-grid">
+                        <a href="/amharic/worship" class="suggestion-item">
+                            <i class="fas fa-pray"></i>
+                            <span>Amharic Worship Hymns</span>
+                        </a>
+                        <a href="/oromo/praise" class="suggestion-item">
+                            <i class="fas fa-hands-praying"></i>
+                            <span>Oromo Praise Hymns</span>
+                        </a>
+                        <a href="/tigrigna/thanksgiving" class="suggestion-item">
+                            <i class="fas fa-heart"></i>
+                            <span>Tigrigna Thanksgiving</span>
+                        </a>
+                        <a href="/english/slow" class="suggestion-item">
+                            <i class="fas fa-moon"></i>
+                            <span>English Slow Hymns</span>
+                        </a>
                     </div>
                 </div>
             <% } %>
@@ -94,5 +587,121 @@
     </footer>
 
     <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter functionality
+            const languageFilter = document.getElementById('language-filter');
+            const categoryFilter = document.getElementById('category-filter');
+            const sortFilter = document.getElementById('sort-filter');
+            const searchResults = document.getElementById('search-results');
+
+            if (searchResults) {
+                function filterAndSortResults() {
+                    const language = languageFilter.value;
+                    const category = categoryFilter.value;
+                    const sortBy = sortFilter.value;
+                    
+                    const items = Array.from(searchResults.querySelectorAll('.search-result-item'));
+                    
+                    // Filter
+                    const filteredItems = items.filter(item => {
+                        const itemLanguage = item.getAttribute('data-language');
+                        const itemCategory = item.getAttribute('data-category');
+                        
+                        const languageMatch = !language || itemLanguage === language;
+                        const categoryMatch = !category || itemCategory === category;
+                        
+                        return languageMatch && categoryMatch;
+                    });
+                    
+                    // Sort
+                    filteredItems.sort((a, b) => {
+                        switch (sortBy) {
+                            case 'popular':
+                                return parseInt(b.getAttribute('data-plays')) - parseInt(a.getAttribute('data-plays'));
+                            case 'rating':
+                                return parseFloat(b.getAttribute('data-rating')) - parseFloat(a.getAttribute('data-rating'));
+                            case 'newest':
+                                return new Date(b.getAttribute('data-created')) - new Date(a.getAttribute('data-created'));
+                            case 'relevance':
+                            default:
+                                return 0; // Keep original order for relevance
+                        }
+                    });
+                    
+                    // Update DOM
+                    searchResults.innerHTML = '';
+                    filteredItems.forEach(item => searchResults.appendChild(item));
+                    
+                    // Show message if no results after filtering
+                    if (filteredItems.length === 0) {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'empty-state';
+                        noResults.innerHTML = `
+                            <i class="fas fa-filter"></i>
+                            <h3>No results match your filters</h3>
+                            <p>Try adjusting your filter settings to see more results.</p>
+                        `;
+                        searchResults.appendChild(noResults);
+                    }
+                }
+                
+                // Add event listeners
+                languageFilter.addEventListener('change', filterAndSortResults);
+                categoryFilter.addEventListener('change', filterAndSortResults);
+                sortFilter.addEventListener('change', filterAndSortResults);
+            }
+
+            // Favorite button functionality
+            document.querySelectorAll('.favorite-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const hymnId = this.getAttribute('data-hymn-id');
+                    const isActive = this.classList.contains('active');
+                    
+                    try {
+                        const response = await fetch(`/users/favorites/${hymnId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            const icon = this.querySelector('i');
+                            if (result.action === 'added') {
+                                this.classList.add('active');
+                                icon.classList.remove('far');
+                                icon.classList.add('fas');
+                                this.title = 'Remove from favorites';
+                                showNotification('Added to favorites!', 'success');
+                            } else {
+                                this.classList.remove('active');
+                                icon.classList.remove('fas');
+                                icon.classList.add('far');
+                                this.title = 'Add to favorites';
+                                showNotification('Removed from favorites', 'info');
+                            }
+                        } else {
+                            showNotification(result.error || 'Please log in to add favorites', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error toggling favorite:', error);
+                        showNotification('Error updating favorites', 'error');
+                    }
+                });
+            });
+
+            // Notification function
+            function showNotification(message, type = 'info') {
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification(message, type);
+                } else {
+                    alert(message);
+                }
+            }
+        });
+    </script>
 </body>
 </html>

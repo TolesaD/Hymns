@@ -7,12 +7,199 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1002;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .close-btn:hover {
+            color: var(--text-dark);
+        }
+
+        .modal-form {
+            padding: 1.5rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        /* Profile specific mobile fixes */
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .profile-avatar {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+                width: 100%;
+            }
+
+            .profile-stats {
+                justify-content: space-around;
+                width: 100%;
+            }
+
+            .profile-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .profile-sidebar {
+                order: 2;
+            }
+
+            .profile-main {
+                order: 1;
+            }
+
+            .profile-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+
+            .profile-nav .nav-item {
+                white-space: nowrap;
+                flex-shrink: 0;
+                margin-bottom: 0;
+                margin-right: 0.5rem;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+            }
+        }
+
+        /* Additional mobile fixes for very small screens */
+        @media (max-width: 480px) {
+            .profile-stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .hymn-card.compact .hymn-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .hymn-card.compact .btn {
+                width: 100%;
+            }
+        }
+
+        /* Flash message styles */
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--error);
+            color: var(--error);
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+            margin-top: 0.1rem;
+        }
+
+        .alert div p {
+            margin: 0.2rem 0;
+        }
+    </style>
 </head>
 <body>
     <%- include('partials/header') %>
 
     <div class="profile-container">
         <div class="container">
+            <!-- Flash Messages -->
+            <% if (success_msg && success_msg.length > 0) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <p><%= success_msg %></p>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (error_msg && error_msg.length > 0) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <p><%= error_msg %></p>
+                    </div>
+                </div>
+            <% } %>
+
             <div class="profile-header">
                 <div class="profile-avatar">
                     <div class="avatar-placeholder">
@@ -30,6 +217,10 @@
                                 <span class="stat-number"><%= user.isSubscribed ? 'Yes' : 'No' %></span>
                                 <span class="stat-label">Newsletter</span>
                             </div>
+                            <div class="stat">
+                                <span class="stat-number"><%= user.isAdmin ? 'Admin' : 'User' %></span>
+                                <span class="stat-label">Role</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -39,7 +230,7 @@
             </div>
             
             <!-- Edit Profile Modal -->
-            <div id="edit-profile-modal" class="modal" style="display: none;">
+            <div id="edit-profile-modal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>Edit Profile</h2>
@@ -49,20 +240,14 @@
                         <div class="form-group">
                             <label class="form-label">Username *</label>
                             <input type="text" id="edit-username" name="username" class="form-control" 
-                                   value="<%= user.username %>" required maxlength="50">
-                            <small class="form-help">Choose a unique username (3-50 characters)</small>
+                                   value="<%= user.username %>" required minlength="3" maxlength="30">
+                            <small class="form-help">Choose a unique username (3-30 characters)</small>
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">Email Address *</label>
                             <input type="email" id="edit-email" name="email" class="form-control" 
                                    value="<%= user.email %>" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" id="edit-fullname" name="fullName" class="form-control" 
-                                   value="<%= user.fullName || '' %>" placeholder="Optional">
                         </div>
                         
                         <div class="form-actions">
@@ -100,6 +285,9 @@
                     <div class="tab-content active" id="favorites-tab">
                         <div class="tab-header">
                             <h2>My Favorite Hymns</h2>
+                            <div class="content-actions">
+                                <span class="stat-label"><%= user.favorites ? user.favorites.length : 0 %> hymns</span>
+                            </div>
                         </div>
                         
                         <% if (user.favorites && user.favorites.length > 0) { %>
@@ -113,15 +301,16 @@
                                             <i class="fas fa-music"></i>
                                         </div>
                                         <div class="hymn-content">
-                                            <h3><%= hymn.title %></h3>
-                                            <p><%= hymn.description ? hymn.description.substring(0, 80) + '...' : 'No description' %></p>
+                                            <h3><a href="/hymns/<%= hymn._id %>"><%= hymn.title %></a></h3>
+                                            <p class="hymn-description"><%= hymn.description ? hymn.description.substring(0, 80) + (hymn.description.length > 80 ? '...' : '') : 'No description available' %></p>
                                             <div class="hymn-meta">
                                                 <span><i class="fas fa-play"></i> <%= hymn.plays || 0 %></span>
                                                 <span><i class="fas fa-star"></i> <%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %></span>
+                                                <span><i class="fas fa-download"></i> <%= hymn.downloads || 0 %></span>
                                             </div>
                                             <div class="hymn-actions">
                                                 <a href="/hymns/<%= hymn._id %>" class="btn btn-primary btn-small">Listen</a>
-                                                <button class="btn-icon favorite-btn active" data-hymn-id="<%= hymn._id %>">
+                                                <button class="btn-icon favorite-btn active" data-hymn-id="<%= hymn._id %>" title="Remove from favorites">
                                                     <i class="fas fa-heart"></i>
                                                 </button>
                                             </div>
@@ -131,10 +320,13 @@
                             </div>
                         <% } else { %>
                             <div class="empty-state">
-                                <i class="fas fa-heart"></i>
+                                <i class="fas fa-heart" style="font-size: 4rem; color: var(--gray); margin-bottom: 1rem;"></i>
                                 <h3>No favorite hymns yet</h3>
                                 <p>Start exploring hymns and add them to your favorites!</p>
-                                <a href="/" class="btn btn-primary">Browse Hymns</a>
+                                <div class="empty-state-actions">
+                                    <a href="/" class="btn btn-primary">Browse Hymns</a>
+                                    <a href="/search" class="btn btn-outline">Search Hymns</a>
+                                </div>
                             </div>
                         <% } %>
                     </div>
@@ -158,6 +350,11 @@
                                     <label class="form-label">Email Address</label>
                                     <input type="email" class="form-control" value="<%= user.email %>" disabled>
                                 </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Account Type</label>
+                                    <input type="text" class="form-control" value="<%= user.isAdmin ? 'Administrator' : 'Standard User' %>" disabled>
+                                </div>
                             </div>
                             
                             <div class="form-section">
@@ -170,6 +367,7 @@
                                         <option value="oromo" <%= user.languagePreference === 'oromo' ? 'selected' : '' %>>Afan Oromo</option>
                                         <option value="tigrigna" <%= user.languagePreference === 'tigrigna' ? 'selected' : '' %>>Tigrigna</option>
                                     </select>
+                                    <small class="form-help">This will be your default language for hymn recommendations</small>
                                 </div>
                             </div>
                             
@@ -226,6 +424,17 @@
                                         </div>
                                     </label>
                                 </div>
+
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label large">
+                                        <input type="checkbox" name="newHymns" <%= user.notifications && user.notifications.newHymns ? 'checked' : 'checked' %>>
+                                        <span class="checkmark"></span>
+                                        <div>
+                                            <strong>New Hymn Notifications</strong>
+                                            <p>Get notified when new hymns are added to the platform</p>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                             
                             <button type="submit" class="btn btn-primary">Save Preferences</button>
@@ -257,7 +466,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Tab functionality
-            const tabItems = document.querySelectorAll('.nav-item');
+            const tabItems = document.querySelectorAll('.profile-nav .nav-item');
             const tabContents = document.querySelectorAll('.tab-content');
             
             tabItems.forEach(item => {
@@ -309,8 +518,7 @@
                 const formData = new FormData(this);
                 const data = {
                     username: formData.get('username'),
-                    email: formData.get('email'),
-                    fullName: formData.get('fullName')
+                    email: formData.get('email')
                 };
 
                 try {
@@ -327,17 +535,78 @@
                     if (response.ok) {
                         // Update displayed username
                         document.getElementById('username-display').textContent = data.username;
-                        alert('Profile updated successfully!');
+                        showNotification('Profile updated successfully!', 'success');
                         closeModal();
-                        // Optional: reload page to reflect changes
-                        // window.location.reload();
                     } else {
-                        alert('Error: ' + result.error);
+                        showNotification('Error: ' + result.error, 'error');
                     }
                 } catch (error) {
                     console.error('Error updating profile:', error);
-                    alert('Error updating profile. Please try again.');
+                    showNotification('Error updating profile. Please try again.', 'error');
                 }
+            });
+
+            // Handle favorite buttons
+            document.querySelectorAll('.favorite-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const hymnId = this.getAttribute('data-hymn-id');
+                    const isActive = this.classList.contains('active');
+                    
+                    try {
+                        const response = await fetch(`/users/favorites/${hymnId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            if (result.action === 'removed') {
+                                this.classList.remove('active');
+                                showNotification('Removed from favorites', 'info');
+                                // Remove the card from the DOM
+                                this.closest('.hymn-card').remove();
+                                
+                                // Update favorites count
+                                const favoritesCount = document.querySelector('.profile-stats .stat:first-child .stat-number');
+                                if (favoritesCount) {
+                                    const currentCount = parseInt(favoritesCount.textContent);
+                                    favoritesCount.textContent = currentCount - 1;
+                                }
+                                
+                                // Update tab header count
+                                const tabCount = document.querySelector('#favorites-tab .stat-label');
+                                if (tabCount) {
+                                    const currentTabCount = parseInt(tabCount.textContent);
+                                    tabCount.textContent = (currentTabCount - 1) + ' hymns';
+                                }
+                                
+                                // Show empty state if no favorites left
+                                const hymnsGrid = document.querySelector('.hymns-grid');
+                                if (hymnsGrid && hymnsGrid.children.length === 0) {
+                                    hymnsGrid.innerHTML = `
+                                        <div class="empty-state">
+                                            <i class="fas fa-heart" style="font-size: 4rem; color: var(--gray); margin-bottom: 1rem;"></i>
+                                            <h3>No favorite hymns yet</h3>
+                                            <p>Start exploring hymns and add them to your favorites!</p>
+                                            <div class="empty-state-actions">
+                                                <a href="/" class="btn btn-primary">Browse Hymns</a>
+                                                <a href="/search" class="btn btn-outline">Search Hymns</a>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        } else {
+                            showNotification(result.error || 'Error updating favorites', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error toggling favorite:', error);
+                        showNotification('Error updating favorites', 'error');
+                    }
+                });
             });
 
             // Handle settings form submission
@@ -356,13 +625,13 @@
                     });
 
                     if (response.ok) {
-                        alert('Settings updated successfully!');
+                        showNotification('Settings updated successfully!', 'success');
                     } else {
-                        alert('Error updating settings');
+                        showNotification('Error updating settings', 'error');
                     }
                 } catch (error) {
                     console.error('Error updating settings:', error);
-                    alert('Error updating settings. Please try again.');
+                    showNotification('Error updating settings. Please try again.', 'error');
                 }
             });
 
@@ -373,7 +642,7 @@
                 const data = Object.fromEntries(formData);
 
                 if (data.newPassword !== data.confirmPassword) {
-                    alert('New passwords do not match!');
+                    showNotification('New passwords do not match!', 'error');
                     return;
                 }
 
@@ -389,14 +658,14 @@
                     const result = await response.json();
 
                     if (response.ok) {
-                        alert('Password changed successfully!');
+                        showNotification('Password changed successfully!', 'success');
                         this.reset();
                     } else {
-                        alert('Error: ' + result.error);
+                        showNotification('Error: ' + result.error, 'error');
                     }
                 } catch (error) {
                     console.error('Error changing password:', error);
-                    alert('Error changing password. Please try again.');
+                    showNotification('Error changing password. Please try again.', 'error');
                 }
             });
 
@@ -416,15 +685,26 @@
                     });
 
                     if (response.ok) {
-                        alert('Notification preferences updated!');
+                        showNotification('Notification preferences updated!', 'success');
                     } else {
-                        alert('Error updating preferences');
+                        showNotification('Error updating preferences', 'error');
                     }
                 } catch (error) {
                     console.error('Error updating notifications:', error);
-                    alert('Error updating notification preferences. Please try again.');
+                    showNotification('Error updating notification preferences. Please try again.', 'error');
                 }
             });
+
+            // Notification function
+            function showNotification(message, type = 'info') {
+                // Use the notification system from main.js if available
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification(message, type);
+                } else {
+                    // Fallback notification
+                    alert(message);
+                }
+            }
         });
     </script>
 </body>

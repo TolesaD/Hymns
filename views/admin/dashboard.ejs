@@ -7,199 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <div class="admin-container">
-        <div class="admin-sidebar">
-            <div class="admin-brand">
-                <img src="/assets/logo.png" alt="Hymns Logo" onerror="this.style.display='none'">
-                <span>Admin Panel</span>
-            </div>
-            
-            <nav class="admin-nav">
-                <a href="/admin" class="nav-item active">
-                    <i class="fas fa-tachometer-alt"></i>
-                    Dashboard
-                </a>
-                <a href="/admin/hymns" class="nav-item">
-                    <i class="fas fa-music"></i>
-                    Manage Hymns
-                </a>
-                <a href="/admin/hymns/add" class="nav-item">
-                    <i class="fas fa-plus"></i>
-                    Add New Hymn
-                </a>
-                <a href="/admin/users" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    Manage Users
-                </a>
-                <a href="/admin/comments" class="nav-item">
-                    <i class="fas fa-comments"></i>
-                    Moderate Comments
-                </a>
-                <a href="/" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    Back to Site
-                </a>
-                <a href="/users/logout" class="nav-item logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </a>
-            </nav>
-        </div>
-        
-        <div class="admin-main">
-            <div class="admin-header">
-                <h1>Admin Dashboard</h1>
-                <p>Welcome, <%= user ? user.username : 'Admin' %></p>
-            </div>
-
-            <% if (success_msg && success_msg.length > 0) { %>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <div>
-                        <p><%= success_msg %></p>
-                    </div>
-                </div>
-            <% } %>
-
-            <% if (error_msg && error_msg.length > 0) { %>
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <div>
-                        <p><%= error_msg %></p>
-                    </div>
-                </div>
-            <% } %>
-            
-            <!-- Stats Overview -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-music"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><%= hymnCount || 0 %></h3>
-                        <p>Total Hymns</p>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><%= userCount || 0 %></h3>
-                        <p>Registered Users</p>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><%= commentCount || 0 %></h3>
-                        <p>Total Comments</p>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3><%= pendingComments || 0 %></h3>
-                        <p>Pending Reviews</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <h2>Quick Actions</h2>
-                <div class="actions-grid">
-                    <a href="/admin/hymns/add" class="action-card">
-                        <i class="fas fa-plus"></i>
-                        <span>Add New Hymn</span>
-                    </a>
-                    <a href="/admin/comments" class="action-card">
-                        <i class="fas fa-comments"></i>
-                        <span>Moderate Comments</span>
-                    </a>
-                    <a href="/admin/users" class="action-card">
-                        <i class="fas fa-user-cog"></i>
-                        <span>Manage Users</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Popular Hymns -->
-            <div class="popular-hymns">
-                <h2>Most Popular Hymns</h2>
-                <div class="hymns-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Language</th>
-                                <th>Plays</th>
-                                <th>Downloads</th>
-                                <th>Rating</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (popularHymns && popularHymns.length > 0) { %>
-                                <% popularHymns.forEach(function(hymn) { %>
-                                    <% if (hymn) { %>
-                                        <tr>
-                                            <td>
-                                                <div class="hymn-title">
-                                                    <i class="fas fa-music"></i>
-                                                    <span><%= hymn.title || 'Untitled' %></span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="language-badge small">
-                                                    <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
-                                                </span>
-                                            </td>
-                                            <td><%= hymn.plays || 0 %></td>
-                                            <td><%= hymn.downloads || 0 %></td>
-                                            <td>
-                                                <div class="rating-display">
-                                                    <i class="fas fa-star"></i>
-                                                    <span><%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %></span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="table-actions">
-                                                    <% if (hymn._id) { %>
-                                                        <a href="/hymns/<%= hymn._id %>" class="btn-icon" title="View">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="/admin/hymns/edit/<%= hymn._id %>" class="btn-icon" title="Edit">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                    <% } %>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <% } %>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="6" class="no-data">No hymns available</td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    
     <style>
         .quick-actions {
             margin: 2rem 0;
@@ -252,6 +60,573 @@
         .rating-display .fa-star {
             color: #ffc107;
         }
+
+        /* Alert Styles */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: rgba(39, 174, 96, 0.1);
+            border-left-color: var(--success);
+            color: var(--success);
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            border-left-color: var(--error);
+            color: var(--error);
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+        }
+
+        .alert div p {
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Recent Activity */
+        .recent-activity {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-top: 2rem;
+        }
+
+        .activity-list {
+            margin-top: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .activity-icon.hymn {
+            background: var(--primary-color);
+        }
+
+        .activity-icon.user {
+            background: var(--secondary-color);
+        }
+
+        .activity-icon.comment {
+            background: var(--accent-color);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-content strong {
+            color: var(--text-dark);
+        }
+
+        .activity-time {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* System Status */
+        .system-status {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-top: 2rem;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            background: var(--bg-light);
+        }
+
+        .status-item.online {
+            border-left: 4px solid var(--success);
+        }
+
+        .status-item.offline {
+            border-left: 4px solid var(--error);
+        }
+
+        .status-item.warning {
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .status-value.online {
+            color: var(--success);
+        }
+
+        .status-value.offline {
+            color: var(--error);
+        }
+
+        .status-value.warning {
+            color: var(--accent-color);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-card {
+                padding: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            
+            .stat-info h3 {
+                font-size: 1.5rem;
+            }
+            
+            .hymns-table {
+                overflow-x: auto;
+            }
+            
+            .hymns-table table {
+                min-width: 600px;
+            }
+            
+            .activity-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-header {
+                padding: 1rem;
+            }
+            
+            .admin-header h1 {
+                font-size: 1.5rem;
+            }
+        }
     </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-sidebar">
+            <div class="admin-brand">
+                <img src="/assets/logo.png" alt="Hymns Logo" onerror="this.style.display='none'">
+                <span>Admin Panel</span>
+            </div>
+            
+            <nav class="admin-nav">
+                <a href="/admin" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/admin/hymns" class="nav-item">
+                    <i class="fas fa-music"></i>
+                    Manage Hymns
+                </a>
+                <a href="/admin/hymns/add" class="nav-item">
+                    <i class="fas fa-plus"></i>
+                    Add New Hymn
+                </a>
+                <a href="/admin/users" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    Manage Users
+                </a>
+                <a href="/admin/comments" class="nav-item">
+                    <i class="fas fa-comments"></i>
+                    Moderate Comments
+                </a>
+                <a href="/" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    Back to Site
+                </a>
+                <a href="/users/logout" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </nav>
+        </div>
+        
+        <div class="admin-main">
+            <div class="admin-header">
+                <div>
+                    <h1>Admin Dashboard</h1>
+                    <p>Welcome back, <%= user ? user.username : 'Admin' %>! Here's what's happening today.</p>
+                </div>
+                <div class="header-actions">
+                    <span class="current-time" id="currentTime"></span>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            <% if (success_msg && success_msg.length > 0) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <p><%= success_msg %></p>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (error_msg && error_msg.length > 0) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <p><%= error_msg %></p>
+                    </div>
+                </div>
+            <% } %>
+            
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= hymnCount || 0 %></h3>
+                        <p>Total Hymns</p>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= userCount || 0 %></h3>
+                        <p>Registered Users</p>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= commentCount || 0 %></h3>
+                        <p>Total Comments</p>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><%= pendingComments || 0 %></h3>
+                        <p>Pending Reviews</p>
+                    </div>
+                    <% if (pendingComments > 0) { %>
+                        <div class="stat-trend warning">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    <% } else { %>
+                        <div class="stat-trend up">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="actions-grid">
+                    <a href="/admin/hymns/add" class="action-card">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New Hymn</span>
+                        <small>Upload a new hymn</small>
+                    </a>
+                    <a href="/admin/comments" class="action-card">
+                        <i class="fas fa-comments"></i>
+                        <span>Moderate Comments</span>
+                        <small><%= pendingComments || 0 %> pending</small>
+                    </a>
+                    <a href="/admin/users" class="action-card">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Manage Users</span>
+                        <small><%= userCount || 0 %> users</small>
+                    </a>
+                    <a href="/admin/hymns" class="action-card">
+                        <i class="fas fa-list"></i>
+                        <span>View All Hymns</span>
+                        <small><%= hymnCount || 0 %> hymns</small>
+                    </a>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="system-status">
+                <h2>System Status</h2>
+                <div class="status-grid">
+                    <div class="status-item online">
+                        <div class="status-label">Database</div>
+                        <div class="status-value online">Online</div>
+                    </div>
+                    <div class="status-item online">
+                        <div class="status-label">Email Service</div>
+                        <div class="status-value online">Active</div>
+                    </div>
+                    <div class="status-item online">
+                        <div class="status-label">File Storage</div>
+                        <div class="status-value online">Connected</div>
+                    </div>
+                    <div class="status-item <%= pendingComments > 0 ? 'warning' : 'online' %>">
+                        <div class="status-label">Moderation</div>
+                        <div class="status-value <%= pendingComments > 0 ? 'warning' : 'online' %>">
+                            <%= pendingComments > 0 ? 'Pending' : 'Clear' %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Popular Hymns -->
+            <div class="popular-hymns">
+                <div class="content-header">
+                    <h2>Most Popular Hymns</h2>
+                    <a href="/admin/hymns" class="btn btn-outline">View All</a>
+                </div>
+                <div class="hymns-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Language</th>
+                                <th>Plays</th>
+                                <th>Downloads</th>
+                                <th>Rating</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (popularHymns && popularHymns.length > 0) { %>
+                                <% popularHymns.forEach(function(hymn, index) { %>
+                                    <% if (hymn) { %>
+                                        <tr>
+                                            <td>
+                                                <div class="hymn-title">
+                                                    <i class="fas fa-music"></i>
+                                                    <div>
+                                                        <strong><%= hymn.title || 'Untitled' %></strong>
+                                                        <% if (hymn.featured) { %>
+                                                            <span class="featured-badge">Featured</span>
+                                                        <% } %>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="language-badge small">
+                                                    <%= hymn.hymnLanguage ? hymn.hymnLanguage.charAt(0).toUpperCase() + hymn.hymnLanguage.slice(1) : 'Unknown' %>
+                                                </span>
+                                            </td>
+                                            <td><%= hymn.plays || 0 %></td>
+                                            <td><%= hymn.downloads || 0 %></td>
+                                            <td>
+                                                <div class="rating-display">
+                                                    <i class="fas fa-star"></i>
+                                                    <span><%= hymn.rating ? hymn.rating.toFixed(1) : '0.0' %></span>
+                                                    <small>(<%= hymn.ratingCount || 0 %>)</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-actions">
+                                                    <% if (hymn._id) { %>
+                                                        <a href="/hymns/<%= hymn._id %>" class="btn-icon" title="View" target="_blank">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="/admin/hymns/edit/<%= hymn._id %>" class="btn-icon" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="no-data">
+                                        <i class="fas fa-music" style="font-size: 2rem; margin-bottom: 1rem; color: var(--gray);"></i>
+                                        <p>No hymns available yet</p>
+                                        <a href="/admin/hymns/add" class="btn btn-primary">Add First Hymn</a>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update current time
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            const dateString = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = `${dateString} • ${timeString}`;
+            }
+        }
+
+        // Auto-refresh dashboard every 30 seconds
+        function autoRefreshDashboard() {
+            setTimeout(() => {
+                window.location.reload();
+            }, 30000); // 30 seconds
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 60000); // Update time every minute
+            
+            // Auto-refresh if there are pending comments
+            const pendingComments = <%= pendingComments || 0 %>;
+            if (pendingComments > 0) {
+                autoRefreshDashboard();
+            }
+
+            // Add animation to stat cards
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fade-in');
+            });
+        });
+
+        // Add some CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            .fade-in {
+                animation: fadeInUp 0.6s ease-out forwards;
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            
+            @keyframes fadeInUp {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .featured-badge {
+                background: var(--accent-color);
+                color: var(--text-dark);
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                margin-left: 8px;
+            }
+            
+            .header-actions {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+            
+            .current-time {
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>

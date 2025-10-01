@@ -16,6 +16,117 @@
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="<%= hymn.title %>">
     <meta name="twitter:description" content="<%= hymn.description %>">
+    
+    <style>
+        /* Comment and Rating Styles */
+        .comments-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+
+        .comment-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .rating-stars input {
+            display: none;
+        }
+
+        .rating-stars label {
+            font-size: 24px;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .rating-stars label:hover,
+        .rating-stars input:checked ~ label {
+            color: #ffc107;
+        }
+
+        .rating-stars input:checked ~ label {
+            color: #ffc107;
+        }
+
+        .comments-list {
+            margin-top: 20px;
+        }
+
+        .comment-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .comment-user {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .comment-rating {
+            color: #ffc107;
+        }
+
+        .comment-date {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .comment-content {
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .no-comments {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px 0;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flash-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -62,6 +173,21 @@
     </nav>
 
     <div class="container">
+        <!-- Flash Messages -->
+        <% if (success_msg && success_msg.length > 0) { %>
+            <div class="flash-message success">
+                <i class="fas fa-check-circle"></i>
+                <span><%= success_msg %></span>
+            </div>
+        <% } %>
+
+        <% if (error_msg && error_msg.length > 0) { %>
+            <div class="flash-message error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span><%= error_msg %></span>
+            </div>
+        <% } %>
+
         <div class="hymn-detail">
             <div class="breadcrumb">
                 <a href="/">Home</a> > 
@@ -152,6 +278,79 @@
                     <h2>Lyrics</h2>
                     <div class="lyrics-content">
                         <pre><%= hymn.lyrics %></pre>
+                    </div>
+                </div>
+
+                <!-- Comments and Ratings Section -->
+                <div class="comments-section">
+                    <h2>Comments & Ratings</h2>
+                    
+                    <!-- Comment Form -->
+                    <% if (user) { %>
+                        <div class="comment-form">
+                            <h3>Leave a Comment and Rating</h3>
+                            <form action="/hymns/<%= hymn._id %>/comments" method="POST">
+                                <div class="form-group">
+                                    <label>Your Rating:</label>
+                                    <div class="rating-stars">
+                                        <input type="radio" id="star5" name="rating" value="5" required>
+                                        <label for="star5"><i class="fas fa-star"></i></label>
+                                        <input type="radio" id="star4" name="rating" value="4">
+                                        <label for="star4"><i class="fas fa-star"></i></label>
+                                        <input type="radio" id="star3" name="rating" value="3">
+                                        <label for="star3"><i class="fas fa-star"></i></label>
+                                        <input type="radio" id="star2" name="rating" value="2">
+                                        <label for="star2"><i class="fas fa-star"></i></label>
+                                        <input type="radio" id="star1" name="rating" value="1">
+                                        <label for="star1"><i class="fas fa-star"></i></label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="content">Your Comment:</label>
+                                    <textarea name="content" id="content" rows="4" placeholder="Share your thoughts about this hymn..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit Comment</button>
+                            </form>
+                        </div>
+                    <% } else { %>
+                        <div class="comment-form">
+                            <p><a href="/users/login" class="btn btn-primary">Log in</a> to leave a comment and rating.</p>
+                        </div>
+                    <% } %>
+
+                    <!-- Comments List -->
+                    <div class="comments-list">
+                        <h3>User Comments (<%= comments.length %>)</h3>
+                        <% if (comments.length > 0) { %>
+                            <% comments.forEach(function(comment) { %>
+                                <div class="comment-item">
+                                    <div class="comment-header">
+                                        <span class="comment-user">
+                                            <i class="fas fa-user"></i>
+                                            <%= comment.user.username %>
+                                        </span>
+                                        <div class="comment-rating">
+                                            <% for (let i = 1; i <= 5; i++) { %>
+                                                <i class="fas fa-star <%= i <= comment.rating ? 'filled' : '' %>"></i>
+                                            <% } %>
+                                            (<%= comment.rating %>/5)
+                                        </div>
+                                    </div>
+                                    <div class="comment-content">
+                                        <%= comment.content %>
+                                    </div>
+                                    <div class="comment-date">
+                                        <i class="fas fa-clock"></i>
+                                        <%= comment.createdAt.toLocaleDateString() %>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="no-comments">
+                                <i class="fas fa-comments"></i>
+                                <p>No comments yet. Be the first to comment!</p>
+                            </div>
+                        <% } %>
                     </div>
                 </div>
                 
@@ -281,6 +480,20 @@
                     audio.dispatchEvent(new Event('loadedmetadata'));
                 }
             }, 1000);
+
+            // Star rating interaction
+            const starInputs = document.querySelectorAll('.rating-stars input');
+            starInputs.forEach((input, index) => {
+                input.addEventListener('change', function() {
+                    // Update visual state of stars
+                    const labels = document.querySelectorAll('.rating-stars label');
+                    labels.forEach((label, labelIndex) => {
+                        if (labelIndex >= index) {
+                            label.style.color = '#ffc107';
+                        }
+                    });
+                });
+            });
         });
 
         // Track download

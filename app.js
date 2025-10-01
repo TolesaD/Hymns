@@ -65,11 +65,20 @@ app.use(session(sessionConfig));
 // Flash messages
 app.use(flash());
 
+// Custom authentication middleware to convert session.user to req.user
+app.use((req, res, next) => {
+    // Convert session user to req.user for consistency
+    if (req.session.user) {
+        req.user = req.session.user;
+    }
+    next();
+});
+
 // Global variables for templates
 app.use((req, res, next) => {
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
-    res.locals.user = req.session.user || null;
+    res.locals.user = req.user || null; // Now using req.user consistently
     next();
 });
 
@@ -90,7 +99,7 @@ app.get('/api/health', (req, res) => {
         status: 'OK',
         database: dbStatus,
         environment: process.env.NODE_ENV || 'development',
-        session: req.session.user ? 'active' : 'none',
+        session: req.user ? 'active' : 'none',
         timestamp: new Date().toISOString()
     });
 });
@@ -100,6 +109,7 @@ app.get('/api/debug-session', (req, res) => {
     res.json({
         sessionId: req.sessionID,
         sessionUser: req.session.user,
+        reqUser: req.user,
         environment: process.env.NODE_ENV || 'development'
     });
 });
@@ -136,7 +146,7 @@ app.use((req, res) => {
     console.log('❌ 404 - Route not found:', req.originalUrl);
     res.status(404).render('404', { 
         title: 'Page Not Found',
-        user: req.session.user || null
+        user: req.user || null // Fixed to use req.user
     });
 });
 
@@ -148,7 +158,7 @@ app.use((err, req, res, next) => {
         message: process.env.NODE_ENV === 'production' 
             ? 'Something went wrong! Please try again later.' 
             : err.message,
-        user: req.session.user || null
+        user: req.user || null // Fixed to use req.user
     });
 });
 

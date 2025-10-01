@@ -7,6 +7,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--error);
+            color: var(--error);
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+            margin-top: 0.1rem;
+        }
+
+        .alert div p {
+            margin: 0.2rem 0;
+        }
+    </style>
 </head>
 <body>
     <%- include('partials/header') %>
@@ -18,17 +50,12 @@
                 <p>Sign in to your Hymns account</p>
             </div>
 
+            <!-- Flash Messages -->
             <% if (success_msg && success_msg.length > 0) { %>
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
                     <div>
-                        <% if (Array.isArray(success_msg)) { %>
-                            <% success_msg.forEach(function(msg) { %>
-                                <p><%= msg %></p>
-                            <% }); %>
-                        <% } else { %>
-                            <p><%= success_msg %></p>
-                        <% } %>
+                        <p><%= success_msg %></p>
                     </div>
                 </div>
             <% } %>
@@ -37,13 +64,18 @@
                 <div class="alert alert-error">
                     <i class="fas fa-exclamation-circle"></i>
                     <div>
-                        <% if (Array.isArray(error_msg)) { %>
-                            <% error_msg.forEach(function(msg) { %>
-                                <p><%= msg %></p>
-                            <% }); %>
-                        <% } else { %>
-                            <p><%= error_msg %></p>
-                        <% } %>
+                        <p><%= error_msg %></p>
+                    </div>
+                </div>
+            <% } %>
+            
+            <% if (errors && Array.isArray(errors) && errors.length > 0) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <% errors.forEach(function(error) { %>
+                            <p><%= error.msg %></p>
+                        <% }); %>
                     </div>
                 </div>
             <% } %>
@@ -58,6 +90,7 @@
                         class="form-control" 
                         value="<%= typeof email !== 'undefined' ? email : '' %>"
                         required
+                        placeholder="Enter your email address"
                     >
                 </div>
                 
@@ -69,6 +102,7 @@
                         name="password" 
                         class="form-control" 
                         required
+                        placeholder="Enter your password"
                     >
                 </div>
                 
