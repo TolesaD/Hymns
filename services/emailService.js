@@ -8,7 +8,8 @@ class EmailService {
         this.baseUrl = 'https://api.mailersend.com/v1';
         this.enabled = !!this.apiToken && !!this.fromEmail;
         
-        console.log('📧 Email Service Initialized:', {
+        console.log('📧 Email Service Status:', {
+            environment: process.env.NODE_ENV,
             enabled: this.enabled,
             hasToken: !!this.apiToken,
             fromEmail: this.fromEmail,
@@ -17,20 +18,26 @@ class EmailService {
     }
 
     async sendEmail(to, subject, text, html = null) {
-        // Check if email service is enabled
+        // Development mode - log instead of sending
+        if (process.env.NODE_ENV === 'development') {
+            console.log('📧 DEVELOPMENT MODE - Email would be sent:');
+            console.log('To:', to);
+            console.log('Subject:', subject);
+            console.log('Content:', text);
+            console.log('HTML:', html ? 'Yes' : 'No');
+            console.log('---');
+            return true;
+        }
+
+        // Production mode - actually send email
         if (!this.enabled) {
-            console.log('❌ Email service disabled - missing API token or from email');
-            console.log('API Token present:', !!this.apiToken);
-            console.log('From Email present:', !!this.fromEmail);
+            console.error('❌ Email service disabled in production! Check MAILERSEND_API_TOKEN and MAILERSEND_FROM_EMAIL');
             return false;
         }
 
         // Validate required fields
         if (!to || !subject || !text) {
             console.error('❌ Missing required email parameters');
-            console.log('To:', to);
-            console.log('Subject:', subject);
-            console.log('Text:', text ? 'Present' : 'Missing');
             return false;
         }
 
@@ -41,18 +48,12 @@ class EmailService {
             return false;
         }
 
-        if (!emailRegex.test(this.fromEmail)) {
-            console.error('❌ Invalid from email format:', this.fromEmail);
-            return false;
-        }
-
         try {
-            console.log('📧 Attempting to send email...');
+            console.log('📧 PRODUCTION: Sending email via MailerSend...');
             console.log('To:', to);
             console.log('From:', `${this.fromName} <${this.fromEmail}>`);
             console.log('Subject:', subject);
 
-            // MailerSend API payload
             const emailData = {
                 from: {
                     email: this.fromEmail,
@@ -61,15 +62,13 @@ class EmailService {
                 to: [
                     {
                         email: to,
-                        name: to.split('@')[0] // Use username part as name
+                        name: to.split('@')[0]
                     }
                 ],
                 subject: subject,
                 text: text,
                 html: html || this.textToHtml(text)
             };
-
-            console.log('📤 Sending request to MailerSend API...');
 
             const response = await axios.post(
                 `${this.baseUrl}/email`,
@@ -80,38 +79,40 @@ class EmailService {
                         'Content-Type': 'application/json',
                         'User-Agent': 'Hymns-App/1.0'
                     },
-                    timeout: 30000 // 30 second timeout
+                    timeout: 30000
                 }
             );
 
             console.log('✅ Email sent successfully! Status:', response.status);
-            console.log('Message ID:', response.data?.id || 'Not provided');
+            if (response.data && response.data.id) {
+                console.log('📨 Message ID:', response.data.id);
+            }
             return true;
 
         } catch (error) {
             console.error('❌ Email sending failed!');
             
             if (error.response) {
-                // Server responded with error status
                 console.error('Status:', error.response.status);
-                console.error('Headers:', error.response.headers);
                 console.error('Error Data:', JSON.stringify(error.response.data, null, 2));
                 
                 if (error.response.status === 401) {
-                    console.error('❌ Authentication failed - check your API token');
+                    console.error('❌ AUTHENTICATION FAILED:');
+                    console.error('1. Check your MAILERSEND_API_TOKEN in environment variables');
+                    console.error('2. Make sure the token is active in MailerSend dashboard');
+                    console.error('3. Verify the token has correct permissions');
                 } else if (error.response.status === 422) {
-                    console.error('❌ Validation error - check your email parameters');
+                    console.error('❌ VALIDATION ERROR:');
+                    console.error('Check your email parameters and domain verification');
                 } else if (error.response.status === 429) {
-                    console.error('❌ Rate limit exceeded - too many requests');
+                    console.error('❌ RATE LIMIT EXCEEDED:');
+                    console.error('Too many requests. Please try again later.');
                 }
             } else if (error.request) {
-                // No response received
-                console.error('No response received from MailerSend API');
-                console.error('Request config:', error.config);
+                console.error('❌ NETWORK ERROR: No response received from MailerSend API');
+                console.error('Check your internet connection and firewall settings');
             } else {
-                // Other error
-                console.error('Error message:', error.message);
-                console.error('Stack trace:', error.stack);
+                console.error('❌ UNEXPECTED ERROR:', error.message);
             }
             
             return false;
@@ -180,6 +181,7 @@ class EmailService {
             border-left: 4px solid #4a6fa5;
             margin: 15px 0;
             word-break: break-all;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -227,7 +229,7 @@ The Hymns Team`;
             <p>To reset your password, click the button below:</p>
             
             <p style="text-align: center;">
-                <a href="${resetLink}" class="button" style="color: white; text-decoration: none;">
+                <a href="${resetLink}" class="button" style="color: white; text-decoration: none; background: #4a6fa5; padding: 12px 24px; border-radius: 4px;">
                     Reset Your Password
                 </a>
             </p>
@@ -248,79 +250,37 @@ The Hymns Team`;
         const result = await this.sendEmail(email, subject, text, html);
         
         if (result) {
-            console.log('✅ Password reset email sent successfully to:', email);
+            console.log('✅ Password reset email processed successfully');
         } else {
-            console.error('❌ Failed to send password reset email to:', email);
+            console.error('❌ Failed to process password reset email');
         }
         
         return result;
     }
 
-    async sendWelcomeEmail(email, username) {
-        const subject = 'Welcome to Hymns App!';
-        const text = `Welcome to Hymns, ${username}!
-
-Thank you for joining our community. We're excited to have you on board.
-
-With your account, you can:
-- Access thousands of beautiful Orthodox hymns
-- Save your favorite hymns
-- Download hymns for offline listening
-- Receive notifications about new content
-
-Start exploring now: ${process.env.APP_URL || 'https://your-app-url.com'}
-
-If you have any questions, feel free to reply to this email.
-
-Best regards,
-The Hymns Team`;
-
-        return await this.sendEmail(email, subject, text);
-    }
-
-    async sendNewHymnNotification(email, username, hymnTitle) {
-        const subject = 'New Hymn Added - Hymns App';
-        const text = `Hello ${username},
-
-A new hymn has been added to the platform: "${hymnTitle}"
-
-Check it out now: ${process.env.APP_URL || 'https://your-app-url.com'}
-
-Best regards,
-The Hymns Team`;
-
-        return await this.sendEmail(email, subject, text);
-    }
-
     // Test configuration
     async testConfiguration() {
-        console.log('\n=== MailerSend Configuration Test ===');
+        console.log('\n=== Email Service Configuration Test ===');
+        console.log('Environment:', process.env.NODE_ENV);
         console.log('API Token present:', !!this.apiToken);
         console.log('From Email:', this.fromEmail);
         console.log('From Name:', this.fromName);
-        console.log('Base URL:', this.baseUrl);
         console.log('Service Enabled:', this.enabled);
         
         if (!this.apiToken) {
-            console.log('❌ Missing MAILERSEND_API_TOKEN in environment variables');
+            console.log('❌ Missing MAILERSEND_API_TOKEN');
             return false;
         }
         
         if (!this.fromEmail) {
-            console.log('❌ Missing MAILERSEND_FROM_EMAIL in environment variables');
+            console.log('❌ Missing MAILERSEND_FROM_EMAIL');
             return false;
         }
         
-        if (!this.fromEmail.includes('@')) {
-            console.log('❌ Invalid MAILERSEND_FROM_EMAIL format');
-            return false;
-        }
-        
-        console.log('✅ Basic configuration looks good');
+        console.log('✅ Configuration looks good');
         return true;
     }
 
-    // Simple test email
     async sendTestEmail(toEmail = 'test@example.com') {
         console.log('\n=== Sending Test Email ===');
         
@@ -329,19 +289,11 @@ The Hymns Team`;
             return false;
         }
 
-        console.log('Sending test email to:', toEmail);
-        
         const testResult = await this.sendEmail(
             toEmail,
             'Test Email from Hymns App',
-            'This is a test email to verify your MailerSend configuration is working correctly!\n\nIf you received this email, your email service is properly configured.\n\nBest regards,\nHymns Team'
+            'This is a test email to verify your email configuration is working correctly!\n\nIf you received this email, your email service is properly configured.\n\nBest regards,\nHymns Team'
         );
-
-        if (testResult) {
-            console.log('✅ Test email sent successfully!');
-        } else {
-            console.log('❌ Test email failed to send');
-        }
 
         return testResult;
     }

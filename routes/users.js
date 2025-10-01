@@ -128,16 +128,16 @@ router.post('/login', [
         }
 
         // Check if user is blocked
-if (user.isBlocked) {
-    console.log('❌ Blocked user attempt:', user.username);
-    return res.render('login', {
-        title: 'Login',
-        errors: [{ msg: 'Your account has been blocked. Please contact support.' }],
-        email: req.body.email || '',
-        success_msg: req.flash('success_msg'),
-        error_msg: req.flash('error_msg')
-    });
-}
+        if (user.isBlocked) {
+            console.log('❌ Blocked user attempt:', user.username);
+            return res.render('login', {
+                title: 'Login',
+                errors: [{ msg: 'Your account has been blocked. Please contact support.' }],
+                email: req.body.email || '',
+                success_msg: req.flash('success_msg'),
+                error_msg: req.flash('error_msg')
+            });
+        }
 
         console.log('👤 User found:', user.username);
         console.log('🔍 Admin status - Username:', user.username, 'isAdmin flag:', user.isAdmin);
@@ -343,8 +343,11 @@ router.post('/favorites/:hymnId', async (req, res) => {
     }
 });
 
-// Forgot Password Routes
+// Forgot Password Routes - ADDED MISSING GET ROUTE
 router.get('/forgot-password', (req, res) => {
+    if (req.user) {
+        return res.redirect('/');
+    }
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
         error_msg: req.flash('error_msg'),
@@ -352,6 +355,7 @@ router.get('/forgot-password', (req, res) => {
     });
 });
 
+// Forgot Password POST Route
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -362,24 +366,32 @@ router.post('/forgot-password', async (req, res) => {
         if (user) {
             const resetToken = crypto.randomBytes(32).toString('hex');
             user.resetPasswordToken = resetToken;
-            user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+            user.resetPasswordExpires = Date.now() + 3600000;
             await user.save();
 
             const resetLink = `${process.env.APP_URL || req.protocol + '://' + req.get('host')}/users/reset-password/${resetToken}`;
             console.log('Generated reset link:', resetLink);
 
-            const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, resetLink);
-
-            if (emailSent) {
-                console.log('Password reset email sent successfully to:', email);
-                req.flash('success_msg', 'Password reset link has been sent to your email.');
+            // Different behavior for development vs production
+            if (process.env.NODE_ENV === 'development') {
+                console.log('📧 Development mode - Reset link shown in flash message');
+                req.flash('success_msg', `Password reset link: ${resetLink}`);
             } else {
-                console.error('Failed to send password reset email to:', email);
-                req.flash('error_msg', 'Failed to send email. Please try again later.');
+                // Production - actually send email
+                console.log('📧 Production mode - Sending email via MailerSend');
+                const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, resetLink);
+                
+                if (emailSent) {
+                    console.log('✅ Password reset email sent successfully');
+                    req.flash('success_msg', 'Password reset link has been sent to your email.');
+                } else {
+                    console.error('❌ Failed to send password reset email');
+                    req.flash('error_msg', 'Failed to send email. Please try again later or contact support.');
+                }
             }
         } else {
+            // For security, don't reveal if email exists
             console.log('Password reset requested for non-existent email:', email);
-            // Don't reveal that email doesn't exist for security
         }
 
         // Always show success message for security
@@ -413,7 +425,7 @@ router.get('/reset-password/:token', async (req, res) => {
             success_msg: req.flash('success_msg')
         });
     } catch (error) {
-        console.error('Reset password error:', error);
+        console.error('Reset password GET error:', error);
         req.flash('error_msg', 'Error processing reset password token.');
         res.redirect('/users/forgot-password');
     }
@@ -423,8 +435,18 @@ router.post('/reset-password/:token', async (req, res) => {
     try {
         const { password, confirmPassword } = req.body;
 
+        console.log('Password reset attempt for token:', req.params.token);
+        console.log('New password length:', password ? password.length : 0);
+
+        // Validate passwords match
         if (password !== confirmPassword) {
             req.flash('error_msg', 'Passwords do not match.');
+            return res.redirect(`/users/reset-password/${req.params.token}`);
+        }
+
+        // Validate password length
+        if (!password || password.length < 6) {
+            req.flash('error_msg', 'Password must be at least 6 characters long.');
             return res.redirect(`/users/reset-password/${req.params.token}`);
         }
 
@@ -438,15 +460,18 @@ router.post('/reset-password/:token', async (req, res) => {
             return res.redirect('/users/forgot-password');
         }
 
+        // Update user password
         user.password = password;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
 
-        req.flash('success_msg', 'Your password has been reset successfully. You can now log in.');
+        console.log('✅ Password reset successful for user:', user.email);
+        req.flash('success_msg', 'Your password has been reset successfully! You can now log in with your new password.');
         res.redirect('/users/login');
+
     } catch (error) {
-        console.error('Reset password error:', error);
+        console.error('Reset password POST error:', error);
         req.flash('error_msg', 'Error resetting password. Please try again.');
         res.redirect(`/users/reset-password/${req.params.token}`);
     }
