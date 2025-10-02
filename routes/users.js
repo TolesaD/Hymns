@@ -503,6 +503,48 @@ router.post('/update-profile', async (req, res) => {
     }
 });
 
+// Update Settings Route (Language Preferences)
+router.post('/update-settings', async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { languagePreference } = req.body;
+        
+        console.log('🔄 Updating user settings for:', req.user.username);
+        console.log('🌍 Language preference:', languagePreference);
+
+        // Validate language preference
+        const validLanguages = ['english', 'amharic', 'oromo', 'tigrigna'];
+        if (languagePreference && !validLanguages.includes(languagePreference)) {
+            return res.status(400).json({ error: 'Invalid language preference' });
+        }
+
+        // Update user settings
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { 
+                languagePreference: languagePreference || 'english'
+            },
+            { new: true }
+        );
+
+        // Update session if needed
+        if (req.session.user) {
+            req.session.user.languagePreference = user.languagePreference;
+        }
+
+        console.log('✅ Settings updated successfully for:', user.username);
+        res.json({ 
+            message: 'Settings updated successfully',
+            languagePreference: user.languagePreference 
+        });
+    } catch (error) {
+        console.error('❌ Error updating settings:', error);
+        res.status(500).json({ error: 'Error updating settings: ' + error.message });
+    }
+});
 // Change Password Route
 router.post('/change-password', async (req, res) => {
     try {

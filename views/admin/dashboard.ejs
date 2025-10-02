@@ -61,15 +61,16 @@
             color: #ffc107;
         }
 
-        /* Alert Styles */
+        /* Alert Styles - UPDATED FOR CONSISTENCY */
         .alert {
             padding: 1rem 1.5rem;
             border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
+            margin: 1.5rem 0;
             display: flex;
             align-items: center;
             gap: 1rem;
             border-left: 4px solid;
+            animation: slideInDown 0.3s ease-out;
         }
 
         .alert-success {
@@ -88,9 +89,20 @@
             font-size: 1.2rem;
         }
 
-        .alert div p {
+        .alert p {
             margin: 0;
             font-weight: 500;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Recent Activity */
@@ -330,22 +342,18 @@
                 </div>
             </div>
 
-            <!-- Flash Messages -->
+            <!-- Flash Messages - FIXED: Single consistent display -->
             <% if (success_msg && success_msg.length > 0) { %>
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
-                    <div>
-                        <p><%= success_msg %></p>
-                    </div>
+                    <p><%= success_msg %></p>
                 </div>
             <% } %>
 
             <% if (error_msg && error_msg.length > 0) { %>
                 <div class="alert alert-error">
                     <i class="fas fa-exclamation-circle"></i>
-                    <div>
-                        <p><%= error_msg %></p>
-                    </div>
+                    <p><%= error_msg %></p>
                 </div>
             <% } %>
             
@@ -570,6 +578,20 @@
             }, 30000); // 30 seconds
         }
 
+        // Auto-hide flash messages after 5 seconds
+        function autoHideFlashMessages() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 300);
+                }, 5000);
+            });
+        }
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             updateCurrentTime();
@@ -580,6 +602,9 @@
             if (pendingComments > 0) {
                 autoRefreshDashboard();
             }
+
+            // Auto-hide flash messages
+            autoHideFlashMessages();
 
             // Add animation to stat cards
             const statCards = document.querySelectorAll('.stat-card');

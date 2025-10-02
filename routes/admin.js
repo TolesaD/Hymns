@@ -380,10 +380,12 @@ router.post('/hymns/delete/:id', requireAdmin, async (req, res) => {
             
             await Hymn.findByIdAndDelete(req.params.id);
             req.flash('success_msg', 'Hymn deleted successfully');
+        } else {
+            req.flash('error_msg', 'Hymn not found');
         }
     } catch (error) {
         console.error('Error deleting hymn:', error);
-        req.flash('error_msg', 'Error deleting hymn');
+        req.flash('error_msg', 'Error deleting hymn: ' + error.message);
     }
     res.redirect('/admin/hymns');
 });
@@ -435,7 +437,7 @@ router.post('/users/block/:id', requireAdmin, async (req, res) => {
         }
     } catch (error) {
         console.error('Error blocking user:', error);
-        req.flash('error_msg', 'Error blocking user');
+        req.flash('error_msg', 'Error blocking user: ' + error.message);
     }
     res.redirect('/admin/users');
 });
@@ -453,7 +455,7 @@ router.post('/users/unblock/:id', requireAdmin, async (req, res) => {
         }
     } catch (error) {
         console.error('Error unblocking user:', error);
-        req.flash('error_msg', 'Error unblocking user');
+        req.flash('error_msg', 'Error unblocking user: ' + error.message);
     }
     res.redirect('/admin/users');
 });
@@ -488,7 +490,7 @@ router.post('/users/delete/:id', requireAdmin, async (req, res) => {
         }
     } catch (error) {
         console.error('Error deleting user:', error);
-        req.flash('error_msg', 'Error deleting user');
+        req.flash('error_msg', 'Error deleting user: ' + error.message);
     }
     res.redirect('/admin/users');
 });
@@ -515,7 +517,7 @@ router.post('/users/bulk-block', requireAdmin, async (req, res) => {
         req.flash('success_msg', `Successfully blocked ${blockedCount} user(s)`);
     } catch (error) {
         console.error('Error bulk blocking users:', error);
-        req.flash('error_msg', 'Error blocking users');
+        req.flash('error_msg', 'Error blocking users: ' + error.message);
     }
     res.redirect('/admin/users');
 });
@@ -542,7 +544,7 @@ router.post('/users/bulk-unblock', requireAdmin, async (req, res) => {
         req.flash('success_msg', `Successfully unblocked ${unblockedCount} user(s)`);
     } catch (error) {
         console.error('Error bulk unblocking users:', error);
-        req.flash('error_msg', 'Error unblocking users');
+        req.flash('error_msg', 'Error unblocking users: ' + error.message);
     }
     res.redirect('/admin/users');
 });
@@ -570,7 +572,7 @@ router.post('/users/bulk-delete', requireAdmin, async (req, res) => {
         req.flash('success_msg', `Successfully deleted ${deletedCount} user(s)`);
     } catch (error) {
         console.error('Error bulk deleting users:', error);
-        req.flash('error_msg', 'Error deleting users');
+        req.flash('error_msg', 'Error deleting users: ' + error.message);
     }
     res.redirect('/admin/users');
 });
@@ -626,6 +628,7 @@ router.post('/comments/approve/:id', requireAdmin, async (req, res) => {
         // Update hymn rating after approval
         await updateHymnRating(comment.hymn._id);
 
+        console.log('✅ Comment approved by admin:', req.user.username, 'for hymn:', comment.hymn.title);
         req.flash('success_msg', 'Comment approved and hymn rating updated successfully');
     } catch (error) {
         console.error('Error approving comment:', error);
@@ -652,6 +655,7 @@ router.post('/comments/delete/:id', requireAdmin, async (req, res) => {
             await updateHymnRating(hymnId);
         }
 
+        console.log('🗑️ Comment deleted by admin:', req.user.username);
         req.flash('success_msg', 'Comment deleted successfully');
     } catch (error) {
         console.error('Error deleting comment:', error);

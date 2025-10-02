@@ -61,6 +61,12 @@ router.post('/:id/comments', async (req, res) => {
       return res.redirect('/');
     }
 
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      req.flash('error_msg', 'Comment content cannot be empty');
+      return res.redirect(`/hymns/${req.params.id}`);
+    }
+
     // Check if user has already commented on this hymn
     const existingComment = await Comment.findOne({
       hymn: hymn._id,
@@ -75,12 +81,13 @@ router.post('/:id/comments', async (req, res) => {
     const comment = new Comment({
       hymn: hymn._id,
       user: req.user.id,
-      content,
+      content: content.trim(),
       rating: parseInt(rating) || null
     });
     
     await comment.save();
     
+    console.log('✅ Comment submitted by user:', req.user.username, 'for hymn:', hymn.title);
     req.flash('success_msg', 'Thank you for your comment! It will be visible after admin approval.');
     res.redirect(`/hymns/${req.params.id}`);
   } catch (error) {
@@ -102,6 +109,8 @@ router.get('/:id/download', async (req, res) => {
     // Increment download count
     hymn.downloads += 1;
     await hymn.save();
+    
+    console.log('📥 Hymn downloaded:', hymn.title, 'by user:', req.user ? req.user.username : 'Anonymous');
     
     // Redirect to audio file
     res.redirect(hymn.audioFile);
