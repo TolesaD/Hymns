@@ -1,77 +1,42 @@
-const B2 = require('backblaze-b2');
+const SupabaseService = require('./supabaseService');
 const fs = require('fs');
 const path = require('path');
 
 class StorageService {
     constructor() {
-        this.b2 = new B2({
-            applicationKeyId: process.env.B2_KEY_ID,
-            applicationKey: process.env.B2_APPLICATION_KEY
-        });
-        this.bucketName = process.env.B2_BUCKET_NAME;
-        this.bucketId = process.env.B2_BUCKET_ID;
-        this.authorized = false;
-        this.enabled = !!(process.env.B2_KEY_ID && process.env.B2_APPLICATION_KEY);
+        this.supabase = SupabaseService;
+        this.enabled = this.supabase.isConfigured();
     }
 
-    async authorize() {
-        if (!this.enabled) {
-            throw new Error('Backblaze B2 storage is not configured. Please check your environment variables.');
-        }
-        
-        if (!this.authorized) {
-            try {
-                await this.b2.authorize();
-                this.authorized = true;
-                console.log('Backblaze B2 authorized successfully');
-            } catch (error) {
-                console.error('B2 authorization error:', error.message);
-                throw new Error('Failed to authenticate with Backblaze B2. Please check your credentials.');
-            }
-        }
-    }
-
-    async uploadFile(filePath, fileName) {
+    async uploadFile(filePath, fileName, mimeType = 'audio/mpeg') {
         try {
-            // Check if B2 is enabled and configured
+            // Check if Supabase is enabled and configured
             if (!this.enabled) {
-                throw new Error('Backblaze B2 is not configured. Using local storage fallback.');
+                console.log('Supabase storage is not configured. Using local storage fallback.');
+                return this.localUploadFallback(filePath, fileName);
             }
 
-            await this.authorize();
+            console.log('📤 Attempting to upload file to Supabase...');
             
-            // Get upload URL
-            const response = await this.b2.getUploadUrl({
-                bucketId: this.bucketId
-            });
+            // Read file as buffer
+            const fileBuffer = fs.readFileSync(filePath);
             
-            // Read file
-            const fileData = fs.readFileSync(filePath);
+            // Upload to Supabase
+            const result = await this.supabase.uploadFile(fileBuffer, fileName, mimeType);
             
-            // Upload file
-            const uploadResponse = await this.b2.uploadFile({
-                uploadUrl: response.data.uploadUrl,
-                uploadAuthToken: response.data.authorizationToken,
-                fileName: `hymns/${Date.now()}-${fileName}`,
-                data: fileData,
-                contentLength: fileData.length
-            });
-            
-            // Construct public URL
-            const publicUrl = `https://f005.backblazeb2.com/file/${this.bucketName}/${uploadResponse.data.fileName}`;
-            
-            console.log('File uploaded successfully to Backblaze B2:', publicUrl);
+            console.log('✅ File uploaded successfully to Supabase:', result.publicUrl);
             return {
-                fileId: uploadResponse.data.fileId,
-                fileName: uploadResponse.data.fileName,
-                publicUrl: publicUrl
+                fileId: result.filePath,
+                fileName: result.fileName,
+                publicUrl: result.publicUrl,
+                filePath: result.filePath
             };
             
         } catch (error) {
-            console.error('Backblaze B2 upload error:', error.message);
+            console.error('❌ Supabase upload error:', error.message);
             
             // Fallback to local storage
-            console.log('Falling back to local storage...');
+            console.log('🔄 Falling back to local storage...');
             return this.localUploadFallback(filePath, fileName);
         }
     }
@@ -95,63 +60,92 @@ class StorageService {
             // Return local URL
             const publicUrl = `/uploads/${uniqueFileName}`;
             
-            console.log('File saved locally:', publicUrl);
+            console.log('📁 File saved locally:', publicUrl);
             return {
                 fileId: uniqueFileName,
                 fileName: uniqueFileName,
                 publicUrl: publicUrl,
+                filePath: uniqueFileName,
                 isLocal: true // Flag to indicate local storage
             };
             
         } catch (error) {
-            console.error('Local storage fallback error:', error);
-            throw new Error('Failed to upload file to both Backblaze B2 and local storage.');
+            console.error('💥 Local storage fallback error:', error);
+            throw new Error('Failed to upload file to both Supabase and local storage.');
         }
     }
 
-    async deleteFile(fileName) {
+    async deleteFile(filePath) {
         try {
             if (!this.enabled) {
-                console.log('Backblaze B2 not configured, skipping file deletion');
-                return;
+                console.log('Supabase not configured, attempting local file deletion');
+                return this.localDeleteFallback(filePath);
             }
 
-            await this.authorize();
-            
-            // Get file info first
-            const files = await this.b2.listFileNames({
-                bucketId: this.bucketId,
-                startFileName: fileName,
-                maxFileCount: 1
-            });
-            
-            if (files.data.files.length > 0) {
-                await this.b2.deleteFileVersion({
-                    fileId: files.data.files[0].fileId,
-                    fileName: fileName
-                });
-                console.log('File deleted successfully from Backblaze B2:', fileName);
-            }
+            await this.supabase.deleteFile(filePath);
             
         } catch (error) {
             console.error('File deletion error:', error.message);
-            // Don't throw error for deletion failures
+            // Try local deletion as fallback
+            await this.localDeleteFallback(filePath);
         }
     }
 
-    // Check if B2 is properly configured
+    // Local deletion fallback
+    async localDeleteFallback(filePath) {
+        try {
+            if (filePath && !filePath.startsWith('hymns/')) {
+                const localFilePath = path.join(__dirname, '../public/uploads', filePath);
+                if (fs.existsSync(localFilePath)) {
+                    fs.unlinkSync(localFilePath);
+                    console.log('🗑️ Local file deleted:', filePath);
+                }
+            }
+        } catch (error) {
+            console.error('Local file deletion error:', error.message);
+        }
+    }
+
+    async updateFile(oldFilePath, newFilePath, fileName, mimeType = 'audio/mpeg') {
+        try {
+            if (!this.enabled) {
+                console.log('Supabase not configured, using local storage for update');
+                return this.localUploadFallback(newFilePath, fileName);
+            }
+
+            // Read new file as buffer
+            const newFileBuffer = fs.readFileSync(newFilePath);
+            
+            // Update in Supabase
+            const result = await this.supabase.updateFile(oldFilePath, newFileBuffer, fileName, mimeType);
+            
+            return {
+                fileId: result.filePath,
+                fileName: result.fileName,
+                publicUrl: result.publicUrl,
+                filePath: result.filePath
+            };
+            
+        } catch (error) {
+            console.error('Update file error:', error.message);
+            return this.localUploadFallback(newFilePath, fileName);
+        }
+    }
+
+    // Check if storage is properly configured
     isConfigured() {
         return this.enabled;
     }
 
     // Get configuration status
     getStatus() {
+        const supabaseStatus = this.supabase.getStatus();
         return {
             enabled: this.enabled,
-            configured: !!(process.env.B2_KEY_ID && process.env.B2_APPLICATION_KEY && 
-                          process.env.B2_BUCKET_ID && process.env.B2_BUCKET_NAME),
-            bucketName: this.bucketName,
-            hasCredentials: !!(process.env.B2_KEY_ID && process.env.B2_APPLICATION_KEY)
+            configured: supabaseStatus.configured,
+            storageType: 'supabase',
+            bucketName: supabaseStatus.bucketName,
+            hasCredentials: supabaseStatus.hasCredentials
         };
     }
 }

@@ -55,23 +55,8 @@
             </div>
 
             <div class="admin-content">
-                <% if (error_msg && error_msg.length > 0) { %>
-                    <div class="alert alert-error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <div>
-                            <p><%= error_msg %></p>
-                        </div>
-                    </div>
-                <% } %>
-
-                <% if (success_msg && success_msg.length > 0) { %>
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <div>
-                            <p><%= success_msg %></p>
-                        </div>
-                    </div>
-                <% } %>
+                <!-- REPLACED FLASH MESSAGES WITH INCLUDE -->
+                <%- include('../partials/flash-messages') %>
 
                 <form method="POST" action="/admin/hymns/edit/<%= hymn._id %>" class="hymn-form" enctype="multipart/form-data">
                     <div class="form-group">

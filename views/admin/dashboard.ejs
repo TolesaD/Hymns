@@ -342,20 +342,8 @@
                 </div>
             </div>
 
-            <!-- Flash Messages - FIXED: Single consistent display -->
-            <% if (success_msg && success_msg.length > 0) { %>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <p><%= success_msg %></p>
-                </div>
-            <% } %>
-
-            <% if (error_msg && error_msg.length > 0) { %>
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <p><%= error_msg %></p>
-                </div>
-            <% } %>
+            <!-- FIXED: Flash messages in correct location -->
+            <%- include('../partials/flash-messages') %>
             
             <!-- Stats Overview -->
             <div class="stats-grid">

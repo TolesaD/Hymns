@@ -3,9 +3,12 @@ const router = express.Router();
 const Hymn = require('../models/Hymn');
 const User = require('../models/User');
 const Comment = require('../models/Comment');
+const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const supabaseService = require('../services/supabaseService');
+const fs = require('fs'); // ADD THIS IMPORT
+const path = require('path'); // ADD THIS IMPORT
 
 // Configure multer for memory storage (Vercel compatible)
 const storage = multer.memoryStorage();
@@ -113,6 +116,11 @@ router.get(['/', '/dashboard'], requireAdmin, async (req, res) => {
         const commentCount = await Comment.countDocuments();
         const pendingComments = await Comment.countDocuments({ approved: false });
         
+        // ADD: Get recent notifications count
+        const recentNotifications = await Notification.countDocuments({
+            createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        });
+        
         const popularHymns = await Hymn.find().sort({ plays: -1 }).limit(5);
         
         res.render('admin/dashboard', {
@@ -122,6 +130,7 @@ router.get(['/', '/dashboard'], requireAdmin, async (req, res) => {
             userCount,
             commentCount,
             pendingComments,
+            recentNotifications, // ADD THIS
             popularHymns,
             success_msg: req.flash('success_msg'),
             error_msg: req.flash('error_msg')
@@ -161,40 +170,38 @@ router.get('/hymns/add', requireAdmin, (req, res) => {
     });
 });
 
-// Add new hymn (POST route) - UPDATED FOR SUPABASE
+// Add new hymn (POST route) - FIXED VERSION
 router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, res) => {
     try {
         console.log('🎵 POST /admin/hymns/add - Starting hymn creation');
-        console.log('📦 Request body:', req.body);
-        console.log('📁 Uploaded file:', req.file ? `Present (${req.file.size} bytes)` : 'None');
         
         const { title, description, hymnLanguage, category, lyrics, duration, featured } = req.body;
         
-        // Validate required fields
+        // Validate required fields with better messages
         if (!title || !title.trim()) {
-            req.flash('error_msg', 'Title is required');
+            req.flash('error_msg', '📝 Hymn title is required');
             return res.redirect('/admin/hymns/add');
         }
         if (!description || !description.trim()) {
-            req.flash('error_msg', 'Description is required');
+            req.flash('error_msg', '📄 Hymn description is required');
             return res.redirect('/admin/hymns/add');
         }
         if (!hymnLanguage) {
-            req.flash('error_msg', 'Language is required');
+            req.flash('error_msg', '🌍 Language selection is required');
             return res.redirect('/admin/hymns/add');
         }
         if (!category) {
-            req.flash('error_msg', 'Category is required');
+            req.flash('error_msg', '📂 Category selection is required');
             return res.redirect('/admin/hymns/add');
         }
         if (!lyrics || !lyrics.trim()) {
-            req.flash('error_msg', 'Lyrics are required');
+            req.flash('error_msg', '🎶 Hymn lyrics are required');
             return res.redirect('/admin/hymns/add');
         }
         
         console.log('✅ All validation passed');
         
-        // Handle audio file with Supabase
+        // Handle audio file with Supabase - WITH FALLBACK
         let audioFileUrl = '';
         let supabaseFilePath = '';
         
@@ -213,11 +220,27 @@ router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, 
                 
             } catch (uploadError) {
                 console.error('❌ Supabase upload failed:', uploadError);
-                req.flash('error_msg', 'File upload failed: ' + uploadError.message);
-                return res.redirect('/admin/hymns/add');
+                
+                // FALLBACK: Use local storage if Supabase fails
+                const localFileName = `${Date.now()}-${req.file.originalname}`;
+                const uploadsDir = path.join(__dirname, '../uploads');
+                
+                // Ensure uploads directory exists
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                
+                const localPath = path.join(uploadsDir, localFileName);
+                
+                // Save file locally
+                fs.writeFileSync(localPath, req.file.buffer);
+                audioFileUrl = `/uploads/${localFileName}`;
+                
+                console.log('📁 File saved locally as fallback:', audioFileUrl);
+                req.flash('warning_msg', 'File saved locally (cloud storage unavailable)');
             }
         } else {
-            req.flash('error_msg', 'Audio file is required');
+            req.flash('error_msg', '🎵 Audio file is required');
             return res.redirect('/admin/hymns/add');
         }
         
@@ -228,7 +251,7 @@ router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, 
             hymnLanguage: hymnLanguage.trim(),
             category: category.trim(),
             audioFile: audioFileUrl,
-            supabaseFilePath: supabaseFilePath, // Store for future deletion
+            supabaseFilePath: supabaseFilePath,
             lyrics: lyrics.trim(),
             duration: duration ? parseInt(duration) : 180,
             featured: featured === 'on'
@@ -236,26 +259,45 @@ router.post('/hymns/add', requireAdmin, upload.single('audioFile'), async (req, 
         
         console.log('💾 Saving hymn to database');
         await newHymn.save();
-        
+
+        // CREATE NOTIFICATIONS FOR ALL USERS
+        try {
+            console.log('📢 Creating notifications for new hymn...');
+            const notifiedCount = await Notification.createNewHymnNotification(newHymn, req.user);
+            
+            if (notifiedCount > 0) {
+                console.log(`✅ Notifications sent to ${notifiedCount} users about new hymn`);
+                req.flash('success_msg', `🎵 Hymn "${title}" added successfully! ${notifiedCount} users notified.`);
+            } else {
+                console.log('ℹ️ No users to notify about new hymn');
+                req.flash('success_msg', `🎵 Hymn "${title}" added successfully!`);
+            }
+        } catch (notifyError) {
+            console.error('❌ Error sending notifications:', notifyError);
+            req.flash('success_msg', `🎵 Hymn "${title}" added successfully! (Notifications temporarily unavailable)`);
+        }
+
         console.log('✅ Hymn saved successfully with ID:', newHymn._id);
-        req.flash('success_msg', `Hymn "${title}" added successfully!`);
-        res.redirect('/admin/hymns');
+        return res.redirect('/admin/hymns');
         
     } catch (error) {
         console.error('❌ Error adding hymn:', error);
         
+        let errorMessage = 'Error adding hymn';
+        
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
-            req.flash('error_msg', `Validation error: ${messages.join(', ')}`);
+            errorMessage = `Validation error: ${messages.join(', ')}`;
         } else if (error.code === 11000) {
-            req.flash('error_msg', 'A hymn with this title already exists');
+            errorMessage = 'A hymn with this title already exists';
         } else if (error.code === 'LIMIT_FILE_SIZE') {
-            req.flash('error_msg', 'File too large. Maximum size is 10MB.');
+            errorMessage = 'File too large. Maximum size is 10MB.';
         } else {
-            req.flash('error_msg', 'Server error while adding hymn: ' + error.message);
+            errorMessage = `Server error: ${error.message}`;
         }
         
-        res.redirect('/admin/hymns/add');
+        req.flash('error_msg', errorMessage);
+        return res.redirect('/admin/hymns/add');
     }
 });
 
@@ -391,7 +433,7 @@ router.post('/hymns/delete/:id', requireAdmin, async (req, res) => {
 });
 
 // =============================================
-// USER MANAGEMENT ROUTES
+// USER MANAGEMENT ROUTES - ENHANCED WITH NOTIFICATIONS
 // =============================================
 
 // Manage users route
@@ -412,7 +454,7 @@ router.get('/users', requireAdmin, async (req, res) => {
     }
 });
 
-// Block user route
+// Block user route - ENHANCED WITH NOTIFICATION
 router.post('/users/block/:id', requireAdmin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -431,7 +473,23 @@ router.post('/users/block/:id', requireAdmin, async (req, res) => {
             
             user.isBlocked = true;
             await user.save();
-            req.flash('success_msg', `User ${user.username} has been blocked successfully`);
+
+            // CREATE NOTIFICATION FOR THE BLOCKED USER
+            try {
+                await Notification.create({
+                    user: user._id,
+                    title: '🚫 Account Temporarily Blocked',
+                    message: 'Your account has been temporarily blocked. Please contact support if you believe this is an error.',
+                    type: 'warning',
+                    priority: 'high',
+                    read: false
+                });
+                console.log(`✅ Block notification sent to user: ${user.username}`);
+            } catch (notifyError) {
+                console.error('❌ Error sending block notification:', notifyError);
+            }
+            
+            req.flash('success_msg', `User ${user.username} has been blocked successfully. Notification sent to user.`);
         } else {
             req.flash('error_msg', 'User not found');
         }
@@ -442,14 +500,30 @@ router.post('/users/block/:id', requireAdmin, async (req, res) => {
     res.redirect('/admin/users');
 });
 
-// Unblock user route
+// Unblock user route - ENHANCED WITH NOTIFICATION
 router.post('/users/unblock/:id', requireAdmin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (user) {
             user.isBlocked = false;
             await user.save();
-            req.flash('success_msg', `User ${user.username} has been unblocked successfully`);
+
+            // CREATE NOTIFICATION FOR THE UNBLOCKED USER
+            try {
+                await Notification.create({
+                    user: user._id,
+                    title: '✅ Account Restored',
+                    message: 'Your account access has been restored. Welcome back!',
+                    type: 'info',
+                    priority: 'medium',
+                    read: false
+                });
+                console.log(`✅ Unblock notification sent to user: ${user.username}`);
+            } catch (notifyError) {
+                console.error('❌ Error sending unblock notification:', notifyError);
+            }
+            
+            req.flash('success_msg', `User ${user.username} has been unblocked successfully. Welcome back notification sent.`);
         } else {
             req.flash('error_msg', 'User not found');
         }
@@ -460,7 +534,7 @@ router.post('/users/unblock/:id', requireAdmin, async (req, res) => {
     res.redirect('/admin/users');
 });
 
-// Delete user route
+// Delete user route - ENHANCED WITH CLEANUP
 router.post('/users/delete/:id', requireAdmin, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -480,11 +554,11 @@ router.post('/users/delete/:id', requireAdmin, async (req, res) => {
             // Delete user's comments
             await Comment.deleteMany({ user: user._id });
             
-            // Remove user from any other references if needed
-            // (e.g., if you have other models that reference users)
+            // Delete user's notifications
+            await Notification.deleteMany({ user: user._id });
             
             await User.findByIdAndDelete(req.params.id);
-            req.flash('success_msg', `User ${user.username} has been deleted successfully`);
+            req.flash('success_msg', `User ${user.username} has been deleted successfully (comments and notifications cleaned up).`);
         } else {
             req.flash('error_msg', 'User not found');
         }
@@ -495,7 +569,7 @@ router.post('/users/delete/:id', requireAdmin, async (req, res) => {
     res.redirect('/admin/users');
 });
 
-// Bulk block users
+// Bulk block users - ENHANCED
 router.post('/users/bulk-block', requireAdmin, async (req, res) => {
     try {
         const { userIds } = req.body;
@@ -511,10 +585,24 @@ router.post('/users/bulk-block', requireAdmin, async (req, res) => {
                 user.isBlocked = true;
                 await user.save();
                 blockedCount++;
+
+                // Send notification to blocked user
+                try {
+                    await Notification.create({
+                        user: user._id,
+                        title: '🚫 Account Blocked',
+                        message: 'Your account has been temporarily blocked by administration.',
+                        type: 'warning',
+                        priority: 'high',
+                        read: false
+                    });
+                } catch (notifyError) {
+                    console.error('Error sending bulk block notification:', notifyError);
+                }
             }
         }
 
-        req.flash('success_msg', `Successfully blocked ${blockedCount} user(s)`);
+        req.flash('success_msg', `Successfully blocked ${blockedCount} user(s) and sent notifications.`);
     } catch (error) {
         console.error('Error bulk blocking users:', error);
         req.flash('error_msg', 'Error blocking users: ' + error.message);
@@ -522,7 +610,7 @@ router.post('/users/bulk-block', requireAdmin, async (req, res) => {
     res.redirect('/admin/users');
 });
 
-// Bulk unblock users
+// Bulk unblock users - ENHANCED
 router.post('/users/bulk-unblock', requireAdmin, async (req, res) => {
     try {
         const { userIds } = req.body;
@@ -538,10 +626,24 @@ router.post('/users/bulk-unblock', requireAdmin, async (req, res) => {
                 user.isBlocked = false;
                 await user.save();
                 unblockedCount++;
+
+                // Send notification to unblocked user
+                try {
+                    await Notification.create({
+                        user: user._id,
+                        title: '✅ Account Restored',
+                        message: 'Your account access has been restored. Welcome back to our community!',
+                        type: 'info',
+                        priority: 'medium',
+                        read: false
+                    });
+                } catch (notifyError) {
+                    console.error('Error sending bulk unblock notification:', notifyError);
+                }
             }
         }
 
-        req.flash('success_msg', `Successfully unblocked ${unblockedCount} user(s)`);
+        req.flash('success_msg', `Successfully unblocked ${unblockedCount} user(s) and sent welcome back notifications.`);
     } catch (error) {
         console.error('Error bulk unblocking users:', error);
         req.flash('error_msg', 'Error unblocking users: ' + error.message);
@@ -549,7 +651,7 @@ router.post('/users/bulk-unblock', requireAdmin, async (req, res) => {
     res.redirect('/admin/users');
 });
 
-// Bulk delete users
+// Bulk delete users - ENHANCED
 router.post('/users/bulk-delete', requireAdmin, async (req, res) => {
     try {
         const { userIds } = req.body;
@@ -564,12 +666,14 @@ router.post('/users/bulk-delete', requireAdmin, async (req, res) => {
             if (user && !user.isAdmin && user._id.toString() !== req.user.id) {
                 // Delete user's comments
                 await Comment.deleteMany({ user: user._id });
+                // Delete user's notifications
+                await Notification.deleteMany({ user: user._id });
                 await User.findByIdAndDelete(userId);
                 deletedCount++;
             }
         }
 
-        req.flash('success_msg', `Successfully deleted ${deletedCount} user(s)`);
+        req.flash('success_msg', `Successfully deleted ${deletedCount} user(s) and cleaned up their data.`);
     } catch (error) {
         console.error('Error bulk deleting users:', error);
         req.flash('error_msg', 'Error deleting users: ' + error.message);
@@ -578,7 +682,7 @@ router.post('/users/bulk-delete', requireAdmin, async (req, res) => {
 });
 
 // =============================================
-// COMMENT MODERATION ROUTES
+// COMMENT MODERATION ROUTES - ENHANCED WITH NOTIFICATIONS
 // =============================================
 
 // Comments moderation route
@@ -611,13 +715,15 @@ router.get('/comments', requireAdmin, async (req, res) => {
     }
 });
 
-// Approve comment route - UPDATED WITH RATING
+// Approve comment route - ENHANCED WITH NOTIFICATIONS
 router.post('/comments/approve/:id', requireAdmin, async (req, res) => {
     try {
         const comment = await Comment.findById(req.params.id)
-            .populate('hymn');
+            .populate('hymn')
+            .populate('user', 'username');
 
         if (!comment) {
+            console.log('❌ Comment not found for approval:', req.params.id);
             req.flash('error_msg', 'Comment not found');
             return res.redirect('/admin/comments');
         }
@@ -628,40 +734,138 @@ router.post('/comments/approve/:id', requireAdmin, async (req, res) => {
         // Update hymn rating after approval
         await updateHymnRating(comment.hymn._id);
 
-        console.log('✅ Comment approved by admin:', req.user.username, 'for hymn:', comment.hymn.title);
-        req.flash('success_msg', 'Comment approved and hymn rating updated successfully');
+        // SEND NOTIFICATION TO USER ABOUT COMMENT APPROVAL
+        try {
+            await Notification.createCommentApprovalNotification(comment, comment.hymn);
+            console.log(`✅ Comment approval notification sent to user: ${comment.user.username}`);
+        } catch (notifyError) {
+            console.error('❌ Error sending comment approval notification:', notifyError);
+        }
+
+        console.log('✅ Comment approved by admin:', req.user.username, 'for hymn:', comment.hymn.title, 'by user:', comment.user.username);
+        
+        // SUCCESS: Comment approved and user notified
+        req.flash('success_msg', `Comment by ${comment.user.username} approved successfully! User notified and hymn rating updated.`);
+        
     } catch (error) {
-        console.error('Error approving comment:', error);
+        console.error('❌ Error approving comment:', error);
         req.flash('error_msg', 'Error approving comment: ' + error.message);
     }
-    res.redirect('/admin/comments');
+    
+    return res.redirect('/admin/comments');
 });
 
-// Delete comment route - UPDATED WITH RATING
+// Delete comment route - ENHANCED WITH BETTER FLASH MESSAGES
 router.post('/comments/delete/:id', requireAdmin, async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.id);
+        const comment = await Comment.findById(req.params.id)
+            .populate('user', 'username')
+            .populate('hymn', 'title');
         
         if (!comment) {
+            console.log('❌ Comment not found for deletion:', req.params.id);
             req.flash('error_msg', 'Comment not found');
             return res.redirect('/admin/comments');
         }
 
-        const hymnId = comment.hymn;
+        const hymnId = comment.hymn ? comment.hymn._id : null;
+        const userName = comment.user ? comment.user.username : 'Unknown User';
+        const hymnTitle = comment.hymn ? comment.hymn.title : 'Unknown Hymn';
+
         await Comment.findByIdAndDelete(req.params.id);
 
         // Update hymn rating if comment was approved
-        if (comment.approved) {
+        if (comment.approved && hymnId) {
             await updateHymnRating(hymnId);
         }
 
-        console.log('🗑️ Comment deleted by admin:', req.user.username);
-        req.flash('success_msg', 'Comment deleted successfully');
+        console.log('🗑️ Comment deleted by admin:', req.user.username, 'Comment by:', userName, 'for hymn:', hymnTitle);
+        
+        // SUCCESS: Comment deleted
+        req.flash('success_msg', `Comment by ${userName} for "${hymnTitle}" has been deleted successfully.`);
+        
     } catch (error) {
-        console.error('Error deleting comment:', error);
+        console.error('❌ Error deleting comment:', error);
         req.flash('error_msg', 'Error deleting comment: ' + error.message);
     }
-    res.redirect('/admin/comments');
+    
+    return res.redirect('/admin/comments');
+});
+
+// =============================================
+// NOTIFICATION MANAGEMENT ROUTES (NEW)
+// =============================================
+
+// View all system notifications
+router.get('/notifications', requireAdmin, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 20;
+        const skip = (page - 1) * limit;
+
+        const [notifications, totalCount] = await Promise.all([
+            Notification.find()
+                .populate('user', 'username email')
+                .populate('relatedHymn', 'title')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            
+            Notification.countDocuments()
+        ]);
+
+        res.render('admin/notifications', {
+            title: 'System Notifications',
+            user: req.user,
+            notifications,
+            currentPage: page,
+            totalPages: Math.ceil(totalCount / limit),
+            success_msg: req.flash('success_msg'),
+            error_msg: req.flash('error_msg')
+        });
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        req.flash('error_msg', 'Error loading notifications');
+        res.redirect('/admin');
+    }
+});
+
+// Send system notification to all users
+router.post('/notifications/broadcast', requireAdmin, async (req, res) => {
+    try {
+        const { title, message, priority } = req.body;
+        
+        if (!title || !message) {
+            req.flash('error_msg', 'Title and message are required');
+            return res.redirect('/admin/notifications');
+        }
+
+        const users = await User.find().select('_id');
+        let sentCount = 0;
+
+        for (const user of users) {
+            try {
+                await Notification.create({
+                    user: user._id,
+                    title: title.trim(),
+                    message: message.trim(),
+                    type: 'system',
+                    priority: priority || 'medium',
+                    read: false
+                });
+                sentCount++;
+            } catch (error) {
+                console.error(`Error sending notification to user ${user._id}:`, error);
+            }
+        }
+
+        req.flash('success_msg', `Broadcast notification sent to ${sentCount} users successfully!`);
+    } catch (error) {
+        console.error('Error broadcasting notification:', error);
+        req.flash('error_msg', 'Error sending broadcast notification');
+    }
+    
+    res.redirect('/admin/notifications');
 });
 
 module.exports = router;

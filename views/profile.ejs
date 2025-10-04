@@ -144,36 +144,7 @@
             }
         }
 
-        /* Flash message styles */
-        .alert {
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .alert-success {
-            background: rgba(39, 174, 96, 0.1);
-            border-left: 4px solid var(--success);
-            color: var(--success);
-        }
-
-        .alert-error {
-            background: rgba(231, 76, 60, 0.1);
-            border-left: 4px solid var(--error);
-            color: var(--error);
-        }
-
-        .alert i {
-            font-size: 1.2rem;
-            margin-top: 0.1rem;
-        }
-
-        .alert div p {
-            margin: 0.2rem 0;
-        }
+        /* REMOVED: Duplicate flash message styles - using standardized partial instead */
     </style>
 </head>
 <body>
@@ -181,24 +152,8 @@
 
     <div class="profile-container">
         <div class="container">
-            <!-- Flash Messages -->
-            <% if (success_msg && success_msg.length > 0) { %>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <div>
-                        <p><%= success_msg %></p>
-                    </div>
-                </div>
-            <% } %>
-
-            <% if (error_msg && error_msg.length > 0) { %>
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <div>
-                        <p><%= error_msg %></p>
-                    </div>
-                </div>
-            <% } %>
+            <!-- FIXED: Use standardized flash messages partial -->
+            <%- include('partials/flash-messages') %>
 
             <div class="profile-header">
                 <div class="profile-avatar">

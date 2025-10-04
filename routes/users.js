@@ -8,18 +8,18 @@ const emailService = require('../services/emailService');
 
 const router = express.Router();
 
-// Register Routes
+// Register Routes - FIXED: Remove duplicate flash message passing
 router.get('/register', (req, res) => {
     if (req.user) {
+        req.flash('info_msg', 'You are already logged in');
         return res.redirect('/');
     }
+    
     res.render('register', { 
         title: 'Create Account',
         errors: [],
         username: '',
-        email: '',
-        success_msg: req.flash('success_msg'),
-        error_msg: req.flash('error_msg')
+        email: ''
     });
 });
 
@@ -34,13 +34,12 @@ router.post('/register', [
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.log('❌ Registration validation errors:', errors.array());
             return res.render('register', {
                 title: 'Create Account',
                 errors: errors.array(),
                 username: req.body.username || '',
-                email: req.body.email || '',
-                success_msg: req.flash('success_msg'),
-                error_msg: req.flash('error_msg')
+                email: req.body.email || ''
             });
         }
 
@@ -48,13 +47,12 @@ router.post('/register', [
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
 
         if (existingUser) {
+            console.log('❌ User already exists:', { email, username });
             return res.render('register', {
                 title: 'Create Account',
                 errors: [{ msg: 'User already exists with this email or username' }],
                 username: req.body.username || '',
-                email: req.body.email || '',
-                success_msg: req.flash('success_msg'),
-                error_msg: req.flash('error_msg')
+                email: req.body.email || ''
             });
         }
 
@@ -66,27 +64,78 @@ router.post('/register', [
         });
         await user.save();
 
-        req.flash('success_msg', 'Registration successful! You can now log in.');
-        res.redirect('/users/login');
+        console.log('✅ User registered successfully:', username);
+        
+        req.flash('success_msg', `🎉 Welcome to Hymns, ${username}! Your account has been created successfully. You can now log in.`);
+        
+        return res.redirect('/users/login');
+
     } catch (error) {
-        console.error('Registration error:', error);
-        req.flash('error_msg', 'Server error during registration. Please try again.');
-        res.redirect('/users/register');
+        console.error('❌ Registration error:', error);
+        req.flash('error_msg', '❌ Server error during registration. Please try again.');
+        return res.redirect('/users/register');
     }
 });
 
-// Login Routes
+// Login Routes - ENHANCED: Handle flash messages from query parameters
 router.get('/login', (req, res) => {
     if (req.user) {
-        console.log('User already logged in, redirecting to home');
+        req.flash('info_msg', 'You are already logged in');
         return res.redirect('/');
     }
+    
+    // Read possible query params from logout or redirects
+    const successFromQuery = req.query.success;
+    const errorFromQuery = req.query.error;
+    const infoFromQuery = req.query.info;
+    const warningFromQuery = req.query.warning;
+    
+    console.log('🔍 Login page - Query parameters:', {
+        success: successFromQuery,
+        error: errorFromQuery,
+        info: infoFromQuery,
+        warning: warningFromQuery
+    });
+    
+    // If query params exist, set them as flash messages
+    if (successFromQuery) {
+        req.flash('success_msg', decodeURIComponent(successFromQuery));
+        console.log('✅ Set flash from query - success:', decodeURIComponent(successFromQuery));
+    }
+    if (errorFromQuery) {
+        req.flash('error_msg', decodeURIComponent(errorFromQuery));
+        console.log('✅ Set flash from query - error:', decodeURIComponent(errorFromQuery));
+    }
+    if (infoFromQuery) {
+        req.flash('info_msg', decodeURIComponent(infoFromQuery));
+        console.log('✅ Set flash from query - info:', decodeURIComponent(infoFromQuery));
+    }
+    if (warningFromQuery) {
+        req.flash('warning_msg', decodeURIComponent(warningFromQuery));
+        console.log('✅ Set flash from query - warning:', decodeURIComponent(warningFromQuery));
+    }
+    
+    // Get the flash messages after setting them
+    const success_msg = req.flash('success_msg');
+    const error_msg = req.flash('error_msg');
+    const info_msg = req.flash('info_msg');
+    const warning_msg = req.flash('warning_msg');
+    
+    console.log('🔍 Login page - Final flash messages:', {
+        success: success_msg,
+        error: error_msg,
+        info: info_msg,
+        warning: warning_msg
+    });
+    
     res.render('login', { 
         title: 'Login',
         errors: [],
         email: '',
-        success_msg: req.flash('success_msg'),
-        error_msg: req.flash('error_msg')
+        success_msg: success_msg.length > 0 ? success_msg : null,
+        error_msg: error_msg.length > 0 ? error_msg : null,
+        info_msg: info_msg.length > 0 ? info_msg : null,
+        warning_msg: warning_msg.length > 0 ? warning_msg : null
     });
 });
 
@@ -99,20 +148,20 @@ router.post('/login', [
         
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.log('❌ Login validation errors:', errors.array());
             return res.render('login', {
                 title: 'Login',
                 errors: errors.array(),
                 email: req.body.email || '',
-                success_msg: req.flash('success_msg'),
-                error_msg: req.flash('error_msg')
+                success_msg: null,
+                error_msg: null,
+                info_msg: null,
+                warning_msg: null
             });
         }
 
         const { email, password } = req.body;
-        
-        // Better email normalization
         const normalizedEmail = email.toLowerCase().trim();
-        console.log('📧 Normalized email:', normalizedEmail);
         
         const user = await User.findOne({ email: normalizedEmail });
         
@@ -122,25 +171,25 @@ router.post('/login', [
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
                 email: req.body.email || '',
-                success_msg: req.flash('success_msg'),
-                error_msg: req.flash('error_msg')
+                success_msg: null,
+                error_msg: null,
+                info_msg: null,
+                warning_msg: null
             });
         }
 
-        // Check if user is blocked
         if (user.isBlocked) {
             console.log('❌ Blocked user attempt:', user.username);
             return res.render('login', {
                 title: 'Login',
                 errors: [{ msg: 'Your account has been blocked. Please contact support.' }],
                 email: req.body.email || '',
-                success_msg: req.flash('success_msg'),
-                error_msg: req.flash('error_msg')
+                success_msg: null,
+                error_msg: null,
+                info_msg: null,
+                warning_msg: null
             });
         }
-
-        console.log('👤 User found:', user.username);
-        console.log('🔍 Admin status - Username:', user.username, 'isAdmin flag:', user.isAdmin);
 
         const isMatch = await user.comparePassword(password);
         
@@ -150,8 +199,10 @@ router.post('/login', [
                 title: 'Login',
                 errors: [{ msg: 'Invalid email or password' }],
                 email: req.body.email || '',
-                success_msg: req.flash('success_msg'),
-                error_msg: req.flash('error_msg')
+                success_msg: null,
+                error_msg: null,
+                info_msg: null,
+                warning_msg: null
             });
         }
 
@@ -159,17 +210,6 @@ router.post('/login', [
         const isTolesa = user.username === 'Tolesa';
         const isCorrectEmail = user.email === 'marosetofficial@gmail.com';
         const isAdmin = isTolesa && isCorrectEmail && user.isAdmin === true;
-        
-        console.log('🔍 STRICT Admin check:', {
-            username: user.username,
-            isTolesa: isTolesa,
-            email: user.email,
-            isCorrectEmail: isCorrectEmail,
-            isAdminFlag: user.isAdmin,
-            finalIsAdmin: isAdmin
-        });
-
-        console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
         // Set session data
         req.session.user = {
@@ -179,9 +219,8 @@ router.post('/login', [
             isAdmin: isAdmin
         };
 
-        console.log('💾 Session data set:', req.session.user);
+        console.log('✅ Login successful:', user.username, 'Admin:', isAdmin);
 
-        // Use session save with callback for better reliability
         req.session.save((err) => {
             if (err) {
                 console.error('❌ Session save error:', err);
@@ -189,13 +228,14 @@ router.post('/login', [
                     title: 'Login',
                     errors: [{ msg: 'Login error. Please try again.' }],
                     email: req.body.email || '',
-                    success_msg: req.flash('success_msg'),
-                    error_msg: req.flash('error_msg')
+                    success_msg: null,
+                    error_msg: null,
+                    info_msg: null,
+                    warning_msg: null
                 });
             }
 
             console.log('✅ Session saved successfully');
-            console.log('🔍 Final session check:', req.session.user);
             
             req.flash('success_msg', `Welcome back, ${user.username}!`);
             
@@ -210,75 +250,47 @@ router.post('/login', [
 
     } catch (error) {
         console.error('💥 CRITICAL Login error:', error);
-        console.error('💥 Error stack:', error.stack);
-        
-        let errorMessage = 'Server error during login';
-        
-        if (error.name === 'MongoError') {
-            errorMessage = 'Database connection error. Please try again.';
-        } else if (error.name === 'ValidationError') {
-            errorMessage = 'Data validation error. Please check your input.';
-        } else if (error.message && error.message.includes('bcrypt')) {
-            errorMessage = 'Password processing error. Please try again.';
-        }
-        
-        return res.render('login', {
-            title: 'Login',
-            errors: [{ msg: errorMessage }],
-            email: req.body.email || '',
-            success_msg: req.flash('success_msg'),
-            error_msg: req.flash('error_msg')
-        });
+        req.flash('error_msg', 'Server error during login. Please try again.');
+        return res.redirect('/users/login');
     }
 });
-
-// Debug admin route
-router.get('/debug-admin', async (req, res) => {
-    try {
-        const testEmail = 'marosetofficial@gmail.com';
-        const user = await User.findOne({ email: testEmail });
-        
-        if (user) {
-            const isTolesa = user.username === 'Tolesa';
-            const isCorrectEmail = user.email === 'marosetofficial@gmail.com';
-            const isAdmin = isTolesa && isCorrectEmail && user.isAdmin === true;
-            
-            res.json({
-                userFound: true,
-                username: user.username,
-                email: user.email,
-                isAdmin: isAdmin,
-                isAdminFlag: user.isAdmin,
-                isTolesa: user.username === 'Tolesa',
-                computedAdminStatus: isAdmin,
-                sessionUser: req.session.user,
-                reqUser: req.user
-            });
-        } else {
-            res.json({ userFound: false, message: 'Admin user not found' });
-        }
-    } catch (error) {
-        res.json({ error: error.message });
-    }
-});
-
-// Logout Route
+// Logout Route - SIMPLIFIED APPROACH
 router.get('/logout', (req, res) => {
     const username = req.user ? req.user.username : 'Unknown user';
     console.log('👋 Logout requested by:', username);
     
-    req.flash('success_msg', 'You have been logged out successfully.');
+    // Store user info before destroying session
+    const userName = req.user ? req.user.username : 'User';
+    const isAdmin = req.user ? req.user.isAdmin : false;
     
+    // Set flash message BEFORE destroying session
+    if (isAdmin) {
+        req.flash('success_msg', `👋 Admin ${userName} has been logged out successfully.`);
+    } else {
+        req.flash('success_msg', `👋 ${userName} has been logged out successfully. Come back soon!`);
+    }
+    
+    console.log('💾 Flash message set:', req.flash('success_msg')[0]);
+    
+    // Destroy session
     req.session.destroy((err) => {
         if (err) {
-            console.error('Session destruction error:', err);
+            console.error('❌ Session destruction error:', err);
+            // Even if session destruction fails, redirect to login
+            return res.redirect('/users/login');
         }
+        
+        // Clear the cookie
         res.clearCookie('connect.sid');
+        console.log('✅ Logout completed for:', userName);
+        console.log('🔀 Redirecting to login page');
+        
+        // Redirect to login - the flash message should persist
         res.redirect('/users/login');
     });
 });
 
-// Profile Route
+// Profile Route - FIXED: Remove duplicate flash message passing
 router.get('/profile', async (req, res) => {
     console.log('👤 Profile access attempt - User:', req.user);
     
@@ -300,9 +312,7 @@ router.get('/profile', async (req, res) => {
         console.log('✅ Profile loaded for:', user.username);
         res.render('profile', {
             title: 'My Profile',
-            user: user,
-            success_msg: req.flash('success_msg'),
-            error_msg: req.flash('error_msg')
+            user: user
         });
     } catch (error) {
         console.error('Profile error:', error);
@@ -343,15 +353,14 @@ router.post('/favorites/:hymnId', async (req, res) => {
     }
 });
 
-// Forgot Password Routes - ADDED MISSING GET ROUTE
+// Forgot Password Routes - FIXED: Remove duplicate flash message passing
 router.get('/forgot-password', (req, res) => {
     if (req.user) {
         return res.redirect('/');
     }
     res.render('forgot-password', {
         title: 'Forgot Password - Hymns',
-        error_msg: req.flash('error_msg'),
-        success_msg: req.flash('success_msg')
+        token: req.params.token
     });
 });
 
@@ -405,7 +414,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// Reset Password Routes
+// Reset Password Routes - FIXED: Remove duplicate flash message passing
 router.get('/reset-password/:token', async (req, res) => {
     try {
         const user = await User.findOne({
@@ -420,9 +429,7 @@ router.get('/reset-password/:token', async (req, res) => {
 
         res.render('reset-password', {
             title: 'Reset Password - Hymns',
-            token: req.params.token,
-            error_msg: req.flash('error_msg'),
-            success_msg: req.flash('success_msg')
+            token: req.params.token
         });
     } catch (error) {
         console.error('Reset password GET error:', error);
@@ -545,6 +552,7 @@ router.post('/update-settings', async (req, res) => {
         res.status(500).json({ error: 'Error updating settings: ' + error.message });
     }
 });
+
 // Change Password Route
 router.post('/change-password', async (req, res) => {
     try {

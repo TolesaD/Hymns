@@ -10,7 +10,7 @@
             <a href="/">
                 <img src="/assets/logo.png" alt="Hymns Logo" class="logo" 
                      onerror="this.style.display='none'; document.querySelector('.nav-logo span').style.marginLeft='0';">
-                <span>Hymns</span>
+                <span>Akotet</span>
             </a>
         </div>
         
@@ -41,6 +41,40 @@
                 </div>
             </div>
             
+           <!-- Notification Bell - ENHANCED -->
+<% if (user) { %>
+    <div class="nav-dropdown notification-dropdown">
+        <a href="#" class="nav-link notification-link" id="notificationBell">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+        </a>
+        <div class="dropdown-content notification-dropdown-content">
+            <div class="notification-header">
+                <h4>Notifications</h4>
+                <div class="notification-actions">
+                    <button class="mark-all-read" id="markAllRead" title="Mark all as read">
+                        <i class="fas fa-check-double"></i>
+                    </button>
+                    <button class="refresh-notifications" id="refreshNotifications" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="notification-list" id="notificationList">
+                <div class="notification-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading notifications...</p>
+                </div>
+            </div>
+            <div class="notification-footer">
+                <a href="/users/profile#notifications" class="view-all">
+                    <i class="fas fa-cog"></i> Notification Settings
+                </a>
+            </div>
+        </div>
+    </div>
+<% } %>
+            
             <!-- User-specific links -->
             <% if (user && user.isAdmin) { %>
                 <a href="/admin" class="nav-link">Admin</a>
@@ -57,131 +91,585 @@
     </div>
 </nav>
 
+<!-- Notification Styles -->
+<style>
+/* Enhanced Notification Styles */
+.notification-dropdown {
+    position: relative;
+}
+
+.notification-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.notification-link:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    animation: pulse 2s infinite;
+}
+
+.notification-badge[style*="background-color: #e74c3c"] {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.notification-dropdown-content {
+    width: 380px;
+    max-height: 500px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-light);
+    background: var(--bg-light);
+}
+
+.notification-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.notification-actions button {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.notification-actions button:hover {
+    background: var(--gray-light);
+    color: var(--primary-color);
+}
+
+.notification-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-light);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.notification-item:hover {
+    background-color: var(--bg-light);
+}
+
+.notification-item.unread {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.notification-item.priority-high {
+    border-left: 3px solid #e74c3c;
+}
+
+.notification-item.priority-medium {
+    border-left: 3px solid #f39c12;
+}
+
+.notification-item.priority-low {
+    border-left: 3px solid #27ae60;
+}
+
+.notification-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+}
+
+.notification-message {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-lighter);
+}
+
+.notification-hymn {
+    font-style: italic;
+}
+
+.notification-dot {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary-color);
+}
+
+.notification-loading,
+.notification-empty,
+.notification-error {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-light);
+}
+
+.notification-loading i,
+.notification-empty i,
+.notification-error i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--gray);
+}
+
+.load-more-indicator {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.retry-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+
+.notification-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--gray-light);
+    text-align: center;
+    background: var(--bg-light);
+}
+
+.view-all {
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .notification-dropdown-content {
+        width: 300px;
+        right: -50px;
+    }
+    
+    .notification-item {
+        padding: 0.75rem;
+    }
+}
+</style>
+
 <script>
-// Enhanced Mobile menu functionality - FIXED
+// Enhanced Notification functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const mobileToggle = document.getElementById('mobileMenuToggle');
-    const navMenu = document.getElementById('navMenu');
-    const navDropdowns = document.querySelectorAll('.nav-dropdown');
-    const body = document.body;
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const notificationList = document.getElementById('notificationList');
+    const markAllReadBtn = document.getElementById('markAllRead');
+    const refreshNotificationsBtn = document.getElementById('refreshNotifications');
     
-    console.log('📱 Mobile menu initialized - Elements found:', {
-        mobileToggle: !!mobileToggle,
-        navMenu: !!navMenu,
-        navDropdowns: navDropdowns.length
-    });
+    let currentPage = 1;
+    let isLoading = false;
+    let hasMoreNotifications = true;
     
-    // Mobile menu toggle - FIXED
-    if (mobileToggle && navMenu) {
-        mobileToggle.addEventListener('click', function(e) {
+    // Load notifications on page load
+    loadNotifications();
+    
+    // Set up periodic notification check (every 1 minute)
+    setInterval(loadNotifications, 60000);
+    
+    // Mark all as read
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
-            const isOpening = !navMenu.classList.contains('active');
-            
-            // Toggle menu
-            navMenu.classList.toggle('active');
-            this.classList.toggle('active');
-            body.classList.toggle('menu-open', isOpening);
-            
-            // Toggle icon between bars and times
-            const icon = this.querySelector('i');
-            if (icon) {
-                if (icon.classList.contains('fa-bars')) {
-                    icon.classList.remove('fa-bars');
-                    icon.classList.add('fa-times');
-                } else {
-                    icon.classList.remove('fa-times');
-                    icon.classList.add('fa-bars');
-                }
-            }
-            
-            console.log('📱 Mobile menu ' + (isOpening ? 'opened' : 'closed'));
+            markAllNotificationsRead();
         });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (navMenu.classList.contains('active') && 
-                !navMenu.contains(e.target) && 
-                !mobileToggle.contains(e.target)) {
-                closeMobileMenu();
-            }
+    }
+    
+    // Refresh notifications
+    if (refreshNotificationsBtn) {
+        refreshNotificationsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            currentPage = 1;
+            hasMoreNotifications = true;
+            loadNotifications(true);
         });
-        
-        // Close menu when clicking on a link (except dropdown toggles)
-        navMenu.addEventListener('click', function(e) {
-            const target = e.target.closest('a');
-            if (target) {
-                // Don't close for dropdown toggles
-                const isDropdownToggle = target.parentElement.classList.contains('nav-dropdown') && 
-                                       target.querySelector('i.fa-chevron-down');
-                if (!isDropdownToggle) {
-                    closeMobileMenu();
-                }
+    }
+    
+    // Load more notifications on scroll
+    if (notificationList) {
+        notificationList.addEventListener('scroll', function() {
+            if (this.scrollTop + this.clientHeight >= this.scrollHeight - 10 && 
+                !isLoading && hasMoreNotifications) {
+                loadMoreNotifications();
             }
         });
     }
     
-    // Mobile dropdown functionality - FIXED
-    navDropdowns.forEach(dropdown => {
-        const link = dropdown.querySelector('.nav-link');
+    async function loadNotifications(forceRefresh = false) {
+        if (isLoading) return;
         
-        if (link) {
-            link.addEventListener('click', function(e) {
-                if (window.innerWidth <= 768) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Close other dropdowns
-                    navDropdowns.forEach(otherDropdown => {
-                        if (otherDropdown !== dropdown) {
-                            otherDropdown.classList.remove('active');
-                        }
+        isLoading = true;
+        showLoadingState();
+        
+        try {
+            const response = await fetch('/api/notifications?page=1&limit=10');
+            const data = await response.json();
+            
+            if (response.ok) {
+                updateNotificationUI(data, forceRefresh);
+                currentPage = 1;
+                hasMoreNotifications = data.hasMore;
+            } else {
+                showErrorState('Failed to load notifications');
+            }
+        } catch (error) {
+            console.error('❌ Error loading notifications:', error);
+            showErrorState('Network error loading notifications');
+        } finally {
+            isLoading = false;
+        }
+    }
+    
+    async function loadMoreNotifications() {
+        if (isLoading || !hasMoreNotifications) return;
+        
+        isLoading = true;
+        showLoadingMoreState();
+        
+        try {
+            const response = await fetch(`/api/notifications?page=${currentPage + 1}&limit=10`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                appendNotifications(data);
+                currentPage++;
+                hasMoreNotifications = data.hasMore;
+            }
+        } catch (error) {
+            console.error('❌ Error loading more notifications:', error);
+        } finally {
+            isLoading = false;
+        }
+    }
+    
+    function updateNotificationUI(data, forceRefresh = false) {
+        // Update badge with red background for new hymns
+        if (notificationBadge) {
+            if (data.unreadCount > 0) {
+                notificationBadge.textContent = data.unreadCount > 99 ? '99+' : data.unreadCount;
+                notificationBadge.style.display = 'flex';
+                
+                // Check if there are new hymn notifications for red badge
+                checkForNewHymns();
+            } else {
+                notificationBadge.style.display = 'none';
+            }
+        }
+        
+        // Update notification list
+        if (notificationList && data.notifications) {
+            if (data.notifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No notifications yet</p>
+                        <small>You'll see notifications here for new hymns and comments</small>
+                    </div>
+                `;
+            } else {
+                notificationList.innerHTML = data.notifications.map(notification => `
+                    <div class="notification-item ${!notification.read ? 'unread' : ''} 
+                         priority-${notification.priority}" 
+                         data-notification-id="${notification._id}">
+                        <div class="notification-icon">
+                            <i class="fas fa-${getNotificationIcon(notification.type)}"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">${notification.title}</div>
+                            <div class="notification-message">${notification.message}</div>
+                            <div class="notification-meta">
+                                <span class="notification-time">${notification.timeAgo}</span>
+                                ${notification.relatedHymn ? 
+                                    `<span class="notification-hymn">• ${notification.relatedHymn.title}</span>` : ''}
+                            </div>
+                        </div>
+                        ${!notification.read ? '<div class="notification-dot"></div>' : ''}
+                    </div>
+                `).join('');
+                
+                // Add click handlers for notifications
+                notificationList.querySelectorAll('.notification-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const notificationId = this.getAttribute('data-notification-id');
+                        const notification = data.notifications.find(n => n._id === notificationId);
+                        handleNotificationClick(notificationId, notification);
                     });
-                    
-                    // Toggle current dropdown
-                    dropdown.classList.toggle('active');
+                });
+                
+                // Add load more indicator if there are more notifications
+                if (data.hasMore) {
+                    notificationList.innerHTML += `
+                        <div class="load-more-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                            <span>Scroll to load more</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+    }
+    
+    function appendNotifications(data) {
+        if (notificationList && data.notifications && data.notifications.length > 0) {
+            const newNotificationsHTML = data.notifications.map(notification => `
+                <div class="notification-item ${!notification.read ? 'unread' : ''} 
+                     priority-${notification.priority}" 
+                     data-notification-id="${notification._id}">
+                    <div class="notification-icon">
+                        <i class="fas fa-${getNotificationIcon(notification.type)}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-meta">
+                            <span class="notification-time">${notification.timeAgo}</span>
+                            ${notification.relatedHymn ? 
+                                `<span class="notification-hymn">• ${notification.relatedHymn.title}</span>` : ''}
+                        </div>
+                    </div>
+                    ${!notification.read ? '<div class="notification-dot"></div>' : ''}
+                </div>
+            `).join('');
+            
+            // Remove load more indicator if it exists
+            const loadMoreIndicator = notificationList.querySelector('.load-more-indicator');
+            if (loadMoreIndicator) {
+                loadMoreIndicator.remove();
+            }
+            
+            notificationList.innerHTML += newNotificationsHTML;
+            
+            // Re-add click handlers for new notifications
+            notificationList.querySelectorAll('.notification-item').forEach(item => {
+                if (!item.hasAttribute('data-handler-attached')) {
+                    item.setAttribute('data-handler-attached', 'true');
+                    item.addEventListener('click', function() {
+                        const notificationId = this.getAttribute('data-notification-id');
+                        handleNotificationClick(notificationId);
+                    });
                 }
             });
-        }
-    });
-    
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-            closeMobileMenu();
-        }
-    });
-    
-    // Escape key to close menu
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && navMenu && navMenu.classList.contains('active')) {
-            closeMobileMenu();
-        }
-    });
-    
-    // Close menu function
-    function closeMobileMenu() {
-        if (navMenu) {
-            navMenu.classList.remove('active');
-        }
-        if (mobileToggle) {
-            mobileToggle.classList.remove('active');
-            const icon = mobileToggle.querySelector('i');
-            if (icon) {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
+            
+            // Add load more indicator if there are more notifications
+            if (data.hasMore) {
+                notificationList.innerHTML += `
+                    <div class="load-more-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>Scroll to load more</span>
+                    </div>
+                `;
             }
         }
-        body.classList.remove('menu-open');
-        
-        // Close all dropdowns
-        navDropdowns.forEach(dropdown => {
-            dropdown.classList.remove('active');
-        });
     }
     
-    // Initialize menu state
-    closeMobileMenu();
+    async function checkForNewHymns() {
+        try {
+            const response = await fetch('/api/notifications/check-new-hymns');
+            const data = await response.json();
+            
+            if (response.ok && data.hasNewHymns && notificationBadge) {
+                notificationBadge.style.backgroundColor = '#e74c3c'; // Red color for new hymns
+                notificationBadge.style.animation = 'pulse 1s infinite';
+            }
+        } catch (error) {
+            console.error('Error checking new hymns:', error);
+        }
+    }
+    
+    async function markAllNotificationsRead() {
+        try {
+            const response = await fetch('/api/notifications/read-all', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (notificationBadge) {
+                    notificationBadge.style.display = 'none';
+                }
+                // Reload notifications to update read status
+                loadNotifications();
+            }
+        } catch (error) {
+            console.error('❌ Error marking all notifications read:', error);
+        }
+    }
+    
+    async function handleNotificationClick(notificationId, notification) {
+        // Mark as read
+        await markNotificationRead(notificationId);
+        
+        // If it's a hymn-related notification, navigate to the hymn
+        if (notification && notification.relatedHymn) {
+            window.location.href = `/hymns/${notification.relatedHymn._id}`;
+        }
+    }
+    
+    async function markNotificationRead(notificationId) {
+        try {
+            const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                // Update the UI immediately
+                const notificationItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                    const dot = notificationItem.querySelector('.notification-dot');
+                    if (dot) dot.remove();
+                }
+                
+                // Update badge count
+                const data = await response.json();
+                if (notificationBadge) {
+                    if (data.unreadCount > 0) {
+                        notificationBadge.textContent = data.unreadCount > 99 ? '99+' : data.unreadCount;
+                    } else {
+                        notificationBadge.style.display = 'none';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error marking notification read:', error);
+        }
+    }
+    
+    function getNotificationIcon(type) {
+        const icons = {
+            'new_hymn': 'music',
+            'comment_approved': 'comment-check',
+            'system': 'cog',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle'
+        };
+        return icons[type] || 'bell';
+    }
+    
+    function showLoadingState() {
+        if (notificationList) {
+            notificationList.innerHTML = `
+                <div class="notification-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading notifications...</p>
+                </div>
+            `;
+        }
+    }
+    
+    function showLoadingMoreState() {
+        if (notificationList) {
+            const loadMoreIndicator = notificationList.querySelector('.load-more-indicator');
+            if (loadMoreIndicator) {
+                loadMoreIndicator.innerHTML = `
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Loading more...</span>
+                `;
+            }
+        }
+    }
+    
+    function showErrorState(message) {
+        if (notificationList) {
+            notificationList.innerHTML = `
+                <div class="notification-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>${message}</p>
+                    <button class="retry-btn" onclick="loadNotifications(true)">Retry</button>
+                </div>
+            `;
+        }
+    }
 });
 </script>

@@ -402,9 +402,12 @@
 </head>
 <body>
     <%- include('partials/header') %>
-
+    
     <div class="search-results-container">
         <div class="container">
+            <!-- FIXED: Use standardized flash messages partial -->
+            <%- include('partials/flash-messages') %>
+
             <!-- Search Header -->
             <div class="search-header">
                 <h1>Search Results for "<span class="search-query"><%= query %></span>"</h1>

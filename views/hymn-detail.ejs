@@ -102,91 +102,34 @@
             padding: 40px 0;
         }
 
-        .flash-messages {
-            margin-bottom: 20px;
+        /* Rating requirement message */
+        .rating-requirement {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+            animation: shake 0.5s ease-in-out;
         }
 
-        .flash-message {
-            padding: 12px 15px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .rating-requirement.show {
+            display: block;
         }
 
-        .flash-message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
-        .flash-message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+        /* REMOVED: Duplicate flash message styles - using standardized partial instead */
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="/">
-                    <img src="/assets/logo.png" alt="Hymns Logo" class="logo">
-                    <span>Hymns</span>
-                </a>
-            </div>
-            
-            <div class="nav-search">
-                <form action="/search" method="GET">
-                    <div class="search-box">
-                        <input type="text" name="q" placeholder="Search hymns..." id="search-input">
-                        <button type="submit"><i class="fas fa-search"></i></button>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="nav-menu">
-                <a href="/" class="nav-link">Home</a>
-                <div class="nav-dropdown">
-                    <a href="#" class="nav-link">Languages <i class="fas fa-chevron-down"></i></a>
-                    <div class="dropdown-content">
-                        <a href="/amharic/worship">Amharic</a>
-                        <a href="/oromo/worship">Afan Oromo</a>
-                        <a href="/tigrigna/worship">Tigrigna</a>
-                        <a href="/english/worship">English</a>
-                    </div>
-                </div>
-                <% if (user && user.isAdmin) { %>
-                    <a href="/admin" class="nav-link">Admin</a>
-                <% } %>
-                <% if (user) { %>
-                    <a href="/users/profile" class="nav-link">Profile</a>
-                    <a href="/users/logout" class="nav-link">Logout</a>
-                <% } else { %>
-                    <a href="/users/login" class="nav-link">Login</a>
-                    <a href="/users/register" class="nav-link btn-primary">Sign Up</a>
-                <% } %>
-            </div>
-        </div>
-    </nav>
+    <%- include('partials/header') %>
 
     <div class="container">
-        <!-- Flash Messages -->
-        <% if (success_msg && success_msg.length > 0) { %>
-            <div class="flash-message success">
-                <i class="fas fa-check-circle"></i>
-                <span><%= success_msg %></span>
-            </div>
-        <% } %>
-
-        <% if (error_msg && error_msg.length > 0) { %>
-            <div class="flash-message error">
-                <i class="fas fa-exclamation-circle"></i>
-                <span><%= error_msg %></span>
-            </div>
-        <% } %>
+        <!-- FIXED: Use standardized flash messages partial -->
+        <%- include('partials/flash-messages') %>
 
         <div class="hymn-detail">
             <div class="breadcrumb">
@@ -280,7 +223,6 @@
                         <pre><%= hymn.lyrics %></pre>
                     </div>
                 </div>
-
                 <!-- Comments and Ratings Section -->
                 <div class="comments-section">
                     <h2>Comments & Ratings</h2>
@@ -289,10 +231,10 @@
                     <% if (user) { %>
                         <div class="comment-form">
                             <h3>Leave a Comment and Rating</h3>
-                            <form action="/hymns/<%= hymn._id %>/comments" method="POST">
+                            <form action="/hymns/<%= hymn._id %>/comments" method="POST" id="comment-form">
                                 <div class="form-group">
-                                    <label>Your Rating:</label>
-                                    <div class="rating-stars">
+                                    <label>Your Rating *:</label>
+                                    <div class="rating-stars" id="rating-stars">
                                         <input type="radio" id="star5" name="rating" value="5" required>
                                         <label for="star5"><i class="fas fa-star"></i></label>
                                         <input type="radio" id="star4" name="rating" value="4">
@@ -304,9 +246,13 @@
                                         <input type="radio" id="star1" name="rating" value="1">
                                         <label for="star1"><i class="fas fa-star"></i></label>
                                     </div>
+                                    <div class="rating-requirement" id="rating-requirement">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span>Please rate the hymn before submitting your comment</span>
+                                    </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="content">Your Comment:</label>
+                                    <label for="content">Your Comment *:</label>
                                     <textarea name="content" id="content" rows="4" placeholder="Share your thoughts about this hymn..." required></textarea>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Submit Comment</button>
@@ -317,7 +263,6 @@
                             <p><a href="/users/login" class="btn btn-primary">Log in</a> to leave a comment and rating.</p>
                         </div>
                     <% } %>
-
                     <!-- Comments List -->
                     <div class="comments-list">
                         <h3>User Comments (<%= comments.length %>)</h3>
@@ -481,18 +426,58 @@
                 }
             }, 1000);
 
-            // Star rating interaction
+            // Enhanced star rating interaction
             const starInputs = document.querySelectorAll('.rating-stars input');
+            const ratingRequirement = document.getElementById('rating-requirement');
+            
             starInputs.forEach((input, index) => {
                 input.addEventListener('change', function() {
+                    // Hide rating requirement when a rating is selected
+                    if (ratingRequirement) {
+                        ratingRequirement.classList.remove('show');
+                    }
+                    
                     // Update visual state of stars
                     const labels = document.querySelectorAll('.rating-stars label');
                     labels.forEach((label, labelIndex) => {
-                        if (labelIndex >= index) {
+                        if (labelIndex <= index) {
                             label.style.color = '#ffc107';
+                        } else {
+                            label.style.color = '#ddd';
                         }
                     });
                 });
+            });
+
+            // Hover effect for stars
+            const starLabels = document.querySelectorAll('.rating-stars label');
+            starLabels.forEach((label, index) => {
+                label.addEventListener('mouseenter', function() {
+                    // Highlight stars on hover
+                    starLabels.forEach((l, i) => {
+                        if (i <= index) {
+                            l.style.color = '#ffc107';
+                        } else {
+                            l.style.color = '#ddd';
+                        }
+                    });
+                });
+            });
+
+            // Reset stars when mouse leaves (if no selection)
+            document.querySelector('.rating-stars').addEventListener('mouseleave', function() {
+                const selectedRating = document.querySelector('input[name="rating"]:checked');
+                if (!selectedRating) {
+                    starLabels.forEach(label => {
+                        label.style.color = '#ddd';
+                    });
+                } else {
+                    // Maintain selected state
+                    const selectedIndex = Array.from(starInputs).findIndex(input => input.checked);
+                    starLabels.forEach((label, index) => {
+                        label.style.color = index <= selectedIndex ? '#ffc107' : '#ddd';
+                    });
+                }
             });
         });
 
@@ -500,6 +485,49 @@
         function trackDownload(hymnId) {
             fetch(`/hymns/${hymnId}/download`, { method: 'GET' })
                 .catch(err => console.log('Download tracked'));
+        }
+
+        // Rating requirement validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const commentForm = document.getElementById('comment-form');
+            const ratingRequirement = document.getElementById('rating-requirement');
+            
+            if (commentForm) {
+                commentForm.addEventListener('submit', function(e) {
+                    const selectedRating = document.querySelector('input[name="rating"]:checked');
+                    const commentContent = document.getElementById('content').value.trim();
+                    
+                    // Check if rating is selected
+                    if (!selectedRating) {
+                        e.preventDefault();
+                        if (ratingRequirement) {
+                            ratingRequirement.classList.add('show');
+                            ratingRequirement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        showNotification('Please rate the hymn before submitting your comment', 'error');
+                        return false;
+                    }
+                    
+                    // Check if comment is provided
+                    if (!commentContent) {
+                        e.preventDefault();
+                        showNotification('Please write a comment before submitting', 'error');
+                        return false;
+                    }
+                    
+                    // If both are provided, allow form submission
+                    console.log('Comment form submitted with rating:', selectedRating.value);
+                });
+            }
+        });
+
+        // Notification function
+        function showNotification(message, type = 'info') {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification(message, type);
+            } else {
+                alert(message);
+            }
         }
     </script>
 </body>

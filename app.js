@@ -33,16 +33,16 @@ const connectDB = async () => {
 
 connectDB();
 
-// Middleware
+// Middleware - CRITICAL ORDER
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '10mb' }));
 
-// FIXED: Serve static files from multiple directories
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/assets', express.static(path.join(__dirname, 'models/assets')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Session configuration - DIFFERENT FOR LOCAL vs PRODUCTION
+// Session configuration
 const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'hymns-secret-key-change-in-production',
     resave: false,
@@ -50,34 +50,51 @@ const sessionConfig = {
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
         collectionName: 'sessions',
-        ttl: 24 * 60 * 60 // 1 day
+        ttl: 24 * 60 * 60
     }),
     cookie: { 
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Auto true on Vercel
+        secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
 };
 
 app.use(session(sessionConfig));
 
-// Flash messages - MUST BE AFTER SESSION
+// Flash middleware - MUST BE RIGHT AFTER SESSION
 app.use(flash());
 
-// FIXED: Global variables for templates - MUST BE AFTER FLASH
+// CRITICAL FIX: Enhanced flash middleware with better handling
 app.use((req, res, next) => {
+    // Store ALL flash messages in res.locals for templates
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    res.locals.info_msg = req.flash('info_msg');
+    res.locals.warning_msg = req.flash('warning_msg');
+    
+    // For backward compatibility, also set first message
+    res.locals.success = req.flash('success_msg')[0] || '';
+    res.locals.error = req.flash('error_msg')[0] || '';
+    res.locals.info = req.flash('info_msg')[0] || '';
+    res.locals.warning = req.flash('warning_msg')[0] || '';
+    
     // Convert session user to req.user for consistency
     if (req.session.user) {
         req.user = req.session.user;
     }
-    
-    // FIXED: Pass flash messages to all templates
-    res.locals.success_msg = req.flash('success_msg');
-    res.locals.error_msg = req.flash('error_msg');
     res.locals.user = req.user || null;
     
-    console.log('🔍 Flash messages - success:', res.locals.success_msg, 'error:', res.locals.error_msg);
+    // Debug logging for flash messages
+    if (res.locals.success_msg.length > 0 || res.locals.error_msg.length > 0 || res.locals.info_msg.length > 0) {
+        console.log('🔍 FLASH MESSAGES SET:', {
+            success: res.locals.success_msg,
+            error: res.locals.error_msg,
+            info: res.locals.info_msg,
+            warning: res.locals.warning_msg
+        });
+    }
+    
     next();
 });
 
@@ -85,12 +102,16 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Routes
-app.use('/', require('./routes/index'));
+// Routes - SPECIFIC ROUTES FIRST
 app.use('/users', require('./routes/users'));
-app.use('/hymns', require('./routes/hymns'));
 app.use('/admin', require('./routes/admin'));
+app.use('/hymns', require('./routes/hymns'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api', require('./routes/api'));
 app.use('/', require('./routes/legal'));
+
+// GENERAL ROUTES LAST
+app.use('/', require('./routes/index'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -104,44 +125,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Debug session endpoint
-app.get('/api/debug-session', (req, res) => {
-    res.json({
-        sessionId: req.sessionID,
-        sessionUser: req.session.user,
-        reqUser: req.user,
-        environment: process.env.NODE_ENV || 'development'
-    });
-});
-
-// Test route to check if server is working
-app.get('/test', (req, res) => {
-    res.json({ 
-        message: 'Server is working!',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString()
-    });
-});
-
-// Test routes endpoint
-app.get('/test-routes', (req, res) => {
-    res.json({
-        message: 'Routes test',
-        workingRoutes: [
-            '/',
-            '/test',
-            '/api/health',
-            '/api/debug-session',
-            '/test-routes',
-            '/users/login',
-            '/users/register',
-            '/admin/dashboard'
-        ],
-        timestamp: new Date().toISOString()
-    });
-});
-
-// 404 handler - MUST BE AFTER ALL ROUTES
+// 404 handler
 app.use((req, res) => {
     console.log('❌ 404 - Route not found:', req.originalUrl);
     res.status(404).render('404', { 
@@ -164,13 +148,11 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Export for Vercel, but also listen locally
 if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`📱 Local: http://localhost:${PORT}`);
         console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🔐 Session secure: ${process.env.NODE_ENV === 'production'}`);
     });
 }
 

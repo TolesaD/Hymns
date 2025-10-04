@@ -12,7 +12,7 @@ class SupabaseService {
                 }
             }
         );
-        this.bucketName = process.env.SUPABASE_BUCKET_NAME || 'hymns';
+        this.bucketName = process.env.SUPABASE_BUCKET_NAME || 'akotet'; // Changed to 'akotet'
         this.enabled = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
     }
 
@@ -23,6 +23,7 @@ class SupabaseService {
             }
 
             console.log('📤 Uploading file to Supabase:', fileName);
+            console.log('📁 Using bucket:', this.bucketName);
             
             const { data, error } = await this.supabase.storage
                 .from(this.bucketName)

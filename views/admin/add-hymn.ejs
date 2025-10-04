@@ -55,35 +55,8 @@
             </div>
 
             <div class="admin-content">
-                <% if (error_msg && error_msg.length > 0) { %>
-                    <div class="alert alert-error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <div>
-                            <% if (Array.isArray(error_msg)) { %>
-                                <% error_msg.forEach(function(msg) { %>
-                                    <p><%= msg %></p>
-                                <% }); %>
-                            <% } else { %>
-                                <p><%= error_msg %></p>
-                            <% } %>
-                        </div>
-                    </div>
-                <% } %>
-
-                <% if (success_msg && success_msg.length > 0) { %>
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <div>
-                            <% if (Array.isArray(success_msg)) { %>
-                                <% success_msg.forEach(function(msg) { %>
-                                    <p><%= msg %></p>
-                                <% }); %>
-                            <% } else { %>
-                                <p><%= success_msg %></p>
-                            <% } %>
-                        </div>
-                    </div>
-                <% } %>
+                <!-- REPLACED FLASH MESSAGES WITH INCLUDE -->
+                <%- include('../partials/flash-messages') %>
 
                 <form method="POST" action="/admin/hymns/add" class="hymn-form" enctype="multipart/form-data">
                     <div class="form-group">
@@ -130,9 +103,9 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Audio File (Optional)</label>
+                        <label class="form-label">Audio File *</label>
                         <div class="file-upload">
-                            <input type="file" name="audioFile" class="form-control" 
+                            <input type="file" name="audioFile" class="form-control" required
                                    accept="audio/mp3,audio/wav,audio/mpeg,audio/*">
                             <small class="form-help">Supported formats: MP3, WAV. Max size: 10MB</small>
                         </div>
@@ -167,8 +140,9 @@
                 const language = form.querySelector('select[name="hymnLanguage"]').value;
                 const category = form.querySelector('select[name="category"]').value;
                 const lyrics = form.querySelector('textarea[name="lyrics"]').value.trim();
+                const audioFile = form.querySelector('input[name="audioFile"]').value;
                 
-                if (!title || !description || !language || !category || !lyrics) {
+                if (!title || !description || !language || !category || !lyrics || !audioFile) {
                     e.preventDefault();
                     alert('Please fill in all required fields marked with *');
                     return false;
