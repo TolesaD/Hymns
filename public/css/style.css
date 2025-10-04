@@ -217,518 +217,6 @@ body {
     color: var(--primary-color);
 }
 
-/* ============================================= */
-/* MOBILE RESPONSIVE STYLES - FIXED HAMBURGER MENU */
-/* ============================================= */
-
-@media (max-width: 768px) {
-    /* Mobile Navigation Container */
-    .nav-container {
-        padding: 8px 15px;
-        flex-wrap: nowrap;
-        min-height: 60px;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    /* Mobile Menu Toggle - FIXED: Now visible on mobile */
-    .mobile-menu-toggle {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        order: 3;
-        width: 44px;
-        height: 44px;
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: var(--text-dark);
-        cursor: pointer;
-        z-index: 1001;
-        margin-left: auto;
-    }
-    
-    /* Logo Adjustments */
-    .nav-logo {
-        order: 1;
-        flex: 0 0 auto;
-    }
-    
-    .nav-logo a {
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-    }
-    
-    .logo {
-        height: 32px;
-        width: auto;
-        margin-right: 8px;
-    }
-    
-    /* Search Bar */
-    .nav-search {
-        order: 2;
-        flex: 1;
-        margin: 0 15px;
-        max-width: none;
-        display: block;
-    }
-    
-    .search-box {
-        width: 100%;
-    }
-    
-    /* Mobile Navigation Menu - COMPLETELY FIXED */
-    .nav-menu {
-        display: none !important;
-        position: fixed;
-        top: 60px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--white);
-        flex-direction: column;
-        padding: 20px 0;
-        box-shadow: var(--shadow-lg);
-        z-index: 1000;
-        overflow-y: auto;
-        height: calc(100vh - 60px);
-        gap: 0;
-        align-items: stretch;
-    }
-    
-    .nav-menu.active {
-        display: flex !important;
-    }
-    
-    .nav-link {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--gray-light);
-        width: 100%;
-        text-align: left;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        min-height: 50px;
-        font-weight: 500;
-        text-decoration: none;
-        color: var(--text-dark);
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
-    
-    .nav-link:hover {
-        background: var(--gray-light);
-        color: var(--text-dark);
-    }
-    
-    .nav-link:last-child {
-        border-bottom: none;
-    }
-    
-    .nav-link.btn-primary {
-        margin: 15px 20px;
-        width: calc(100% - 40px);
-        text-align: center;
-        border-radius: var(--border-radius);
-        justify-content: center;
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-        color: white;
-        font-weight: 600;
-        border: none;
-    }
-    
-    .nav-link.btn-primary:hover {
-        background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
-        color: white;
-        transform: none;
-    }
-    
-    /* Mobile Dropdown Styles */
-    .nav-dropdown {
-        width: 100%;
-        position: relative;
-    }
-    
-    .nav-dropdown .nav-link {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-right: 20px;
-    }
-    
-    .dropdown-content {
-        position: static;
-        width: 100%;
-        box-shadow: none;
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        display: none;
-        background: var(--gray-light);
-        border-radius: 0;
-        border-left: 4px solid var(--primary-color);
-    }
-    
-    .nav-dropdown.active .dropdown-content {
-        display: block;
-    }
-    
-    .dropdown-content a {
-        padding: 14px 20px 14px 40px;
-        border-bottom: 1px solid rgba(0,0,0,0.1);
-        font-size: 1rem;
-        min-height: 50px;
-        display: flex;
-        align-items: center;
-        color: var(--text-dark);
-        text-decoration: none;
-        font-weight: 400;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-    }
-    
-    .dropdown-content a:hover {
-        background: rgba(74, 111, 165, 0.1);
-        color: var(--primary-color);
-    }
-    
-    /* Container adjustments */
-    .container {
-        padding: 0 15px;
-    }
-    
-    /* Hero section mobile fixes */
-    .hero {
-        padding: 40px 0;
-    }
-    
-    .hero-content h1 {
-        font-size: 2rem;
-    }
-    
-    .hero-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .hero-buttons .btn {
-        width: 100%;
-        max-width: 300px;
-    }
-    
-    /* Hymns grid mobile fixes */
-    .hymns-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    /* Profile page mobile fixes */
-    .profile-content {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .profile-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .profile-avatar {
-        flex-direction: column;
-        text-align: center;
-        gap: 1rem;
-    }
-    
-    .profile-stats {
-        justify-content: space-around;
-        width: 100%;
-    }
-    
-    /* Hymn detail page mobile fixes */
-    .audio-section {
-        padding: 1rem;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-    }
-    
-    .action-buttons .btn {
-        width: 100%;
-        text-align: center;
-    }
-    
-    .share-buttons {
-        justify-content: center;
-        margin: 1rem 0 0 0;
-        width: 100%;
-    }
-    
-    /* Comments section mobile fixes */
-    .comment-form {
-        padding: 1rem;
-    }
-    
-    .rating-stars {
-        justify-content: center;
-    }
-    
-    .comment-item {
-        padding: 1rem;
-    }
-    
-    .comment-header {
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: flex-start;
-    }
-    
-    /* Admin panel mobile fixes */
-    .admin-container {
-        flex-direction: column;
-    }
-    
-    .admin-sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-    }
-    
-    .admin-main {
-        margin-left: 0;
-    }
-    
-    .admin-nav {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1rem;
-    }
-    
-    .nav-item {
-        border-left: none;
-        border-bottom: 3px solid transparent;
-        flex: 1;
-        min-width: 120px;
-        justify-content: center;
-        text-align: center;
-        padding: 0.75rem 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    .nav-item.active {
-        border-left: none;
-        border-bottom-color: var(--accent-color);
-    }
-    
-    /* Stats grid mobile fixes */
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .stat-card {
-        padding: 1rem;
-    }
-    
-    /* Table mobile fixes */
-    .hymns-table {
-        overflow-x: auto;
-    }
-    
-    .hymns-table table {
-        min-width: 600px;
-    }
-    
-    /* Admin content adjustments */
-    .admin-content {
-        padding: 1rem;
-    }
-    
-    .admin-header {
-        padding: 1rem;
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
-    }
-    
-    .content-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
-    }
-    
-    .content-actions {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    /* Auth pages mobile fixes */
-    .auth-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .auth-features {
-        display: none;
-    }
-    
-    .auth-card {
-        padding: 2rem 1rem;
-    }
-    
-    .social-auth {
-        grid-template-columns: 1fr;
-    }
-    
-    /* Flash messages mobile fixes */
-    .flash-messages {
-        padding: 0 15px;
-    }
-    
-    .flash-message {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.5rem;
-    }
-    
-    .flash-close {
-        margin-left: 0;
-    }
-    
-    /* Footer mobile fixes */
-    .footer-content {
-        grid-template-columns: 1fr;
-        text-align: center;
-        gap: 2rem;
-    }
-    
-    .social-links {
-        justify-content: center;
-    }
-    
-    /* Newsletter form mobile */
-    .newsletter-form {
-        flex-direction: column;
-    }
-    
-    /* Utility classes for mobile */
-    .mobile-hidden {
-        display: none !important;
-    }
-    
-    .mobile-full-width {
-        width: 100% !important;
-    }
-    
-    .mobile-text-center {
-        text-align: center !important;
-    }
-}
-
-/* Additional fix for very small screens */
-@media (max-width: 480px) {
-    .nav-container {
-        padding: 8px 10px;
-    }
-    
-    .nav-logo a {
-        font-size: 1.1rem;
-    }
-    
-    .logo {
-        height: 28px;
-    }
-    
-    .nav-search {
-        margin: 0 10px;
-    }
-    
-    .mobile-menu-toggle {
-        width: 40px;
-        height: 40px;
-        font-size: 1.3rem;
-    }
-    
-    h1 {
-        font-size: 1.8rem;
-    }
-    
-    h2 {
-        font-size: 1.5rem;
-    }
-    
-    .hero-content h1 {
-        font-size: 1.8rem;
-    }
-    
-    .admin-header h1 {
-        font-size: 1.5rem;
-    }
-    
-    .content-actions {
-        flex-direction: column;
-        width: 100%;
-        gap: 0.5rem;
-    }
-    
-    .content-actions .btn {
-        width: 100%;
-        text-align: center;
-    }
-    
-    .bulk-actions {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-    }
-    
-    .bulk-buttons {
-        justify-content: center;
-    }
-    
-    .tab-content {
-        padding: 1rem;
-    }
-    
-    .form-options {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-}
-
-/* Ensure desktop menu is properly hidden on mobile */
-@media (max-width: 768px) {
-    /* Hide desktop navigation by default */
-    .nav-menu:not(.active) {
-        display: none !important;
-    }
-    
-    /* Ensure the toggle button is always visible */
-    .mobile-menu-toggle {
-        display: flex !important;
-    }
-}
-
-/* Fix for mobile menu open state */
-body.menu-open {
-    overflow: hidden;
-    height: 100vh;
-}
-
-/* Rest of your existing CSS continues below... */
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1rem;
@@ -2198,7 +1686,6 @@ input:checked + .slider:before {
 
 /* Alert Styles */
 .alert {
-    position: relative;
     padding: 1rem 1.5rem;
     border-radius: var(--border-radius);
     margin-bottom: 1.5rem;
@@ -2211,26 +1698,26 @@ input:checked + .slider:before {
 
 .alert-success {
     background: rgba(39, 174, 96, 0.1);
-    border-left-color: #27ae60;
-    color: #27ae60;
+    border-left-color: var(--success);
+    color: var(--success);
 }
 
 .alert-error {
     background: rgba(231, 76, 60, 0.1);
-    border-left-color: #e74c3c;
-    color: #e74c3c;
+    border-left-color: var(--error);
+    color: var(--error);
 }
 
 .alert-info {
     background: rgba(52, 152, 219, 0.1);
-    border-left-color: #3498db;
-    color: #3498db;
+    border-left-color: var(--info);
+    color: var(--info);
 }
 
 .alert-warning {
     background: rgba(243, 156, 18, 0.1);
-    border-left-color: #f39c12;
-    color: #f39c12;
+    border-left-color: var(--warning);
+    color: var(--warning);
 }
 
 .alert i {
@@ -2348,6 +1835,513 @@ a:focus-visible {
     }
 }
 
+/* MOBILE RESPONSIVE STYLES */
+@media (max-width: 768px) {
+    /* Mobile Navigation Container */
+    .nav-container {
+        padding: 8px 15px;
+        flex-wrap: nowrap;
+        min-height: 60px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    /* Mobile Menu Toggle - FIXED VISIBILITY */
+    .mobile-menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        order: 3;
+        width: 44px;
+        height: 44px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        cursor: pointer;
+        z-index: 1001;
+        margin-left: auto;
+    }
+    
+    /* Logo Adjustments */
+    .nav-logo {
+        order: 1;
+        flex: 0 0 auto;
+    }
+    
+    .nav-logo a {
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+    
+    .logo {
+        height: 32px;
+        width: auto;
+        margin-right: 8px;
+    }
+    
+    /* Search Bar */
+    .nav-search {
+        order: 2;
+        flex: 1;
+        margin: 0 15px;
+        max-width: none;
+        display: block;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    /* Mobile Navigation Menu - COMPLETELY FIXED */
+    .nav-menu {
+        display: none !important;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--white);
+        flex-direction: column;
+        padding: 20px 0;
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        overflow-y: auto;
+        height: calc(100vh - 60px);
+        gap: 0;
+        align-items: stretch;
+    }
+    
+    .nav-menu.active {
+        display: flex !important;
+    }
+    
+    .nav-link {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--gray-light);
+        width: 100%;
+        text-align: left;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        min-height: 50px;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--text-dark);
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .nav-link:hover {
+        background: var(--gray-light);
+        color: var(--text-dark);
+    }
+    
+    .nav-link:last-child {
+        border-bottom: none;
+    }
+    
+    .nav-link.btn-primary {
+        margin: 15px 20px;
+        width: calc(100% - 40px);
+        text-align: center;
+        border-radius: var(--border-radius);
+        justify-content: center;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+        font-weight: 600;
+        border: none;
+    }
+    
+    .nav-link.btn-primary:hover {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+        color: white;
+        transform: none;
+    }
+    
+    /* Mobile Dropdown Styles */
+    .nav-dropdown {
+        width: 100%;
+        position: relative;
+    }
+    
+    .nav-dropdown .nav-link {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-right: 20px;
+    }
+    
+    .dropdown-content {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        display: none;
+        background: var(--gray-light);
+        border-radius: 0;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .nav-dropdown.active .dropdown-content {
+        display: block;
+    }
+    
+    .dropdown-content a {
+        padding: 14px 20px 14px 40px;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        font-size: 1rem;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        color: var(--text-dark);
+        text-decoration: none;
+        font-weight: 400;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+    
+    .dropdown-content a:hover {
+        background: rgba(74, 111, 165, 0.1);
+        color: var(--primary-color);
+    }
+    
+    /* Container adjustments */
+    .container {
+        padding: 0 15px;
+    }
+    
+    /* Hero section mobile fixes */
+    .hero {
+        padding: 40px 0;
+    }
+    
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .hero-buttons .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    /* Hymns grid mobile fixes */
+    .hymns-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    /* Profile page mobile fixes */
+    .profile-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .profile-avatar {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .profile-stats {
+        justify-content: space-around;
+        width: 100%;
+    }
+    
+    /* Hymn detail page mobile fixes */
+    .audio-section {
+        padding: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .share-buttons {
+        justify-content: center;
+        margin: 1rem 0 0 0;
+        width: 100%;
+    }
+    
+    /* Comments section mobile fixes */
+    .comment-form {
+        padding: 1rem;
+    }
+    
+    .rating-stars {
+        justify-content: center;
+    }
+    
+    .comment-item {
+        padding: 1rem;
+    }
+    
+    .comment-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    /* Admin panel mobile fixes */
+    .admin-container {
+        flex-direction: column;
+    }
+    
+    .admin-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+    
+    .admin-nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .nav-item {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .nav-item.active {
+        border-left: none;
+        border-bottom-color: var(--accent-color);
+    }
+    
+    /* Stats grid mobile fixes */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    /* Table mobile fixes */
+    .hymns-table {
+        overflow-x: auto;
+    }
+    
+    .hymns-table table {
+        min-width: 600px;
+    }
+    
+    /* Admin content adjustments */
+    .admin-content {
+        padding: 1rem;
+    }
+    
+    .admin-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .content-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    /* Auth pages mobile fixes */
+    .auth-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .auth-features {
+        display: none;
+    }
+    
+    .auth-card {
+        padding: 2rem 1rem;
+    }
+    
+    .social-auth {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Flash messages mobile fixes */
+    .flash-messages {
+        padding: 0 15px;
+    }
+    
+    .flash-message {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .flash-close {
+        margin-left: 0;
+    }
+    
+    /* Footer mobile fixes */
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 2rem;
+    }
+    
+    .social-links {
+        justify-content: center;
+    }
+    
+    /* Newsletter form mobile */
+    .newsletter-form {
+        flex-direction: column;
+    }
+    
+    /* Utility classes for mobile */
+    .mobile-hidden {
+        display: none !important;
+    }
+    
+    .mobile-full-width {
+        width: 100% !important;
+    }
+    
+    .mobile-text-center {
+        text-align: center !important;
+    }
+}
+
+/* Additional fix for very small screens */
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 8px 10px;
+    }
+    
+    .nav-logo a {
+        font-size: 1.1rem;
+    }
+    
+    .logo {
+        height: 28px;
+    }
+    
+    .nav-search {
+        margin: 0 10px;
+    }
+    
+    .mobile-menu-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 1.3rem;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
+    
+    .admin-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .content-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+    
+    .content-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .bulk-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .bulk-buttons {
+        justify-content: center;
+    }
+    
+    .tab-content {
+        padding: 1rem;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+
+/* Ensure desktop menu is properly hidden on mobile */
+@media (max-width: 768px) {
+    /* Hide desktop navigation by default */
+    .nav-menu:not(.active) {
+        display: none !important;
+    }
+    
+    /* Ensure the toggle button is always visible */
+    .mobile-menu-toggle {
+        display: flex !important;
+    }
+}
+
+/* Fix for mobile menu open state */
+body.menu-open {
+    overflow: hidden;
+    height: 100vh;
+}
 /* Flash Message Styles */
 .alert {
     position: relative;
