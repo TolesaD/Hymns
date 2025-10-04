@@ -102,16 +102,24 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// =============================================
+// CORRECTED ROUTES ORDER - FIXED!
+// =============================================
+
 // Routes - SPECIFIC ROUTES FIRST
 app.use('/users', require('./routes/users'));
 app.use('/admin', require('./routes/admin'));
 app.use('/hymns', require('./routes/hymns'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api', require('./routes/api'));
+
+// MAIN ROUTES - MUST COME BEFORE LEGAL ROUTES
+app.use('/', require('./routes/index')); // This contains /contact, /about routes
+
+// LEGAL ROUTES LAST (only if they don't conflict with main routes)
 app.use('/', require('./routes/legal'));
 
-// GENERAL ROUTES LAST
-app.use('/', require('./routes/index'));
+// =============================================
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

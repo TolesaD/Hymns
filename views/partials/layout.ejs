@@ -13,16 +13,13 @@
     <!-- Navigation -->
     <%- include('./header') %>
 
-    <!-- Flash Messages - SINGLE SOURCE OF TRUTH -->
+    <!-- Flash Messages -->
     <%- include('./flash-messages') %>
 
     <!-- Main Content -->
     <main>
-        <!-- Content will be inserted here by individual templates -->
+        <%- body %>
     </main>
-
-    <!-- Footer -->
-    <%- include('./footer') %>
 
     <script src="/js/main.js"></script>
 </body>

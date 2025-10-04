@@ -112,7 +112,7 @@ router.get('/:language/:category', async (req, res) => {
     }
 });
 
-/// Search route - FIXED: Use consistent variable name
+// Search route - FIXED: Use consistent variable name
 router.get('/search', async (req, res) => {
     try {
         const { q } = req.query;
@@ -147,6 +147,62 @@ router.get('/search', async (req, res) => {
         console.error('Search error:', error);
         req.flash('error_msg', 'Error performing search');
         res.redirect('/');
+    }
+});
+
+// =============================================
+// NEW ROUTES FOR FOOTER PAGES
+// =============================================
+
+// Contact Page Route
+router.get('/contact', (req, res) => {
+    res.render('contact', {
+        title: 'Contact Us - Akotet',
+        user: req.user || null,
+        success_msg: req.flash('success_msg'),
+        error_msg: req.flash('error_msg'),
+        info_msg: req.flash('info_msg')
+    });
+});
+
+// About Page Route  
+router.get('/about', (req, res) => {
+    res.render('about', {
+        title: 'About Akotet - Spiritual Hymns Service',
+        user: req.user || null,
+        success_msg: req.flash('success_msg'),
+        error_msg: req.flash('error_msg'),
+        info_msg: req.flash('info_msg')
+    });
+});
+
+// Privacy Policy Route - Redirect to external Telegraph page
+router.get('/privacy', (req, res) => {
+    res.redirect('https://telegra.ph/Akotet-Privacy-Policy-10-03');
+});
+
+// Terms of Service Route - Redirect to external Telegraph page
+router.get('/terms', (req, res) => {
+    res.redirect('https://telegra.ph/Akotet-Terms-of-Service-10-03');
+});
+
+// Contact form submission handler (if you want to add form functionality later)
+router.post('/contact', async (req, res) => {
+    try {
+        const { name, email, message, prayerRequest } = req.body;
+        
+        // Here you can add email sending logic using your emailService
+        // For now, we'll just show a success message
+        
+        console.log('📧 Contact form submitted:', { name, email, prayerRequest: !!prayerRequest });
+        
+        req.flash('success_msg', 'Thank you for your message! We will pray for you and respond soon.');
+        res.redirect('/contact');
+        
+    } catch (error) {
+        console.error('Contact form error:', error);
+        req.flash('error_msg', 'Error sending your message. Please try again or email us directly at akotetservice@gmail.com');
+        res.redirect('/contact');
     }
 });
 
