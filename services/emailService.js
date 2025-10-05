@@ -308,7 +308,7 @@ May God's grace and peace be with you always,
     <div class="container">
         <div class="header">
             <h1>🕊️ Akotet Hymns</h1>
-            <p>Spiritual Songs for the Soul</p>
+            <p>Spiritual Hymns for the Soul</p>
         </div>
         <div class="content">
             <h2>Peace be with you, ${userName}! 🙏</h2>
