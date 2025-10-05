@@ -196,7 +196,7 @@ router.post('/contact', async (req, res) => {
         
         console.log('📧 Contact form submitted:', { name, email, prayerRequest: !!prayerRequest });
         
-        req.flash('success_msg', 'Thank you for your message! We will pray for you and respond soon.');
+        req.flash('success_msg', 'Thank you for your message! We will respond you soon.');
         res.redirect('/contact');
         
     } catch (error) {
