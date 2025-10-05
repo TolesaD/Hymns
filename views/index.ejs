@@ -10,9 +10,8 @@
 </head>
 <body>
     <%- include('partials/header') %>
-    
-    <!-- REMOVED DUPLICATE FLASH MESSAGES INCLUDE -->
-    <!-- Flash messages are already included in the header partial -->
+        <!-- ADD FLASH MESSAGES FOR CONSISTENCY -->
+    <%- include('partials/flash-messages') %>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -183,7 +182,7 @@
                                 <div class="hymn-actions">
                                     <a href="/hymns/<%= hymn._id %>" class="btn btn-primary">Listen</a>
                                     <% if (user) { %>
-                                        <button class="btn-icon favorite-btn" data-hymn-id="<%= hymn._id %>" data-hymn-title="<%= hymn.title %>">
+                                        <button class="btn-icon favorite-btn" data-hymn-id="<%= hymn._id %>">
                                             <i class="far fa-heart"></i>
                                         </button>
                                     <% } %>
@@ -216,7 +215,7 @@
         </div>
     </section>
 
-    <%- include('partials/footer') %>
+<%- include('partials/footer') %>
 
     <script src="/js/main.js"></script>
 </body>
