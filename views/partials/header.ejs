@@ -1,6 +1,6 @@
 <nav class="navbar">
     <div class="nav-container">
-        <!-- Mobile Menu Toggle - FIXED: Added proper ID -->
+        <!-- Mobile Menu Toggle -->
         <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
             <i class="fas fa-bars"></i>
         </button>
@@ -24,7 +24,7 @@
             </form>
         </div>
         
-        <!-- Main Navigation Menu - FIXED: Added proper ID -->
+        <!-- Main Navigation Menu -->
         <div class="nav-menu" id="navMenu">
             <a href="/" class="nav-link">Home</a>
             
@@ -91,7 +91,7 @@
     </div>
 </nav>
 
-<!-- KEEP ONLY NOTIFICATION STYLES - REMOVE MOBILE MENU STYLES -->
+<!-- NOTIFICATION STYLES WITH MOBILE FIX -->
 <style>
 /* Enhanced Notification Styles */
 .notification-dropdown {
@@ -324,7 +324,7 @@
     gap: 0.5rem;
 }
 
-/* Mobile Responsive Styles for Notifications Only */
+/* MOBILE FIX: Notification dropdown should not interfere with main menu */
 @media (max-width: 768px) {
     .notification-dropdown-content {
         width: 100% !important;
@@ -333,6 +333,116 @@
         left: 0 !important;
         right: 0 !important;
         max-height: 70vh !important;
+        /* CRITICAL FIX: Hide by default on mobile */
+        display: none !important;
+        z-index: 10002 !important;
+    }
+    
+    /* Only show notification dropdown when explicitly activated */
+    .notification-dropdown.active .notification-dropdown-content {
+        display: flex !important;
+    }
+    
+    /* Ensure main menu items are always visible */
+    .nav-menu.active .nav-link:not(.notification-link) {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 1 !important;
+        position: relative !important;
+    }
+    
+    /* Hide notification badge text on mobile to save space */
+    .notification-badge {
+        font-size: 0 !important;
+        width: 12px !important;
+        height: 12px !important;
+        min-width: 12px !important;
+    }
+    
+    /* Ensure notification dropdown doesn't show when main menu is open */
+    .nav-menu.active ~ .notification-dropdown .notification-dropdown-content {
+        display: none !important;
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+    .notification-dropdown-content {
+        display: none;
+    }
+    
+    .notification-dropdown:hover .notification-dropdown-content {
+        display: flex;
     }
 }
 </style>
+
+<!-- EMERGENCY MOBILE MENU FIX SCRIPT -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle notification dropdown on mobile
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.querySelector('.notification-dropdown');
+    
+    if (notificationBell && notificationDropdown) {
+        notificationBell.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close main menu if open
+                const navMenu = document.getElementById('navMenu');
+                if (navMenu && navMenu.classList.contains('active')) {
+                    navMenu.classList.remove('active');
+                    const toggle = document.getElementById('mobileMenuToggle');
+                    if (toggle) {
+                        toggle.querySelector('i').className = 'fas fa-bars';
+                    }
+                    document.body.classList.remove('menu-open');
+                }
+                
+                // Toggle notification dropdown
+                notificationDropdown.classList.toggle('active');
+                
+                // Close other dropdowns
+                document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+                    if (dropdown !== notificationDropdown) {
+                        dropdown.classList.remove('active');
+                    }
+                });
+            }
+        });
+        
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                if (!notificationDropdown.contains(e.target)) {
+                    notificationDropdown.classList.remove('active');
+                }
+            }
+        });
+    }
+    
+    // Handle language dropdown on mobile
+    const languageDropdowns = document.querySelectorAll('.nav-dropdown:not(.notification-dropdown)');
+    languageDropdowns.forEach(dropdown => {
+        const link = dropdown.querySelector('.nav-link');
+        if (link) {
+            link.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    dropdown.classList.toggle('active');
+                    
+                    // Close other dropdowns
+                    document.querySelectorAll('.nav-dropdown').forEach(other => {
+                        if (other !== dropdown) {
+                            other.classList.remove('active');
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+</script>

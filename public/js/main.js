@@ -810,6 +810,45 @@ async function checkForNewHymns() {
         console.error('Error checking for new hymns:', error);
     }
 }
+// Add this function to handle notification dropdown on mobile
+function initializeNotificationDropdown() {
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.querySelector('.notification-dropdown');
+    
+    if (notificationBell && notificationDropdown) {
+        notificationBell.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close main menu if open
+                const navMenu = document.getElementById('navMenu');
+                if (navMenu && navMenu.classList.contains('active')) {
+                    navMenu.classList.remove('active');
+                    const toggle = document.getElementById('mobileMenuToggle');
+                    if (toggle) {
+                        toggle.querySelector('i').className = 'fas fa-bars';
+                    }
+                    document.body.classList.remove('menu-open');
+                }
+                
+                // Toggle notification dropdown
+                notificationDropdown.classList.toggle('active');
+            }
+        });
+        
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('active');
+            }
+        });
+    }
+}
+
+// Call this in your DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeNotificationDropdown();
 
 // =============================================
 // AUDIO PLAYER SYSTEM
