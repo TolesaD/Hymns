@@ -299,7 +299,7 @@ router.get('/forgot-password', (req, res) => {
     }
     
     res.render('forgot-password', {
-        title: 'Forgot Password - akotet',
+        title: 'Forgot Password - Akotet Hymns',
         user: req.user || null
     });
 });
@@ -345,11 +345,10 @@ router.post('/forgot-password', async (req, res) => {
 
         // Send email using your existing service
         const emailSent = await emailService.sendPasswordResetEmail(
-    user.email,
-    resetToken,
-    resetLink,
-    user.name || user.username  // Add the user's name
-);
+            user.email,
+            resetToken,
+            resetLink
+        );
 
         if (emailSent) {
             console.log('✅ Password reset email sent successfully to:', user.email);
@@ -395,7 +394,7 @@ router.get('/reset-password', async (req, res) => {
         console.log('✅ Valid reset token for user:', user.email);
 
         res.render('reset-password', {
-            title: 'Reset Password - akotet',
+            title: 'Reset Password - Akotet Hymns',
             token,
             user: req.user || null
         });
