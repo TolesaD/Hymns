@@ -1835,7 +1835,7 @@ a:focus-visible {
     }
 }
 
-/* MOBILE RESPONSIVE STYLES - FIXED */
+/* MOBILE RESPONSIVE STYLES - FIXED VERSION */
 @media (max-width: 768px) {
     /* Mobile Navigation Container */
     .nav-container {
@@ -1848,7 +1848,7 @@ a:focus-visible {
         justify-content: space-between;
     }
     
-    /* Mobile Menu Toggle - FIXED VISIBILITY */
+    /* Mobile Menu Toggle - FORCE VISIBILITY */
     .mobile-menu-toggle {
         display: flex !important;
         align-items: center;
@@ -1863,41 +1863,11 @@ a:focus-visible {
         cursor: pointer;
         z-index: 1001;
         margin-left: auto;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
-    /* Logo Adjustments */
-    .nav-logo {
-        order: 1;
-        flex: 0 0 auto;
-    }
-    
-    .nav-logo a {
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-    }
-    
-    .logo {
-        height: 32px;
-        width: auto;
-        margin-right: 8px;
-    }
-    
-    /* Search Bar */
-    .nav-search {
-        order: 2;
-        flex: 1;
-        margin: 0 15px;
-        max-width: none;
-        display: block;
-    }
-    
-    .search-box {
-        width: 100%;
-    }
-    
-    /* Mobile Navigation Menu - COMPLETELY FIXED */
+    /* Mobile Navigation Menu - SIMPLIFIED */
     .nav-menu {
         display: none !important;
         position: fixed;
@@ -1914,12 +1884,15 @@ a:focus-visible {
         height: calc(100vh - 60px);
         gap: 0;
         align-items: stretch;
+        visibility: hidden;
     }
     
     .nav-menu.active {
         display: flex !important;
+        visibility: visible;
     }
     
+    /* Rest of your mobile styles... */
     .nav-link {
         padding: 16px 20px;
         border-bottom: 1px solid var(--gray-light);
@@ -1929,12 +1902,6 @@ a:focus-visible {
         display: flex;
         align-items: center;
         min-height: 50px;
-        font-weight: 500;
-        text-decoration: none;
-        color: var(--text-dark);
-        background: none;
-        border: none;
-        cursor: pointer;
     }
     
     .nav-link:hover {
@@ -2396,5 +2363,112 @@ body.menu-open {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+/*Temporary*/
+/* TEMPORARY DEBUG STYLES - REMOVE AFTER FIX */
+.mobile-menu-toggle {
+    border: 2px solid red !important;
+    background: yellow !important;
+}
+
+.nav-menu {
+    border: 2px solid blue !important;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        border: 2px solid green !important;
+        background: lime !important;
+    }
+    
+    .nav-menu:not(.active) {
+        border: 2px solid orange !important;
+    }
+    
+    .nav-menu.active {
+        border: 2px solid purple !important;
+        background: pink !important;
+    }
+}
+/* ============================================= */
+/* MOBILE MENU EMERGENCY FIX - ADD THIS TO style.css */
+/* ============================================= */
+
+/* OVERRIDE ALL conflicting display properties */
+@media (max-width: 768px) {
+    /* Force mobile menu toggle to be visible */
+    .mobile-menu-toggle {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 10001 !important;
+    }
+    
+    /* Force nav-menu to be controlled by JavaScript */
+    .nav-menu {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* When active class is added, show the menu */
+    .nav-menu.active {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Remove any conflicting transforms/transitions temporarily */
+    .nav-menu {
+        transform: none !important;
+        transition: none !important;
+    }
+    
+    .nav-menu.active {
+        transform: none !important;
+    }
+}
+
+/* ============================================= */
+/* MOBILE MENU NUCLEAR FIX - ADD TO END OF style.css */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* FORCE the mobile menu to show when active */
+    .nav-menu.active {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Ensure the toggle button is always visible and clickable */
+    .mobile-menu-toggle {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 10001 !important;
+        position: relative !important;
+    }
+    
+    /* Override any conflicting transforms/positions */
+    .nav-menu {
+        position: fixed !important;
+        top: 60px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: white !important;
+        z-index: 10000 !important;
+        overflow-y: auto !important;
+    }
+    
+    /* Body lock when menu is open */
+    body.menu-open {
+        overflow: hidden !important;
     }
 }

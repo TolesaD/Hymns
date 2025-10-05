@@ -62,152 +62,124 @@ function initializeFlashMessages() {
     });
 }
 
-// =============================================
-// MOBILE MENU FUNCTIONALITY - FIXED VERSION
+/// =============================================
+// MOBILE MENU FUNCTIONALITY - DEBUG VERSION
 // =============================================
 
 function initializeMobileMenu() {
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const navMenu = document.getElementById('navMenu');
+    console.log('🔍 DEBUG: Starting mobile menu initialization...');
     
-    // Fallback selectors if IDs don't exist
-    const toggle = mobileMenuToggle || document.querySelector('.mobile-menu-toggle');
-    const menu = navMenu || document.querySelector('.nav-menu');
+    // Try multiple selectors to find elements
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle') || 
+                            document.querySelector('.mobile-menu-toggle');
     
-    if (toggle && menu) {
-        console.log('📱 Mobile menu elements found, initializing...');
+    const navMenu = document.getElementById('navMenu') || 
+                   document.querySelector('.nav-menu');
+    
+    console.log('🔍 DEBUG: Found elements:', {
+        toggle: mobileMenuToggle,
+        menu: navMenu,
+        toggleExists: !!mobileMenuToggle,
+        menuExists: !!navMenu,
+        toggleHTML: mobileMenuToggle ? mobileMenuToggle.outerHTML : 'NOT FOUND',
+        menuHTML: navMenu ? navMenu.outerHTML : 'NOT FOUND'
+    });
+    
+    if (mobileMenuToggle && navMenu) {
+        console.log('✅ DEBUG: Both elements found, attaching event listeners...');
         
-        toggle.addEventListener('click', function(e) {
+        // Remove any existing event listeners first
+        mobileMenuToggle.replaceWith(mobileMenuToggle.cloneNode(true));
+        const newToggle = document.getElementById('mobileMenuToggle') || 
+                         document.querySelector('.mobile-menu-toggle');
+        
+        newToggle.addEventListener('click', function(e) {
+            console.log('🎯 DEBUG: Mobile menu toggle CLICKED!');
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('🍔 Mobile menu toggle clicked');
+            const currentNavMenu = document.getElementById('navMenu') || 
+                                  document.querySelector('.nav-menu');
             
-            // Toggle active class on nav menu
-            menu.classList.toggle('active');
+            console.log('🔍 DEBUG: Before toggle - navMenu classes:', currentNavMenu.className);
             
-            // Update hamburger icon
+            // Toggle active class
+            currentNavMenu.classList.toggle('active');
+            
+            console.log('🔍 DEBUG: After toggle - navMenu classes:', currentNavMenu.className);
+            console.log('🔍 DEBUG: Is active?', currentNavMenu.classList.contains('active'));
+            
+            // Update icon
             const icon = this.querySelector('i');
-            if (menu.classList.contains('active')) {
-                if (icon) icon.className = 'fas fa-times';
-                document.body.classList.add('menu-open');
-                console.log('📱 Mobile menu opened');
-            } else {
-                if (icon) icon.className = 'fas fa-bars';
-                document.body.classList.remove('menu-open');
-                console.log('📱 Mobile menu closed');
-            }
-        });
-        
-        // Close menu when clicking on nav links (except dropdown toggles)
-        const navLinks = menu.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                // Don't close menu for dropdown toggles
-                if (this.parentElement.classList.contains('nav-dropdown') && 
-                    this.querySelector('.fa-chevron-down')) {
-                    e.preventDefault();
-                    this.parentElement.classList.toggle('active');
-                    return;
+            if (icon) {
+                if (currentNavMenu.classList.contains('active')) {
+                    icon.className = 'fas fa-times';
+                    document.body.classList.add('menu-open');
+                    console.log('📱 DEBUG: Menu opened');
+                } else {
+                    icon.className = 'fas fa-bars';
+                    document.body.classList.remove('menu-open');
+                    console.log('📱 DEBUG: Menu closed');
                 }
-                
-                // For regular links that navigate away, close the menu
-                if (this.getAttribute('href') && !this.getAttribute('href').startsWith('#')) {
-                    if (menu.classList.contains('active')) {
-                        menu.classList.remove('active');
-                        const icon = toggle.querySelector('i');
-                        if (icon) icon.className = 'fas fa-bars';
-                        document.body.classList.remove('menu-open');
-                        console.log('📱 Mobile menu closed via link click');
-                    }
-                }
-            });
-        });
-        
-        // Handle dropdown toggles in mobile menu
-        const dropdownToggles = menu.querySelectorAll('.nav-dropdown > .nav-link');
-        dropdownToggles.forEach(toggle => {
-            // Add chevron icon if not present
-            if (!toggle.querySelector('.fa-chevron-down')) {
-                const chevron = document.createElement('i');
-                chevron.className = 'fas fa-chevron-down';
-                chevron.style.marginLeft = 'auto';
-                chevron.style.transition = 'transform 0.3s ease';
-                toggle.appendChild(chevron);
             }
             
-            toggle.addEventListener('click', function(e) {
-                if (window.innerWidth <= 768) {
-                    e.preventDefault();
-                    const dropdown = this.parentElement;
-                    dropdown.classList.toggle('active');
-                    
-                    // Rotate chevron
-                    const chevron = this.querySelector('.fa-chevron-down');
-                    if (chevron) {
-                        chevron.style.transform = dropdown.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
-                    }
-                }
-            });
+            // Update ARIA attributes
+            this.setAttribute('aria-expanded', currentNavMenu.classList.contains('active'));
+            currentNavMenu.setAttribute('aria-hidden', !currentNavMenu.classList.contains('active'));
         });
         
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!menu.contains(e.target) && !toggle.contains(e.target)) {
-                if (menu.classList.contains('active')) {
-                    menu.classList.remove('active');
-                    const icon = toggle.querySelector('i');
-                    if (icon) icon.className = 'fas fa-bars';
-                    document.body.classList.remove('menu-open');
-                    console.log('📱 Mobile menu closed via outside click');
-                    
-                    // Close all dropdowns
-                    const dropdowns = menu.querySelectorAll('.nav-dropdown.active');
-                    dropdowns.forEach(dropdown => {
-                        dropdown.classList.remove('active');
-                        const chevron = dropdown.querySelector('.fa-chevron-down');
-                        if (chevron) chevron.style.transform = 'rotate(0deg)';
-                    });
-                }
-            }
+        // Test if click event is working
+        newToggle.addEventListener('mousedown', function() {
+            console.log('🎯 DEBUG: Mobile menu toggle MOUSEDOWN event fired');
         });
         
-        // Handle escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && menu.classList.contains('active')) {
-                menu.classList.remove('active');
-                const icon = toggle.querySelector('i');
-                if (icon) icon.className = 'fas fa-bars';
-                document.body.classList.remove('menu-open');
-                console.log('📱 Mobile menu closed via Escape key');
-            }
+        newToggle.addEventListener('touchstart', function() {
+            console.log('🎯 DEBUG: Mobile menu toggle TOUCHSTART event fired');
         });
         
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768 && menu.classList.contains('active')) {
-                menu.classList.remove('active');
-                const icon = toggle.querySelector('i');
-                if (icon) icon.className = 'fas fa-bars';
-                document.body.classList.remove('menu-open');
-                console.log('📱 Mobile menu closed via resize');
-                
-                // Reset all dropdowns
-                const dropdowns = menu.querySelectorAll('.nav-dropdown.active');
-                dropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('active');
-                    const chevron = dropdown.querySelector('.fa-chevron-down');
-                    if (chevron) chevron.style.transform = 'rotate(0deg)';
-                });
-            }
-        });
+        console.log('✅ DEBUG: Event listeners attached successfully');
         
-        console.log('✅ Mobile menu initialized successfully');
+        // Test manual trigger
+        window.debugOpenMenu = function() {
+            console.log('🔧 DEBUG: Manual menu open triggered');
+            navMenu.classList.add('active');
+            const icon = newToggle.querySelector('i');
+            if (icon) icon.className = 'fas fa-times';
+            document.body.classList.add('menu-open');
+        };
+        
+        window.debugCloseMenu = function() {
+            console.log('🔧 DEBUG: Manual menu close triggered');
+            navMenu.classList.remove('active');
+            const icon = newToggle.querySelector('i');
+            if (icon) icon.className = 'fas fa-bars';
+            document.body.classList.remove('menu-open');
+        };
+        
+        console.log('🔧 DEBUG: Test functions available: debugOpenMenu() and debugCloseMenu()');
+        
     } else {
-        console.error('❌ Mobile menu elements not found:', {
-            toggle: toggle,
-            menu: menu
-        });
+        console.error('❌ DEBUG: Mobile menu elements not found!');
+        console.error('❌ DEBUG: Toggle element:', mobileMenuToggle);
+        console.error('❌ DEBUG: Menu element:', navMenu);
+        
+        // Emergency fallback - add mobile menu toggle if it doesn't exist
+        if (!mobileMenuToggle) {
+            console.log('🔄 DEBUG: Creating emergency mobile menu toggle...');
+            const emergencyToggle = document.createElement('button');
+            emergencyToggle.className = 'mobile-menu-toggle';
+            emergencyToggle.id = 'mobileMenuToggle';
+            emergencyToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            emergencyToggle.setAttribute('aria-label', 'Toggle menu');
+            
+            const navContainer = document.querySelector('.nav-container');
+            if (navContainer) {
+                navContainer.appendChild(emergencyToggle);
+                console.log('✅ DEBUG: Emergency toggle created');
+                // Re-initialize with new toggle
+                setTimeout(initializeMobileMenu, 100);
+            }
+        }
     }
 }
 
