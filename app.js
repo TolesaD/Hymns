@@ -98,136 +98,18 @@ app.use((req, res, next) => {
     next();
 });
 
+// Add this to your app.js or server.js
+app.get('/debug-session', (req, res) => {
+    res.json({
+        session: req.session,
+        user: req.user,
+        flash: req.flash()
+    });
+});
+
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
-// =============================================
-// DEBUG ROUTES - ADD THESE FIRST
-// =============================================
-
-// Debug environment variables
-app.get('/debug-env', (req, res) => {
-    const debugInfo = {
-        fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-        fromName: process.env.MAILERSEND_FROM_NAME,
-        hasApiToken: !!process.env.MAILERSEND_API_TOKEN,
-        apiTokenLength: process.env.MAILERSEND_API_TOKEN ? process.env.MAILERSEND_API_TOKEN.length : 0,
-        nodeEnv: process.env.NODE_ENV,
-        appUrl: process.env.APP_URL,
-        mongodbConnected: mongoose.connection.readyState === 1,
-        sessionSecret: process.env.SESSION_SECRET ? 'Set' : 'Not Set'
-    };
-    
-    console.log('🔧 DEBUG ENV:', debugInfo);
-    res.json(debugInfo);
-});
-
-// Debug session
-app.get('/debug-session', (req, res) => {
-    const sessionInfo = {
-        sessionId: req.sessionID,
-        session: req.session,
-        user: req.user,
-        flash: {
-            success_msg: req.flash('success_msg'),
-            error_msg: req.flash('error_msg'),
-            info_msg: req.flash('info_msg'),
-            warning_msg: req.flash('warning_msg')
-        }
-    };
-    
-    console.log('🔧 DEBUG SESSION:', sessionInfo);
-    res.json(sessionInfo);
-});
-
-// Debug email test
-app.get('/debug-email-test', async (req, res) => {
-    try {
-        const emailService = require('./services/emailService');
-        const testEmail = req.query.email || 'test@example.com';
-        
-        console.log('🧪 PRODUCTION - Testing email service with:', testEmail);
-        console.log('📧 Email Service Config:', {
-            fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-            fromName: process.env.MAILERSEND_FROM_NAME,
-            hasToken: !!process.env.MAILERSEND_API_TOKEN,
-            environment: process.env.NODE_ENV
-        });
-        
-        const result = await emailService.sendTestEmail(testEmail);
-        
-        if (result) {
-            console.log('✅ PRODUCTION - Test email sent successfully');
-            res.json({ 
-                success: true, 
-                message: `Test email sent to ${testEmail}`,
-                config: {
-                    fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-                    fromName: process.env.MAILERSEND_FROM_NAME
-                }
-            });
-        } else {
-            console.error('❌ PRODUCTION - Failed to send test email');
-            res.json({ 
-                success: false, 
-                message: 'Failed to send test email - check MailerSend configuration',
-                config: {
-                    fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-                    fromName: process.env.MAILERSEND_FROM_NAME,
-                    hasToken: !!process.env.MAILERSEND_API_TOKEN
-                }
-            });
-        }
-    } catch (error) {
-        console.error('❌ PRODUCTION - Email test error:', error);
-        res.json({ 
-            success: false, 
-            message: error.message,
-            stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
-        });
-    }
-});
-
-// Debug email configuration
-app.get('/debug-email-config', async (req, res) => {
-    try {
-        const emailService = require('./services/emailService');
-        
-        const config = {
-            environment: process.env.NODE_ENV,
-            fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-            fromName: process.env.MAILERSEND_FROM_NAME,
-            hasApiToken: !!process.env.MAILERSEND_API_TOKEN,
-            apiTokenPrefix: process.env.MAILERSEND_API_TOKEN ? process.env.MAILERSEND_API_TOKEN.substring(0, 10) + '...' : 'None',
-            serviceEnabled: emailService.enabled,
-            appUrl: process.env.APP_URL
-        };
-        
-        console.log('🔧 DEBUG EMAIL CONFIG:', config);
-        
-        // Test the configuration
-        const configTest = await emailService.testConfiguration();
-        
-        res.json({
-            config: config,
-            configTest: configTest,
-            message: configTest ? 'Email configuration looks good' : 'Email configuration has issues'
-        });
-        
-    } catch (error) {
-        console.error('❌ Email config debug error:', error);
-        res.json({
-            config: {
-                environment: process.env.NODE_ENV,
-                fromEmail: process.env.MAILERSEND_FROM_EMAIL,
-                fromName: process.env.MAILERSEND_FROM_NAME,
-                hasApiToken: !!process.env.MAILERSEND_API_TOKEN
-            },
-            error: error.message
-        });
-    }
-});
 
 // =============================================
 // CORRECTED ROUTES ORDER - FIXED!
@@ -288,16 +170,6 @@ if (require.main === module) {
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`📱 Local: http://localhost:${PORT}`);
         console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`📧 From Email: ${process.env.MAILERSEND_FROM_EMAIL || 'Not set'}`);
-        console.log(`🔗 App URL: ${process.env.APP_URL || 'Not set'}`);
-        
-        // Log debug URLs
-        console.log('\n🔧 Debug URLs:');
-        console.log(`   Environment: http://localhost:${PORT}/debug-env`);
-        console.log(`   Session: http://localhost:${PORT}/debug-session`);
-        console.log(`   Email Config: http://localhost:${PORT}/debug-email-config`);
-        console.log(`   Email Test: http://localhost:${PORT}/debug-email-test?email=test@example.com`);
-        console.log(`   Health: http://localhost:${PORT}/api/health`);
     });
 }
 
