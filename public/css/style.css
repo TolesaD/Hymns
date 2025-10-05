@@ -77,7 +77,7 @@ body {
 
 /* Mobile Menu Toggle - Hidden on Desktop */
 .mobile-menu-toggle {
-    display: none;
+    display: flex !important;
     background: none;
     border: none;
     font-size: 1.5rem;
@@ -137,6 +137,14 @@ body {
 
 .search-box button:hover {
     background: var(--primary-dark);
+}
+
+/* Main Navigation Menu - Desktop */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: var(--transition);
 }
 
 .nav-link {
@@ -1889,16 +1897,29 @@ a:focus-visible {
         width: 100%;
     }
     
-.nav-menu {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
+    /* Mobile Navigation Menu - COMPLETELY FIXED */
+    .nav-menu {
+        display: none !important;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--white);
+        flex-direction: column;
+        padding: 20px 0;
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        overflow-y: auto;
+        height: calc(100vh - 60px);
+        gap: 0;
+        align-items: stretch;
+    }
+    
     .nav-menu.active {
-    transform: translateX(0);
-}
+        display: flex !important;
+    }
+    
     .nav-link {
         padding: 16px 20px;
         border-bottom: 1px solid var(--gray-light);
@@ -1993,7 +2014,7 @@ a:focus-visible {
         background: rgba(74, 111, 165, 0.1);
         color: var(--primary-color);
     }
-
+    
     /* Container adjustments */
     .container {
         padding: 0 15px;
@@ -2300,6 +2321,19 @@ a:focus-visible {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+    }
+}
+
+/* Ensure desktop menu is properly hidden on mobile */
+@media (max-width: 768px) {
+    /* Hide desktop navigation by default */
+    .nav-menu:not(.active) {
+        display: none !important;
+    }
+    
+    /* Ensure the toggle button is always visible */
+    .mobile-menu-toggle {
+        display: flex !important;
     }
 }
 

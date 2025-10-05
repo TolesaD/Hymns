@@ -2,14 +2,16 @@
 <% function displayFlashMessages(messages, type) { %>
     <% if (messages && messages.length > 0) { %>
         <% messages.forEach(function(message) { %>
-            <div class="alert alert-<%= type %>">
+            <div class="alert alert-<%= type %> flash-message">
                 <i class="fas fa-<%= 
                     type === 'success' ? 'check-circle' : 
                     type === 'error' ? 'exclamation-circle' : 
                     type === 'warning' ? 'exclamation-triangle' : 'info-circle' 
                 %>"></i>
-                <p><%= message %></p>
-                <button class="alert-close" onclick="this.parentElement.style.display='none'">
+                <div class="alert-content">
+                    <p><%= message %></p>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.remove()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -25,36 +27,55 @@
 
 <!-- Backward compatibility for single messages -->
 <% if (success && success.length > 0) { %>
-    <div class="alert alert-success">
+    <div class="alert alert-success flash-message">
         <i class="fas fa-check-circle"></i>
-        <p><%= success %></p>
-        <button class="alert-close" onclick="this.parentElement.style.display='none'">
+        <div class="alert-content">
+            <p><%= success %></p>
+        </div>
+        <button class="alert-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
     </div>
 <% } %>
 
 <% if (error && error.length > 0) { %>
-    <div class="alert alert-error">
+    <div class="alert alert-error flash-message">
         <i class="fas fa-exclamation-circle"></i>
-        <p><%= error %></p>
-        <button class="alert-close" onclick="this.parentElement.style.display='none'">
+        <div class="alert-content">
+            <p><%= error %></p>
+        </div>
+        <button class="alert-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
     </div>
 <% } %>
 
 <% if (info && info.length > 0) { %>
-    <div class="alert alert-info">
+    <div class="alert alert-info flash-message">
         <i class="fas fa-info-circle"></i>
-        <p><%= info %></p>
-        <button class="alert-close" onclick="this.parentElement.style.display='none'">
+        <div class="alert-content">
+            <p><%= info %></p>
+        </div>
+        <button class="alert-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+<% } %>
+
+<% if (warning && warning.length > 0) { %>
+    <div class="alert alert-warning flash-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="alert-content">
+            <p><%= warning %></p>
+        </div>
+        <button class="alert-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>
     </div>
 <% } %>
 
 <style>
+/* Enhanced Flash Message Styles */
 .alert {
     position: relative;
     padding: 1rem 1.5rem;
@@ -67,6 +88,7 @@
     animation: slideInDown 0.3s ease-out;
     max-width: 1200px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
 }
 
 .alert-success {
@@ -93,16 +115,27 @@
     color: #f39c12;
 }
 
+.alert-content {
+    flex: 1;
+}
+
+.alert-content p {
+    margin: 0;
+    font-weight: 500;
+}
+
 .alert-close {
     background: none;
     border: none;
     color: inherit;
     cursor: pointer;
-    margin-left: auto;
     padding: 0.5rem;
     font-size: 1rem;
     border-radius: 4px;
     transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .alert-close:hover {
@@ -140,7 +173,7 @@
 <script>
 // Enhanced auto-hide flash messages
 document.addEventListener('DOMContentLoaded', function() {
-    const alerts = document.querySelectorAll('.alert');
+    const alerts = document.querySelectorAll('.flash-message');
     
     alerts.forEach(alert => {
         // Auto-hide after 5 seconds
