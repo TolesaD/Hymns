@@ -202,61 +202,158 @@ class EmailService {
 </html>`;
     }
 
-    async sendPasswordResetEmail(email, resetToken, resetLink) {
-        console.log('🔐 Sending password reset email to:', email);
-        
-        const subject = 'Reset Your Password - Hymns App';
-        const text = `Hello,
+    async sendPasswordResetEmail(email, resetToken, resetLink, userName = 'Beloved User') {
+    console.log('🔐 Sending spiritual password reset email to:', email);
+    
+    const subject = 'Reset Your Password - akotet 🙏';
+    
+    // Plain text version
+    const text = `🕊️ akotet - Password Reset
 
-You requested a password reset for your Hymns account.
+Peace be with you, ${userName}! 🙏
 
-To reset your password, click the link below:
+Just as we sometimes forget earthly things, we understand that passwords can slip from memory too. Don't worry - we're here to help you restore your access to our community of worship and praise.
 
-${resetLink}
+📖 "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint." - Isaiah 40:31
 
-This password reset link will expire in 1 hour for security reasons.
+Click the link below to reset your password and continue your spiritual journey with us. This sacred link will remain valid for the next 24 hours:
 
-If you didn't request a password reset, please ignore this email. Your account remains secure.
+🔗 Reset Your Password: ${resetLink}
 
-Best regards,
-The Hymns Team`;
+💫 A Prayer for You:
+"May the Lord guide your steps and bless your journey back to our community of faith and worship. May your heart be filled with peace as you continue to explore the spiritual hymns that connect us to the Divine."
 
-        const html = `
-            <p>Hello,</p>
+If you have any questions or need spiritual guidance along with technical support, feel free to reach out to us at akotetservice@gmail.com.
+
+May God's grace and peace be with you always,
+
+🕊️ Akotet Team
+"Make a joyful noise unto the Lord, all ye lands." - Psalm 100:1`;
+
+    // HTML version
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f8f9fa;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header { 
+            background: linear-gradient(135deg, #4a6fa5, #3a5a8c); 
+            padding: 30px 20px; 
+            text-align: center; 
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content { 
+            padding: 30px; 
+        }
+        .footer { 
+            margin-top: 30px; 
+            padding: 20px;
+            background: #f8f9fa;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a6fa5, #3a5a8c);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .bible-verse {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4a6fa5;
+            margin: 20px 0;
+            font-style: italic;
+            color: #555;
+        }
+        .prayer {
+            background: #fff8e1;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            color: #5d4037;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕊️ Akotet Hymns</h1>
+            <p>Spiritual Songs for the Soul</p>
+        </div>
+        <div class="content">
+            <h2>Peace be with you, ${userName}! 🙏</h2>
             
-            <p>You requested a password reset for your Hymns account.</p>
+            <p>Just as we sometimes forget earthly things, we understand that passwords can slip from memory too. Don't worry - we're here to help you restore your access to our community of worship and praise.</p>
             
-            <p>To reset your password, click the button below:</p>
-            
-            <p style="text-align: center;">
-                <a href="${resetLink}" class="button" style="color: white; text-decoration: none; background: #4a6fa5; padding: 12px 24px; border-radius: 4px;">
-                    Reset Your Password
-                </a>
-            </p>
-            
-            <p>Or copy and paste this link in your browser:</p>
-            
-            <div class="code">
-                ${resetLink}
+            <div class="bible-verse">
+                <strong>"But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint."</strong><br>
+                - Isaiah 40:31
             </div>
             
-            <p><strong>This password reset link will expire in 1 hour</strong> for security reasons.</p>
+            <p>Click the button below to reset your password and continue your spiritual journey with us. This sacred link will remain valid for the next 24 hours.</p>
             
-            <p>If you didn't request a password reset, please ignore this email. Your account remains secure.</p>
+            <div style="text-align: center;">
+                <a href="${resetLink}" class="button">🔄 Reset Your Password</a>
+            </div>
             
-            <p>Best regards,<br>The Hymns Team</p>
-        `;
+            <div class="prayer">
+                <strong>💫 A Prayer for You:</strong><br>
+                "May the Lord guide your steps and bless your journey back to our community of faith and worship. May your heart be filled with peace as you continue to explore the spiritual hymns that connect us to the Divine."
+            </div>
+            
+            <p>If you have any questions or need spiritual guidance along with technical support, feel free to reach out to us at <strong>akotetservice@gmail.com</strong>.</p>
+            
+            <p><strong>May God's grace and peace be with you always,</strong></p>
+        </div>
+        <div class="footer">
+            <p>🕊️ <strong>Akotet Hymns Team</strong></p>
+            <p>"Make a joyful noise unto the Lord, all ye lands." - Psalm 100:1</p>
+            <p>© 2024 Akotet Hymns. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>`;
 
-        const result = await this.sendEmail(email, subject, text, html);
-        
-        if (result) {
-            console.log('✅ Password reset email processed successfully');
-        } else {
-            console.error('❌ Failed to process password reset email');
-        }
-        
-        return result;
+    const result = await this.sendEmail(email, subject, text, html);
+    
+    if (result) {
+        console.log('✅ Password reset email sent successfully');
+    } else {
+        console.error('❌ Failed to send password reset email');
     }
+    
+    return result;
+}
 
     // Test configuration
     async testConfiguration() {

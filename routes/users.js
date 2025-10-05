@@ -8,7 +8,7 @@ const emailService = require('../services/emailService');
 
 const router = express.Router();
 
-// Register Routes - FIXED: Remove duplicate flash message passing
+// Register Routes
 router.get('/register', (req, res) => {
     if (req.user) {
         req.flash('info_msg', 'You are already logged in');
@@ -77,7 +77,7 @@ router.post('/register', [
     }
 });
 
-// Login Routes - ENHANCED: Handle flash messages from query parameters
+// Login Routes
 router.get('/login', (req, res) => {
     if (req.user) {
         req.flash('info_msg', 'You are already logged in');
@@ -254,7 +254,8 @@ router.post('/login', [
         return res.redirect('/users/login');
     }
 });
-// Logout Route - SIMPLIFIED APPROACH
+
+// Logout Route
 router.get('/logout', (req, res) => {
     const username = req.user ? req.user.username : 'Unknown user';
     console.log('👋 Logout requested by:', username);
@@ -290,7 +291,181 @@ router.get('/logout', (req, res) => {
     });
 });
 
-// Profile Route - FIXED: Remove duplicate flash message passing
+// Forgot Password Routes
+router.get('/forgot-password', (req, res) => {
+    if (req.user) {
+        req.flash('info_msg', 'You are already logged in');
+        return res.redirect('/');
+    }
+    
+    res.render('forgot-password', {
+        title: 'Forgot Password - akotet',
+        user: req.user || null
+    });
+});
+
+// Forgot Password POST Route
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        console.log('🔐 Password reset requested for:', email);
+
+        if (!email) {
+            req.flash('error_msg', 'Please enter your email address');
+            return res.redirect('/users/forgot-password');
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase().trim() });
+        
+        // Always show success message for security (don't reveal if email exists)
+        if (!user) {
+            console.log('❌ No user found with email:', email);
+            req.flash('success_msg', 'If an account with that email exists, a password reset link has been sent.');
+            return res.redirect('/users/login');
+        }
+
+        console.log('✅ User found:', user.email);
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+
+        // Save token to user
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = resetTokenExpiry;
+        await user.save();
+
+        console.log('✅ Reset token generated and saved for user:', user.email);
+
+        // Create reset link
+        const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/users/reset-password?token=${resetToken}`;
+        
+        console.log('📧 Sending password reset email...');
+        console.log('Reset Link:', resetLink);
+
+        // Send email using your existing service
+        const emailSent = await emailService.sendPasswordResetEmail(
+    user.email,
+    resetToken,
+    resetLink,
+    user.name || user.username  // Add the user's name
+);
+
+        if (emailSent) {
+            console.log('✅ Password reset email sent successfully to:', user.email);
+            req.flash('success_msg', 'Password reset link has been sent to your email. Check your inbox (and spam folder).');
+        } else {
+            console.error('❌ Failed to send password reset email to:', user.email);
+            req.flash('error_msg', 'Failed to send reset email. Please try again or contact support.');
+        }
+
+        res.redirect('/users/login');
+
+    } catch (error) {
+        console.error('❌ Forgot password error:', error);
+        req.flash('error_msg', 'An error occurred. Please try again.');
+        res.redirect('/users/forgot-password');
+    }
+});
+
+// Reset Password GET Route
+router.get('/reset-password', async (req, res) => {
+    try {
+        const { token } = req.query;
+        
+        console.log('🔐 Reset password page accessed with token:', token ? 'present' : 'missing');
+
+        if (!token) {
+            req.flash('error_msg', 'Invalid reset token');
+            return res.redirect('/users/login');
+        }
+
+        // Find user with valid token
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            console.log('❌ Invalid or expired reset token');
+            req.flash('error_msg', 'Password reset token is invalid or has expired');
+            return res.redirect('/users/login');
+        }
+
+        console.log('✅ Valid reset token for user:', user.email);
+
+        res.render('reset-password', {
+            title: 'Reset Password - akotet',
+            token,
+            user: req.user || null
+        });
+
+    } catch (error) {
+        console.error('❌ Reset password page error:', error);
+        req.flash('error_msg', 'An error occurred. Please try again.');
+        res.redirect('/users/login');
+    }
+});
+
+// Reset Password POST Route
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token, password, confirmPassword } = req.body;
+        
+        console.log('🔐 Processing password reset with token:', token ? 'present' : 'missing');
+
+        if (!token || !password || !confirmPassword) {
+            req.flash('error_msg', 'Please fill in all fields');
+            return res.redirect(`/users/reset-password?token=${token}`);
+        }
+
+        if (password !== confirmPassword) {
+            req.flash('error_msg', 'Passwords do not match');
+            return res.redirect(`/users/reset-password?token=${token}`);
+        }
+
+        if (password.length < 6) {
+            req.flash('error_msg', 'Password must be at least 6 characters long');
+            return res.redirect(`/users/reset-password?token=${token}`);
+        }
+
+        // Find user with valid token
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            console.log('❌ Invalid or expired reset token during password reset');
+            req.flash('error_msg', 'Password reset token is invalid or has expired');
+            return res.redirect('/users/login');
+        }
+
+        console.log('✅ Valid user found for password reset:', user.email);
+
+        // Hash new password
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Update user and clear reset token
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        console.log('✅ Password successfully reset for user:', user.email);
+
+        req.flash('success_msg', 'Your password has been reset successfully. You can now log in with your new password.');
+        res.redirect('/users/login');
+
+    } catch (error) {
+        console.error('❌ Password reset error:', error);
+        req.flash('error_msg', 'An error occurred while resetting your password. Please try again.');
+        res.redirect('/users/login');
+    }
+});
+
+// Profile Route
 router.get('/profile', async (req, res) => {
     console.log('👤 Profile access attempt - User:', req.user);
     
@@ -350,137 +525,6 @@ router.post('/favorites/:hymnId', async (req, res) => {
     } catch (error) {
         console.error('Favorites error:', error);
         res.status(500).json({ error: 'Server error' });
-    }
-});
-
-// Forgot Password Routes - FIXED: Remove duplicate flash message passing
-router.get('/forgot-password', (req, res) => {
-    if (req.user) {
-        return res.redirect('/');
-    }
-    res.render('forgot-password', {
-        title: 'Forgot Password - Hymns',
-        token: req.params.token
-    });
-});
-
-// Forgot Password POST Route
-router.post('/forgot-password', async (req, res) => {
-    try {
-        const { email } = req.body;
-        console.log('Password reset requested for:', email);
-
-        const user = await User.findOne({ email });
-
-        if (user) {
-            const resetToken = crypto.randomBytes(32).toString('hex');
-            user.resetPasswordToken = resetToken;
-            user.resetPasswordExpires = Date.now() + 3600000;
-            await user.save();
-
-            const resetLink = `${process.env.APP_URL || req.protocol + '://' + req.get('host')}/users/reset-password/${resetToken}`;
-            console.log('Generated reset link:', resetLink);
-
-            // Different behavior for development vs production
-            if (process.env.NODE_ENV === 'development') {
-                console.log('📧 Development mode - Reset link shown in flash message');
-                req.flash('success_msg', `Password reset link: ${resetLink}`);
-            } else {
-                // Production - actually send email
-                console.log('📧 Production mode - Sending email via MailerSend');
-                const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, resetLink);
-                
-                if (emailSent) {
-                    console.log('✅ Password reset email sent successfully');
-                    req.flash('success_msg', 'Password reset link has been sent to your email.');
-                } else {
-                    console.error('❌ Failed to send password reset email');
-                    req.flash('error_msg', 'Failed to send email. Please try again later or contact support.');
-                }
-            }
-        } else {
-            // For security, don't reveal if email exists
-            console.log('Password reset requested for non-existent email:', email);
-        }
-
-        // Always show success message for security
-        req.flash('success_msg', 'If an account with that email exists, a password reset link has been sent.');
-        res.redirect('/users/login');
-
-    } catch (error) {
-        console.error('Forgot password error:', error);
-        req.flash('error_msg', 'Error processing request. Please try again.');
-        res.redirect('/users/forgot-password');
-    }
-});
-
-// Reset Password Routes - FIXED: Remove duplicate flash message passing
-router.get('/reset-password/:token', async (req, res) => {
-    try {
-        const user = await User.findOne({
-            resetPasswordToken: req.params.token,
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) {
-            req.flash('error_msg', 'Password reset token is invalid or has expired.');
-            return res.redirect('/users/forgot-password');
-        }
-
-        res.render('reset-password', {
-            title: 'Reset Password - Hymns',
-            token: req.params.token
-        });
-    } catch (error) {
-        console.error('Reset password GET error:', error);
-        req.flash('error_msg', 'Error processing reset password token.');
-        res.redirect('/users/forgot-password');
-    }
-});
-
-router.post('/reset-password/:token', async (req, res) => {
-    try {
-        const { password, confirmPassword } = req.body;
-
-        console.log('Password reset attempt for token:', req.params.token);
-        console.log('New password length:', password ? password.length : 0);
-
-        // Validate passwords match
-        if (password !== confirmPassword) {
-            req.flash('error_msg', 'Passwords do not match.');
-            return res.redirect(`/users/reset-password/${req.params.token}`);
-        }
-
-        // Validate password length
-        if (!password || password.length < 6) {
-            req.flash('error_msg', 'Password must be at least 6 characters long.');
-            return res.redirect(`/users/reset-password/${req.params.token}`);
-        }
-
-        const user = await User.findOne({
-            resetPasswordToken: req.params.token,
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) {
-            req.flash('error_msg', 'Password reset token is invalid or has expired.');
-            return res.redirect('/users/forgot-password');
-        }
-
-        // Update user password
-        user.password = password;
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        await user.save();
-
-        console.log('✅ Password reset successful for user:', user.email);
-        req.flash('success_msg', 'Your password has been reset successfully! You can now log in with your new password.');
-        res.redirect('/users/login');
-
-    } catch (error) {
-        console.error('Reset password POST error:', error);
-        req.flash('error_msg', 'Error resetting password. Please try again.');
-        res.redirect(`/users/reset-password/${req.params.token}`);
     }
 });
 
@@ -593,6 +637,26 @@ router.post('/update-notifications', async (req, res) => {
         console.error('Update notifications error:', error);
         res.status(500).json({ error: 'Error updating notification preferences' });
     }
+});
+
+// Test Email Route (Remove in production)
+router.get('/test-email', async (req, res) => {
+    if (process.env.NODE_ENV !== 'production') {
+        const testEmail = req.query.email || 'test@example.com';
+        console.log('🧪 Testing email service with:', testEmail);
+        
+        const result = await emailService.sendTestEmail(testEmail);
+        
+        if (result) {
+            req.flash('success_msg', `Test email sent successfully to ${testEmail}`);
+        } else {
+            req.flash('error_msg', 'Failed to send test email. Check console for details.');
+        }
+    } else {
+        req.flash('error_msg', 'Test email feature disabled in production');
+    }
+    
+    res.redirect('/');
 });
 
 module.exports = router;
