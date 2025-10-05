@@ -205,10 +205,10 @@ class EmailService {
     async sendPasswordResetEmail(email, resetToken, resetLink, userName = 'Beloved User') {
     console.log('🔐 Sending spiritual password reset email to:', email);
     
-    const subject = 'Reset Your Password - akotet 🙏';
+    const subject = 'Reset Your Password - Akotet Hymns 🙏';
     
     // Plain text version
-    const text = `🕊️ akotet - Password Reset
+    const text = `🕊️ Akotet Hymns - Password Reset
 
 Peace be with you, ${userName}! 🙏
 
@@ -227,7 +227,7 @@ If you have any questions or need spiritual guidance along with technical suppor
 
 May God's grace and peace be with you always,
 
-🕊️ Akotet Team
+🕊️ Akotet Hymns Team
 "Make a joyful noise unto the Lord, all ye lands." - Psalm 100:1`;
 
     // HTML version
@@ -308,7 +308,7 @@ May God's grace and peace be with you always,
     <div class="container">
         <div class="header">
             <h1>🕊️ Akotet Hymns</h1>
-            <p>Spiritual Hymns for the Soul</p>
+            <p>Spiritual Songs for the Soul</p>
         </div>
         <div class="content">
             <h2>Peace be with you, ${userName}! 🙏</h2>
@@ -347,53 +347,13 @@ May God's grace and peace be with you always,
     const result = await this.sendEmail(email, subject, text, html);
     
     if (result) {
-        console.log('✅ Password reset email sent successfully');
+        console.log('✅ Spiritual password reset email sent successfully');
     } else {
-        console.error('❌ Failed to send password reset email');
+        console.error('❌ Failed to send spiritual password reset email');
     }
     
     return result;
 }
-
-    // Test configuration
-    async testConfiguration() {
-        console.log('\n=== Email Service Configuration Test ===');
-        console.log('Environment:', process.env.NODE_ENV);
-        console.log('API Token present:', !!this.apiToken);
-        console.log('From Email:', this.fromEmail);
-        console.log('From Name:', this.fromName);
-        console.log('Service Enabled:', this.enabled);
-        
-        if (!this.apiToken) {
-            console.log('❌ Missing MAILERSEND_API_TOKEN');
-            return false;
-        }
-        
-        if (!this.fromEmail) {
-            console.log('❌ Missing MAILERSEND_FROM_EMAIL');
-            return false;
-        }
-        
-        console.log('✅ Configuration looks good');
-        return true;
-    }
-
-    async sendTestEmail(toEmail = 'test@example.com') {
-        console.log('\n=== Sending Test Email ===');
-        
-        const configOk = await this.testConfiguration();
-        if (!configOk) {
-            return false;
-        }
-
-        const testResult = await this.sendEmail(
-            toEmail,
-            'Test Email from Hymns App',
-            'This is a test email to verify your email configuration is working correctly!\n\nIf you received this email, your email service is properly configured.\n\nBest regards,\nHymns Team'
-        );
-
-        return testResult;
-    }
 }
 
 module.exports = new EmailService();
