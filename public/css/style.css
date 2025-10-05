@@ -75,9 +75,9 @@ body {
     margin-right: 10px;
 }
 
-/* Mobile Menu Toggle - Hidden on Desktop */
+/* Mobile Menu Toggle - Hidden on Desktop by default */
 .mobile-menu-toggle {
-    display: flex !important;
+    display: none !important;
     background: none;
     border: none;
     font-size: 1.5rem;
@@ -1835,7 +1835,7 @@ a:focus-visible {
     }
 }
 
-/* MOBILE RESPONSIVE STYLES */
+/* MOBILE RESPONSIVE STYLES - FIXED */
 @media (max-width: 768px) {
     /* Mobile Navigation Container */
     .nav-container {
@@ -2342,6 +2342,7 @@ body.menu-open {
     overflow: hidden;
     height: 100vh;
 }
+
 /* Flash Message Styles */
 .alert {
     position: relative;
