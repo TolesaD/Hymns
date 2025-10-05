@@ -1892,7 +1892,7 @@ a:focus-visible {
         visibility: visible;
     }
     
-    /* Rest of your mobile styles... */
+    /* Mobile menu links */
     .nav-link {
         padding: 16px 20px;
         border-bottom: 1px solid var(--gray-light);
@@ -1902,6 +1902,12 @@ a:focus-visible {
         display: flex;
         align-items: center;
         min-height: 50px;
+        font-weight: 500;
+        text-decoration: none;
+        color: var(--text-dark);
+        background: none;
+        border: none;
+        cursor: pointer;
     }
     
     .nav-link:hover {
@@ -2291,23 +2297,62 @@ a:focus-visible {
     }
 }
 
-/* Ensure desktop menu is properly hidden on mobile */
+/* ============================================= */
+/* MOBILE MENU NUCLEAR OVERRIDE - ADDED AT THE END */
+/* ============================================= */
+
+/* NUCLEAR OPTION: Override everything for mobile menu */
 @media (max-width: 768px) {
-    /* Hide desktop navigation by default */
-    .nav-menu:not(.active) {
+    /* Target by ID for maximum specificity */
+    #navMenu.nav-menu {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: none !important;
     }
     
-    /* Ensure the toggle button is always visible */
-    .mobile-menu-toggle {
+    /* When active, override ALL previous styles */
+    #navMenu.nav-menu.active {
         display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: auto !important;
+        
+        /* Force positioning */
+        position: fixed !important;
+        top: 60px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: white !important;
+        z-index: 10000 !important;
+        overflow-y: auto !important;
+        flex-direction: column !important;
+        padding: 20px 0 !important;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1) !important;
+        height: calc(100vh - 60px) !important;
+        gap: 0 !important;
+        align-items: stretch !important;
+    }
+    
+    /* Ensure toggle is always visible */
+    #mobileMenuToggle.mobile-menu-toggle {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 10001 !important;
     }
 }
 
-/* Fix for mobile menu open state */
+/* Body lock override */
 body.menu-open {
-    overflow: hidden;
-    height: 100vh;
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Flash Message Styles */
@@ -2363,112 +2408,5 @@ body.menu-open {
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-/*Temporary*/
-/* TEMPORARY DEBUG STYLES - REMOVE AFTER FIX */
-.mobile-menu-toggle {
-    border: 2px solid red !important;
-    background: yellow !important;
-}
-
-.nav-menu {
-    border: 2px solid blue !important;
-}
-
-@media (max-width: 768px) {
-    .mobile-menu-toggle {
-        border: 2px solid green !important;
-        background: lime !important;
-    }
-    
-    .nav-menu:not(.active) {
-        border: 2px solid orange !important;
-    }
-    
-    .nav-menu.active {
-        border: 2px solid purple !important;
-        background: pink !important;
-    }
-}
-/* ============================================= */
-/* MOBILE MENU EMERGENCY FIX - ADD THIS TO style.css */
-/* ============================================= */
-
-/* OVERRIDE ALL conflicting display properties */
-@media (max-width: 768px) {
-    /* Force mobile menu toggle to be visible */
-    .mobile-menu-toggle {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        z-index: 10001 !important;
-    }
-    
-    /* Force nav-menu to be controlled by JavaScript */
-    .nav-menu {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    
-    /* When active class is added, show the menu */
-    .nav-menu.active {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-    }
-    
-    /* Remove any conflicting transforms/transitions temporarily */
-    .nav-menu {
-        transform: none !important;
-        transition: none !important;
-    }
-    
-    .nav-menu.active {
-        transform: none !important;
-    }
-}
-
-/* ============================================= */
-/* MOBILE MENU NUCLEAR FIX - ADD TO END OF style.css */
-/* ============================================= */
-
-@media (max-width: 768px) {
-    /* FORCE the mobile menu to show when active */
-    .nav-menu.active {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        transform: none !important;
-        pointer-events: auto !important;
-    }
-    
-    /* Ensure the toggle button is always visible and clickable */
-    .mobile-menu-toggle {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        z-index: 10001 !important;
-        position: relative !important;
-    }
-    
-    /* Override any conflicting transforms/positions */
-    .nav-menu {
-        position: fixed !important;
-        top: 60px !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: white !important;
-        z-index: 10000 !important;
-        overflow-y: auto !important;
-    }
-    
-    /* Body lock when menu is open */
-    body.menu-open {
-        overflow: hidden !important;
     }
 }

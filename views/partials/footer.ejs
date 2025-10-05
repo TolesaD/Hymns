@@ -1,26 +1,15 @@
-<!-- Footer - CLEAN & VISIBLE VERSION -->
 <footer class="footer">
   <div class="container">
     <div class="footer-content">
       
-      <!-- Left Section -->
+      <!-- Left Side -->
       <div class="footer-left">
-        <h3>Spiritual Guidance</h3>
-        <ul>
-          <li><a href="/contact">📧 Contact Us</a></li>
-          <li><a href="/about">🙏 About Our Mission</a></li>
-        </ul>
-      </div>
-
-      <!-- Center Section (Logo + Verse + Socials) -->
-      <div class="footer-center">
         <div class="footer-logo">
           <img src="/assets/logo.png" alt="Hymns Logo">
           <span>Akotet</span>
         </div>
-        <div class="footer-verse">
-          <em>"The Lord is my strength and my shield; my heart trusts in him, and he helps me."</em>
-          <b> - Psalm 28:7</b>
+        <div>
+          <em>"The Lord is my strength and my shield; my heart trusts in him, and he helps me."</em> – <b>Psalm 28:7</b>
         </div>
         <div class="social-links">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
@@ -30,32 +19,32 @@
         </div>
       </div>
 
-      <!-- Right Section -->
+      <!-- Right Side -->
       <div class="footer-right">
-        <h3>Legal</h3>
+        <h3>Spiritual Guidance</h3>
         <ul>
+          <li><a href="/contact">📧 Contact Us</a></li>
+          <li><a href="/about">🙏 About Our Mission</a></li>
           <li><a href="https://telegra.ph/Akotet-Privacy-Policy-10-03" target="_blank">🛡️ Privacy Policy</a></li>
           <li><a href="https://telegra.ph/Akotet-Terms-of-Service-10-03" target="_blank">📜 Terms of Service</a></li>
         </ul>
       </div>
-
     </div>
 
-    <p class="footer-bottom">&copy; 2025 Akotet Service. All rights reserved.</p>
+    <p>&copy; 2025 Akotet Service. All rights reserved.</p>
   </div>
 </footer>
 
 <style>
+/* Footer - Enhanced Responsive Design */
 .footer {
-  background: linear-gradient(135deg, #111, #222);
-  color: #f9f9f9;
-  padding: 40px 0 20px;
+  background-color: #111; /* Dark background */
+  color: #fff;
+  padding: 40px 20px;
   text-align: center;
-  font-family: "Poppins", sans-serif;
 }
 
 .footer .container {
-  width: 90%;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -65,65 +54,37 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
-  text-align: left;
-  margin-bottom: 20px;
+  gap: 20px;
 }
 
-.footer-left,
-.footer-right {
-  flex: 1 1 200px;
+/* Left and Right Sections */
+.footer-left, .footer-right {
+  flex: 1 1 300px;
 }
 
-.footer-center {
-  flex: 2 1 400px;
-  text-align: center;
-}
-
+/* Footer logo and text */
 .footer-logo {
   display: flex;
-  justify-content: center;
   align-items: center;
   gap: 10px;
-  font-size: 1.6rem;
-  font-weight: bold;
-}
-.footer-logo span {
-  color: #ffffff;
-  font-weight: 700;
-  letter-spacing: 1px;
+  justify-content: center;
+  margin-bottom: 10px;
 }
 
 .footer-logo img {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
 }
 
-.footer-verse {
-  font-style: italic;
-  font-size: 0.95rem;
-  margin: 15px 0;
-  color: #ddd;
-}
-
-.social-links a {
-  color: #f9f9f9;
-  margin: 0 10px;
-  font-size: 1.3rem;
-  transition: color 0.3s ease;
-}
-
-.social-links a:hover {
-  color: #ffd700;
-}
-
-.footer h3 {
+.footer-logo span {
   color: #fff;
-  margin-bottom: 10px;
-  border-bottom: 2px solid #ffd700;
-  display: inline-block;
-  padding-bottom: 5px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
+/* Footer Links */
 .footer ul {
   list-style: none;
   padding: 0;
@@ -131,38 +92,52 @@
 }
 
 .footer ul li {
-  margin-bottom: 8px;
+  margin: 8px 0;
 }
 
 .footer ul li a {
-  color: #f0f0f0;
+  color: #ddd;
   text-decoration: none;
-  font-weight: 500;
   transition: color 0.3s;
 }
 
 .footer ul li a:hover {
-  color: #ffd700;
+  color: #fff;
 }
 
-.footer-bottom {
-  border-top: 1px solid #444;
-  margin-top: 20px;
-  padding-top: 10px;
+/* Social Links */
+.social-links a {
+  color: #ddd;
+  margin: 0 8px;
+  font-size: 1.2rem;
+  transition: color 0.3s;
+}
+
+.social-links a:hover {
+  color: #fff;
+}
+
+/* Footer Bottom Text */
+.footer p {
+  margin-top: 30px;
   font-size: 0.9rem;
-  color: #ccc;
+  color: #aaa;
 }
 
+/* ✅ Responsive Design for Mobile */
 @media (max-width: 768px) {
   .footer-content {
     flex-direction: column;
+    align-items: center;
     text-align: center;
   }
 
-  .footer-left,
-  .footer-right,
-  .footer-center {
-    margin-bottom: 20px;
+  .footer-left, .footer-right {
+    flex: 1 1 100%;
+  }
+
+  .footer-logo {
+    justify-content: center;
   }
 }
 </style>
