@@ -324,11 +324,11 @@ router.post('/forgot-password', async (req, res) => {
             return res.redirect('/users/login');
         }
 
-        console.log('✅ User found:', user.email);
+        console.log('✅ User found:', user.email, 'Username:', user.username);
 
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = Date.now() + 24 * 3600000; // 24 hour
+        const resetTokenExpiry = Date.now() + 24 * 3600000; // 24 hours
 
         // Save token to user
         user.resetPasswordToken = resetToken;
@@ -343,27 +343,28 @@ router.post('/forgot-password', async (req, res) => {
         console.log('📧 Sending password reset email...');
         console.log('Reset Link:', resetLink);
 
-        // Send email using your existing service
+        // FIX: Pass the actual username instead of "Beloved User"
         const emailSent = await emailService.sendPasswordResetEmail(
             user.email,
             resetToken,
-            resetLink
+            resetLink,
+            user.username // Pass the actual username here
         );
 
         if (emailSent) {
             console.log('✅ Password reset email sent successfully to:', user.email);
-            req.flash('success_msg', 'Password reset link has been sent to your email. Check your inbox (and spam folder).');
+            req.flash('success_msg', '✅ Password reset link has been sent to your email. Please check your inbox (and spam folder).');
         } else {
             console.error('❌ Failed to send password reset email to:', user.email);
-            req.flash('error_msg', 'Failed to send reset email. Please try again or contact support.');
+            req.flash('error_msg', '❌ Failed to send reset email. Please try again or contact support.');
         }
 
-        res.redirect('/users/login');
+        return res.redirect('/users/login');
 
     } catch (error) {
         console.error('❌ Forgot password error:', error);
-        req.flash('error_msg', 'An error occurred. Please try again.');
-        res.redirect('/users/forgot-password');
+        req.flash('error_msg', '❌ An error occurred. Please try again.');
+        return res.redirect('/users/forgot-password');
     }
 });
 
@@ -387,7 +388,7 @@ router.get('/reset-password', async (req, res) => {
 
         if (!user) {
             console.log('❌ Invalid or expired reset token');
-            req.flash('error_msg', 'Password reset token is invalid or has expired. Please request a new reset link.');
+            req.flash('error_msg', 'Password reset token is invalid or has expired');
             return res.redirect('/users/login');
         }
 
@@ -436,7 +437,7 @@ router.post('/reset-password', async (req, res) => {
 
         if (!user) {
             console.log('❌ Invalid or expired reset token during password reset');
-            req.flash('error_msg', 'Password reset token is invalid or has expired');
+            req.flash('error_msg', '❌ Password reset token is invalid or has expired. Please request a new reset link.');
             return res.redirect('/users/login');
         }
 
@@ -454,13 +455,13 @@ router.post('/reset-password', async (req, res) => {
 
         console.log('✅ Password successfully reset for user:', user.email);
 
-        req.flash('success_msg', 'Your password has been reset successfully. You can now log in with your new password.');
-        res.redirect('/users/login');
+        req.flash('success_msg', '✅ Your password has been reset successfully! You can now log in with your new password.');
+        return res.redirect('/users/login');
 
     } catch (error) {
         console.error('❌ Password reset error:', error);
-        req.flash('error_msg', 'An error occurred while resetting your password. Please try again.');
-        res.redirect('/users/login');
+        req.flash('error_msg', '❌ An error occurred while resetting your password. Please try again.');
+        return res.redirect('/users/login');
     }
 });
 
@@ -638,24 +639,116 @@ router.post('/update-notifications', async (req, res) => {
     }
 });
 
-// Test Email Route (Remove in production)
-router.get('/test-email', async (req, res) => {
-    if (process.env.NODE_ENV !== 'production') {
-        const testEmail = req.query.email || 'test@example.com';
-        console.log('🧪 Testing email service with:', testEmail);
-        
-        const result = await emailService.sendTestEmail(testEmail);
-        
-        if (result) {
-            req.flash('success_msg', `Test email sent successfully to ${testEmail}`);
-        } else {
-            req.flash('error_msg', 'Failed to send test email. Check console for details.');
-        }
-    } else {
-        req.flash('error_msg', 'Test email feature disabled in production');
+// Debug Email Service Route
+router.get('/debug-email-service', async (req, res) => {
+    // Allow without admin in production for debugging
+    if (process.env.NODE_ENV === 'production' && req.user && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
     }
+
+    try {
+        console.log('🔧 Production Email Service Debug Info');
+        
+        // Check environment variables (without exposing secrets)
+        const envCheck = {
+            nodeEnv: process.env.NODE_ENV,
+            appUrl: process.env.APP_URL,
+            hasApiToken: !!process.env.MAILERSEND_API_TOKEN,
+            apiTokenLength: process.env.MAILERSEND_API_TOKEN ? process.env.MAILERSEND_API_TOKEN.length : 0,
+            fromEmail: process.env.MAILERSEND_FROM_EMAIL,
+            fromName: process.env.MAILERSEND_FROM_NAME,
+            // Check if we're in Vercel
+            vercel: !!process.env.VERCEL,
+            vercelEnv: process.env.VERCEL_ENV
+        };
+
+        console.log('📋 Environment Check:', envCheck);
+
+        // Test email service directly
+        const serviceStatus = {
+            enabled: emailService.enabled,
+            apiEnabled: emailService.apiEnabled,
+            fromEmail: emailService.fromEmail,
+            fromName: emailService.fromName
+        };
+
+        console.log('🔧 Service Status:', serviceStatus);
+
+        // Test API connectivity
+        let apiTest = { success: false, error: null };
+        try {
+            const axios = require('axios');
+            const response = await axios.get('https://api.mailersend.com/v1/account', {
+                headers: {
+                    'Authorization': `Bearer ${process.env.MAILERSEND_API_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            });
+            apiTest = { 
+                success: true, 
+                status: response.status,
+                account: response.data?.data?.name || 'Unknown'
+            };
+            console.log('✅ API Connectivity Test: PASSED');
+        } catch (error) {
+            apiTest = { 
+                success: false, 
+                error: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            };
+            console.error('❌ API Connectivity Test: FAILED', error.message);
+        }
+
+        res.json({
+            environment: envCheck,
+            service: serviceStatus,
+            apiTest: apiTest,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Debug route error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Test Email Production Route
+router.get('/test-email-production', async (req, res) => {
+    // Only allow in production for security
+    if (process.env.NODE_ENV !== 'production') {
+        return res.status(403).json({ error: 'Production only' });
+    }
+
+    const testEmail = req.query.email || 'test@example.com';
     
-    res.redirect('/');
+    try {
+        console.log('🧪 PRODUCTION Email Test Started');
+        
+        const result = await emailService.sendEmail(
+            testEmail,
+            'Production Test - Akotet Hymns',
+            'This is a test email from your production server.',
+            '<h1>Production Test</h1><p>This email was sent from your production server.</p>'
+        );
+
+        res.json({
+            success: result,
+            message: result ? 
+                '✅ Test email sent - check MailerSend dashboard' : 
+                '❌ Test email failed - check server logs',
+            environment: process.env.NODE_ENV,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Production test failed:', error);
+        res.status(500).json({ 
+            error: error.message,
+            environment: process.env.NODE_ENV 
+        });
+    }
 });
 
 module.exports = router;

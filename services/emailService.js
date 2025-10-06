@@ -143,6 +143,17 @@ class EmailService {
         try {
             console.log(`🔄 [${emailId}] Attempt ${attempt} of ${this.retryConfig.maxRetries}`);
             
+            // Log production details
+            if (process.env.NODE_ENV === 'production') {
+                console.log(`🌐 [${emailId}] Production Send Details:`, {
+                    to: to,
+                    from: `${this.fromName} <${this.fromEmail}>`,
+                    subject: subject,
+                    environment: process.env.NODE_ENV,
+                    vercel: !!process.env.VERCEL
+                });
+            }
+
             const emailData = {
                 from: {
                     email: this.fromEmail,
@@ -157,13 +168,11 @@ class EmailService {
                 subject: subject,
                 text: text,
                 html: html || this.textToHtml(text),
-                // Additional options for better deliverability
-                ...(options.replyTo && {
-                    reply_to: {
-                        email: options.replyTo,
-                        name: this.fromName
-                    }
-                })
+                // Add headers for better deliverability
+                headers: {
+                    'X-Mailer': 'Akotet-Hymns/1.0',
+                    'List-Unsubscribe': `<mailto:${this.fromEmail}?subject=Unsubscribe>`,
+                }
             };
 
             const response = await axios.post(
@@ -180,14 +189,37 @@ class EmailService {
                 }
             );
 
-            console.log(`✅ [${emailId}] API request successful:`, {
+            // Enhanced logging for production
+            console.log(`✅ [${emailId}] API Response:`, {
                 status: response.status,
-                messageId: response.data?.id || 'unknown'
+                statusText: response.statusText,
+                messageId: response.data?.id || 'unknown',
+                environment: process.env.NODE_ENV
             });
+
+            // If we get 202 but no message ID, log warning
+            if (response.status === 202 && (!response.data?.id)) {
+                console.warn(`⚠️ [${emailId}] 202 Accepted but no message ID - check MailerSend dashboard`);
+            }
 
             return true;
 
         } catch (error) {
+            console.error(`❌ [${emailId}] Production Error Details:`, {
+                attempt,
+                environment: process.env.NODE_ENV,
+                errorMessage: error.message,
+                errorCode: error.code,
+                ...(error.response && {
+                    status: error.response.status,
+                    statusText: error.response.statusText,
+                    data: error.response.data
+                }),
+                ...(error.request && {
+                    requestInfo: 'No response received from API'
+                })
+            });
+
             // Check if we should retry
             if (attempt < this.retryConfig.maxRetries && this.shouldRetry(error)) {
                 const delay = this.retryConfig.retryDelay * attempt;
@@ -197,7 +229,6 @@ class EmailService {
                 return await this.sendWithRetry(to, subject, text, html, options, emailId, attempt + 1);
             }
             
-            // If no more retries or shouldn't retry, throw the error
             throw error;
         }
     }
@@ -234,14 +265,20 @@ class EmailService {
         return null;
     }
 
-    // Enhanced password reset email
-    async sendPasswordResetEmail(email, resetToken, resetLink, userName = 'Beloved User') {
+    // Enhanced password reset email with dynamic username
+    async sendPasswordResetEmail(email, resetToken, resetLink, userName = null) {
         console.log('🔐 Sending password reset email to:', email);
+        
+        // If no username provided, try to extract from email or use a generic name
+        const displayName = userName || email.split('@')[0] || 'Friend';
         
         const subject = 'Reset Your Password - Akotet Hymns 🙏';
         
-        const text = this.getPasswordResetText(userName, resetLink);
-        const html = this.getPasswordResetHtml(userName, resetLink);
+        // Plain text version with dynamic name
+        const text = this.getPasswordResetText(displayName, resetLink);
+        
+        // HTML version with dynamic name
+        const html = this.getPasswordResetHtml(displayName, resetLink);
 
         try {
             const result = await this.sendEmail(email, subject, text, html, {
@@ -251,17 +288,26 @@ class EmailService {
             
             if (result) {
                 console.log('✅ Password reset email sent successfully to:', email);
-                this.logEmailEvent('password_reset_sent', email, { success: true });
+                this.logEmailEvent('password_reset_sent', email, { 
+                    success: true,
+                    userName: displayName 
+                });
             } else {
                 console.error('❌ Failed to send password reset email to:', email);
-                this.logEmailEvent('password_reset_failed', email, { success: false });
+                this.logEmailEvent('password_reset_failed', email, { 
+                    success: false,
+                    userName: displayName 
+                });
             }
             
             return result;
             
         } catch (error) {
             console.error('💥 Critical error sending password reset email:', error);
-            this.logEmailEvent('password_reset_error', email, { error: error.message });
+            this.logEmailEvent('password_reset_error', email, { 
+                error: error.message,
+                userName: displayName 
+            });
             return false;
         }
     }
@@ -271,16 +317,18 @@ class EmailService {
 
 Peace be with you, ${userName}! 🙏
 
-Just as we sometimes forget earthly things, we understand that passwords can slip from memory too. Don't worry - we're here to help you restore your access to our community of worship and praise.
+We received a request to reset your password for your Akotet Hymns account. 
 
-📖 "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint." - Isaiah 40:31
-
-Click the link below to reset your password and continue your spiritual journey with us. This sacred link will remain valid for the next 24 hours:
+Click the link below to reset your password and continue your spiritual journey with us:
 
 🔗 Reset Your Password: ${resetLink}
 
+This sacred link will remain valid for the next 24 hours.
+
 💫 A Prayer for You:
 "May the Lord guide your steps and bless your journey back to our community of faith and worship. May your heart be filled with peace as you continue to explore the spiritual hymns that connect us to the Divine."
+
+If you didn't request this password reset, please ignore this email. Your account remains secure.
 
 If you have any questions or need spiritual guidance along with technical support, feel free to reach out to us at akotetservice@gmail.com.
 
@@ -298,7 +346,6 @@ May God's grace and peace be with you always,
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Your Password - Akotet Hymns</title>
     <style>
-        /* Production-ready email styles */
         body { 
             font-family: 'Arial', sans-serif; 
             line-height: 1.6; 
@@ -307,7 +354,6 @@ May God's grace and peace be with you always,
             padding: 0; 
             background-color: #f8f9fa;
             -webkit-font-smoothing: antialiased;
-            -webkit-text-size-adjust: 100%;
         }
         .container { 
             max-width: 600px; 
@@ -369,6 +415,14 @@ May God's grace and peace be with you always,
             margin: 20px 0;
             color: #5d4037;
         }
+        .security-note {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4caf50;
+            margin: 20px 0;
+            font-size: 14px;
+        }
         /* Mobile responsiveness */
         @media only screen and (max-width: 600px) {
             .container {
@@ -393,7 +447,7 @@ May God's grace and peace be with you always,
         <div class="content">
             <h2>Peace be with you, ${userName}! 🙏</h2>
             
-            <p>Just as we sometimes forget earthly things, we understand that passwords can slip from memory too. Don't worry - we're here to help you restore your access to our community of worship and praise.</p>
+            <p>We received a request to reset your password for your Akotet Hymns account.</p>
             
             <div class="bible-verse">
                 <strong>"But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint."</strong><br>
@@ -410,6 +464,11 @@ May God's grace and peace be with you always,
                 Or copy and paste this link in your browser:<br>
                 <span style="word-break: break-all;">${resetLink}</span>
             </p>
+            
+            <div class="security-note">
+                <strong>🔒 Security Note:</strong><br>
+                If you didn't request this password reset, please ignore this email. Your account remains secure.
+            </div>
             
             <div class="prayer">
                 <strong>💫 A Prayer for You:</strong><br>
@@ -431,6 +490,7 @@ May God's grace and peace be with you always,
     }
 
     textToHtml(text) {
+        // Simple text to HTML conversion for fallback
         return `
 <!DOCTYPE html>
 <html>
@@ -450,44 +510,7 @@ May God's grace and peace be with you always,
 </html>`;
     }
 
-    getPasswordResetText(userName, resetLink) {
-        return `🕊️ Akotet Hymns - Password Reset
-
-Peace be with you, ${userName}! 🙏
-
-Click the link below to reset your password:
-${resetLink}
-
-This link will expire in 24 hours.
-
-May God's grace and peace be with you always,
-
-🕊️ Akotet Hymns Team`;
-    }
-
-    getPasswordResetHtml(userName, resetLink) {
-        return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background: #f8f9fa; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .button { display: inline-block; background: #4a6fa5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Peace be with you, ${userName}! 🙏</h2>
-        <p>Click the button below to reset your password:</p>
-        <a href="${resetLink}" class="button">Reset Password</a>
-        <p>This link will expire in 24 hours.</p>
-    </div>
-</body>
-</html>`;
-    }
-
+    // Utility methods for production monitoring
     logEmailEvent(event, email, details = {}) {
         // In production, integrate with your logging service
         const logEntry = {
@@ -499,11 +522,6 @@ May God's grace and peace be with you always,
         };
         
         console.log('📊 Email Event:', logEntry);
-        
-        // Here you could send to:
-        // - Your database
-        // - Logging service (Sentry, DataDog, etc.)
-        // - Analytics platform
     }
 
     // Health check method
@@ -522,6 +540,58 @@ May God's grace and peace be with you always,
             timestamp: new Date().toISOString()
         };
     }
+
+    // Verify configuration
+    async verifyConfiguration() {
+        console.log('🔧 Verifying MailerSend configuration...');
+        
+        const config = {
+            apiToken: this.apiToken ? '***' + this.apiToken.slice(-8) : 'MISSING',
+            fromEmail: this.fromEmail || 'MISSING',
+            fromName: this.fromName || 'MISSING',
+            environment: process.env.NODE_ENV,
+            appUrl: process.env.APP_URL
+        };
+        
+        console.log('📋 Configuration:', config);
+        
+        // Test API connectivity
+        try {
+            const axios = require('axios');
+            const response = await axios.get(`${this.baseUrl}/account`, {
+                headers: {
+                    'Authorization': `Bearer ${this.apiToken}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            });
+            
+            console.log('✅ API Connectivity: OK');
+            console.log('📊 Account Info:', {
+                accountName: response.data?.data?.name,
+                email: response.data?.data?.email,
+                plan: response.data?.data?.plan?.name
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('❌ API Connectivity Failed:', error.message);
+            if (error.response) {
+                console.error('API Response:', error.response.status, error.response.data);
+            }
+            return false;
+        }
+    }
 }
 
-module.exports = new EmailService();
+// Create singleton instance
+const emailService = new EmailService();
+
+// Verify configuration on startup
+if (emailService.enabled && process.env.NODE_ENV === 'production') {
+    setTimeout(() => {
+        emailService.verifyConfiguration();
+    }, 2000);
+}
+
+module.exports = emailService;
