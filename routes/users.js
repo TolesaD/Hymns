@@ -328,7 +328,7 @@ router.post('/forgot-password', async (req, res) => {
 
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+        const resetTokenExpiry = Date.now() + 24 * 3600000; // 24 hour
 
         // Save token to user
         user.resetPasswordToken = resetToken;
@@ -387,7 +387,7 @@ router.get('/reset-password', async (req, res) => {
 
         if (!user) {
             console.log('❌ Invalid or expired reset token');
-            req.flash('error_msg', 'Password reset token is invalid or has expired');
+            req.flash('error_msg', 'Password reset token is invalid or has expired. Please request a new reset link.');
             return res.redirect('/users/login');
         }
 
